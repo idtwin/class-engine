@@ -23,28 +23,25 @@ export default function PlayPage() {
     }
     setStudentId(stored);
 
-    const source = new EventSource(`/api/room/stream?code=${code}`);
-    
-    source.onmessage = (e) => {
+    // Poll every 1.5s instead of SSE — works reliably on Vercel
+    const poll = async () => {
       try {
-        const data = JSON.parse(e.data);
-        if (data.error) {
-           setError(data.error);
-        } else if (data.status === "ended") {
-           setRoom((prev: any) => ({ ...prev, status: "ended" }));
+        const res = await fetch(`/api/room/get?code=${code}`);
+        if (res.ok) {
+          const data = await res.json();
+          setRoom(data);
         } else {
-           setRoom(data);
+          const err = await res.json();
+          setError(err.error || "Room not found");
         }
-      } catch (err) {
-         console.error("SSE Parse Error", err);
+      } catch (e) {
+        console.error("Polling error", e);
       }
     };
 
-    source.onerror = (e) => {
-       console.error("Live streaming pipeline error", e);
-    };
-
-    return () => source.close();
+    poll(); // immediate first fetch
+    const intervalId = setInterval(poll, 1500);
+    return () => clearInterval(intervalId);
   }, [code]);
 
   const sendAction = async (payload: any) => {
@@ -60,14 +57,20 @@ export default function PlayPage() {
   };
 
   if (error) return <div className={styles.screen}><h1>Disconnected</h1><p>{error}</p></div>;
-  if (!room) return <div className={styles.screen}><div className={styles.giantBuzzer} style={{ width: '100px', height: '100px', opacity: 0.5, pointerEvents: 'none' }} /></div>;
+  
+  if (!room) return (
+    <div className={styles.screen}>
+      <div className={styles.loadingPulse} />
+      <p style={{ opacity: 0.5 }}>Connecting to session...</p>
+    </div>
+  );
 
   if (room.status === "ended") {
-    return <div className={styles.screen}><h2>Session Terminated.</h2><p style={{ opacity: 0.5 }}>The host explicitly severed the connection.</p></div>;
+    return <div className={styles.screen}><h2>Session Ended</h2><p style={{ opacity: 0.5 }}>The host closed this session.</p></div>;
   }
 
   if (room.status === "waiting") {
-    return <div className={styles.screen}><h2>Awaiting Signal...</h2><p style={{ opacity: 0.5 }}>Locked into lobby: {code}</p></div>;
+    return <div className={styles.screen}><h2>You&apos;re In! ✅</h2><p style={{ opacity: 0.5 }}>Waiting for the teacher to start the game...</p><p style={{ fontSize: '3rem' }}>📱</p></div>;
   }
 
   // Active Phase Checks
@@ -133,5 +136,5 @@ export default function PlayPage() {
      )
   }
 
-  return <div className={styles.screen}>Sync Protocol Desync: Unsupported Mode</div>;
+  return <div className={styles.screen}>Waiting for game to begin...</div>;
 }

@@ -23,13 +23,8 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Room not found or expired" }, { status: 404 });
     }
 
-    // Only return public lobby data like the roster before they explicitly join
-    return NextResponse.json({
-      code: room.code,
-      gameMode: room.gameMode,
-      status: room.status,
-      activeRoster: room.activeRoster
-    });
+    // Return full room state for polling clients
+    return NextResponse.json(room);
   } catch (error: any) {
     console.error("Room Get Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

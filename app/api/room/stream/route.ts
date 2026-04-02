@@ -13,39 +13,41 @@ export async function GET(req: Request) {
 
   const stream = new ReadableStream({
     async start(controller) {
-      let intervalId: NodeJS.Timeout;
-      
+      let isActive = true;
+      const encoder = new TextEncoder();
+
+      req.signal.addEventListener('abort', () => {
+        isActive = false;
+        try { controller.close(); } catch (e) {}
+      });
+
       try {
         const redis = new Redis({
           url: process.env.UPSTASH_REDIS_REST_URL || "",
           token: process.env.UPSTASH_REDIS_REST_TOKEN || "",
         });
 
-        // Loop execution 1s tick
-        intervalId = setInterval(async () => {
+        // Edge Runtime compliant async-blocking loop
+        while (isActive) {
           try {
             const room = await redis.get(`room:${code}`);
             if (room) {
-              controller.enqueue(`data: ${JSON.stringify(room)}\n\n`);
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify(room)}\n\n`));
             } else {
-              controller.enqueue(`data: {"status": "ended", "error": "Room Destroyed or Expired"}\n\n`);
+              controller.enqueue(encoder.encode(`data: {"status": "ended", "error": "Room Destroyed or Expired"}\n\n`));
             }
           } catch (pollError) {
              console.error("Redis SSR Polling Internal Block:", pollError);
-             // Ignore transient block
           }
-        }, 1000);
+          await new Promise(r => setTimeout(r, 1000));
+        }
 
       } catch (e: any) {
-        controller.enqueue(`data: {"error": "${e.message}"}\n\n`);
-        controller.close();
-        return;
+        if (isActive) {
+          controller.enqueue(encoder.encode(`data: {"error": "${e.message}"}\n\n`));
+          try { controller.close(); } catch(err) {}
+        }
       }
-
-      req.signal.addEventListener('abort', () => {
-        clearInterval(intervalId);
-        controller.close();
-      });
     }
   });
 

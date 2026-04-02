@@ -64,18 +64,25 @@ export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
     setIsOpen(false);
   };
 
+  // Poll room state every 1.5s instead of SSE — reliable on Vercel
   useEffect(() => {
     if (!activeRoomCode) return;
-    const source = new EventSource(`/api/room/stream?code=${activeRoomCode}`);
-    source.onmessage = (e) => {
+
+    const poll = async () => {
       try {
-        const data = JSON.parse(e.data);
-        if (data && data.students) {
-          setRoster(data.students);
+        const res = await fetch(`/api/room/get?code=${activeRoomCode}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.students) {
+            setRoster(data.students);
+          }
         }
       } catch (err) {}
     };
-    return () => source.close();
+
+    poll(); // immediate
+    const intervalId = setInterval(poll, 1500);
+    return () => clearInterval(intervalId);
   }, [activeRoomCode]);
 
   if (!isOpen) {
