@@ -55,10 +55,23 @@ export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
   const launchMatch = async () => {
     if (!activeRoomCode) return;
     try {
+      // Update gameMode first so phones switch to the correct controller
+      await fetch("/api/room/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: activeRoomCode, action: "set_game_mode", payload: { gameMode } })
+      });
+      // Then set status to playing
       await fetch("/api/room/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: activeRoomCode, action: "update_status", payload: { status: "playing" } })
+      });
+      // Clear any stale answers/buzzes from previous game
+      await fetch("/api/room/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: activeRoomCode, action: "clear_answers", payload: {} })
       });
     } catch (e) {}
     setIsOpen(false);

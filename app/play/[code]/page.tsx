@@ -17,6 +17,8 @@ export default function PlayPage() {
   const [textInput, setTextInput] = useState("");
   const [hasBuzzed, setHasBuzzed] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [lastQuestionId, setLastQuestionId] = useState("");
 
   useEffect(() => {
@@ -53,11 +55,13 @@ export default function PlayPage() {
   // Reset local buzz/vote state when the question changes
   useEffect(() => {
     if (room?.currentQuestion) {
-      const qId = JSON.stringify(room.currentQuestion);
+      const qId = room.currentQuestion.brokenSentence || room.currentQuestion.text || room.currentQuestion.optionA || JSON.stringify(room.currentQuestion);
       if (qId !== lastQuestionId) {
         setLastQuestionId(qId);
         setHasBuzzed(false);
         setHasVoted(false);
+        setHasSubmitted(false);
+        setSelectedWord(null);
         setTextInput("");
       }
     }
@@ -88,11 +92,14 @@ export default function PlayPage() {
   };
 
   const handleSubmitAnswer = () => {
-    if (!textInput.trim()) return;
+    if (!textInput.trim() || hasSubmitted) return;
+    setHasSubmitted(true);
     sendAction("student_answer", { studentId, answer: textInput.trim() });
   };
 
   const handleTapWord = (word: string) => {
+    if (selectedWord) return; // already tapped
+    setSelectedWord(word);
     sendAction("student_answer", { studentId, answer: word });
   };
 
@@ -151,15 +158,15 @@ export default function PlayPage() {
           {words.map((w: string, idx: number) => (
             <button 
               key={idx} 
-              className={`${styles.cardBtn} ${me?.lastAnswer === w ? styles.cardSelected : ''}`}
-              onClick={() => !me?.answered && handleTapWord(w)}
-              disabled={me?.answered}
+              className={`${styles.cardBtn} ${selectedWord === w ? styles.cardSelected : ''}`}
+              onClick={() => handleTapWord(w)}
+              disabled={!!selectedWord}
             >
               {w}
             </button>
           ))}
         </div>
-        {me?.answered && <p style={{ marginTop: '1rem', color: 'var(--accent)' }}>Answer locked! ✅</p>}
+        {selectedWord && <p style={{ marginTop: '1rem', color: 'var(--accent)' }}>Answer locked! ✅</p>}
       </div>
     );
   }
@@ -178,15 +185,15 @@ export default function PlayPage() {
           className={styles.textArea} 
           value={textInput} 
           onChange={e => setTextInput(e.target.value)}
-          disabled={me?.answered}
+          disabled={hasSubmitted}
           placeholder="Type the corrected sentence..."
         />
         <button 
           className={styles.submitBtn} 
           onClick={handleSubmitAnswer}
-          disabled={me?.answered || !textInput.trim()}
+          disabled={hasSubmitted || !textInput.trim()}
         >
-          {me?.answered ? "Locked In ✅" : "LOCK IN ANSWER 🔒"}
+          {hasSubmitted ? "Locked In ✅" : "LOCK IN ANSWER 🔒"}
         </button>
       </div>
     );

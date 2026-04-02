@@ -32,21 +32,20 @@ export default function FixIt() {
   const [roomStudents, setRoomStudents] = useState<any[]>([]);
   const [roomBuzzes, setRoomBuzzes] = useState<any[]>([]);
 
-  // Broadcast Live Question to connected mobile devices via Upstash
+  // Push the first question when generated
   useEffect(() => {
-    const activeQ = questions?.[currentIndex];
-    if (activeRoomCode && activeQ) {
+    if (activeRoomCode && questions && currentIndex === 0) {
        fetch("/api/room/action", {
          method: "POST",
          headers: { "Content-Type": "application/json" },
          body: JSON.stringify({
             code: activeRoomCode,
             action: "set_question",
-            payload: { question: activeQ }
+            payload: { question: questions[0] }
          })
        }).catch((e) => console.error("Sync Error", e));
     }
-  }, [currentIndex, questions, activeRoomCode]);
+  }, [questions, activeRoomCode]);
 
   // Poll for student responses
   useEffect(() => {
@@ -107,17 +106,28 @@ export default function FixIt() {
 
   const nextQuestion = () => {
     if (questions && currentIndex < questions.length - 1) {
-      setCurrentIndex(c => c + 1);
+      const nextIdx = currentIndex + 1;
+      setCurrentIndex(nextIdx);
       setShowHint(false);
       setShowErrorFlag(false);
       setShowAnswer(false);
       
-      // Clear all phone buzzers/inputs for the completely new question
+      // Clear all phone buzzers/inputs and push new question sequentially
       if (activeRoomCode) {
         fetch("/api/room/action", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ code: activeRoomCode, action: "clear_answers", payload: {} })
+        }).then(() => {
+          fetch("/api/room/action", {
+             method: "POST",
+             headers: { "Content-Type": "application/json" },
+             body: JSON.stringify({
+                code: activeRoomCode,
+                action: "set_question",
+                payload: { question: questions[nextIdx] }
+             })
+          });
         }).catch(()=>{});
       }
     }
@@ -270,6 +280,27 @@ export default function FixIt() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Pre-reveal visually show who has locked in */}
+          {!showAnswer && activeRoomCode && roomStudents.length > 0 && (
+            <div style={{ marginTop: '2rem', width: '100%', borderTop: '2px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem', textAlign: 'center' }}>
+              <h3 style={{ marginBottom: '1rem', color: 'var(--accent)' }}>🔒 Locked In: {roomStudents.filter((s:any) => s.answered).length} / {roomStudents.length}</h3>
+              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                {roomStudents.map((s: any, i: number) => (
+                  <div key={i} style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '8px',
+                    background: s.answered ? 'rgba(45,212,191,0.2)' : 'rgba(255,255,255,0.05)',
+                    border: `1px solid ${s.answered ? 'var(--accent)' : 'rgba(255,255,255,0.1)'}`,
+                    transition: 'all 0.2s ease',
+                    opacity: s.answered ? 1 : 0.5
+                  }}>
+                    {s.name} {s.answered && '✅'}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
