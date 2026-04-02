@@ -1,0 +1,65 @@
+.container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.iconBtn {
+  background: var(--panel);
+  color: var(--foreground);
+  padding: 0.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.gameCard {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-decoration: none;
+  color: white;
+  transition: all 0.2s;
+}
+
+.gameCard:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent);
+  background: rgba(255,255,255,0.05);
+}
+
+.gameTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.gameDesc {
+  color: rgba(255,255,255,0.7);
+  line-height: 1.5;
+  font-size: 1.1rem;
+}

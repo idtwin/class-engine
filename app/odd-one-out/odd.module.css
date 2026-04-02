@@ -1,0 +1,266 @@
+.container {
+  min-height: 100vh;
+  padding: 2rem;
+  background-color: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--panel);
+  padding: 1.5rem 2rem;
+  border-radius: 16px;
+  margin-bottom: 2rem;
+}
+
+.iconBtn {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.iconBtn:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.aiControls {
+  display: flex;
+  gap: 1rem;
+}
+
+.topicInput {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  color: white;
+  min-width: 250px;
+}
+
+.genBtn {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem 1.5rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: opacity 0.2s;
+}
+
+.genBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.loadingState, .emptyState {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.5);
+}
+
+.spinIcon {
+  animation: spin 2s linear infinite;
+  margin-bottom: 1rem;
+  color: var(--accent);
+}
+
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* Game Logic Elements */
+.modeTabs {
+  display: flex;
+  gap: 0;
+  background: rgba(0,0,0,0.3);
+  padding: 0.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  justify-content: center;
+  width: 100%;
+}
+
+.tabBtn {
+  flex: 1;
+  background: transparent;
+  color: rgba(255,255,255,0.5);
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tabBtn.active {
+  background: var(--accent);
+  color: #111;
+  box-shadow: 0 4px 15px rgba(45, 212, 191, 0.2);
+}
+
+.gameBoard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.questionMeta {
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.questionPrompt {
+  font-size: 2.2rem;
+  font-weight: bold;
+  margin-bottom: 3rem;
+  text-align: center;
+  color: white;
+}
+
+.wordsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.wordCard {
+  background: var(--panel);
+  border: 2px solid rgba(255,255,255,0.1);
+  padding: 3rem 2rem;
+  border-radius: 16px;
+  font-size: 2.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+  color: white;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.wordCard:hover {
+  border-color: rgba(255,255,255,0.3);
+  transform: translateY(-4px);
+  background: rgba(255,255,255,0.05);
+}
+
+.wordCorrect {
+  background: #2dd4bf !important;
+  color: #111 !important;
+  border-color: #2dd4bf !important;
+  transform: scale(1.02);
+}
+
+.wordWrong {
+  background: #ef4444 !important;
+  color: white !important;
+  border-color: #ef4444 !important;
+  opacity: 0.6;
+}
+
+.controlsRow {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0,0,0,0.3);
+  padding: 1.5rem;
+  border-radius: 16px;
+  margin-top: 1.5rem;
+}
+
+.hintBox {
+  background: rgba(45, 212, 191, 0.1);
+  padding: 1.5rem;
+  border-radius: 12px;
+  width: 100%;
+  font-size: 1.4rem;
+  font-style: italic;
+  text-align: center;
+  color: var(--accent);
+  border: 2px dashed var(--accent);
+  margin-bottom: 1rem;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.teamScoreList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  width: 100%;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.teamCard {
+  background: var(--panel);
+  padding: 1.5rem;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.teamCardEliminated {
+  opacity: 0.3;
+  filter: grayscale(1);
+  border-color: #ef4444;
+}
+
+.teamCardEliminated span {
+  text-decoration: line-through;
+  color: #ef4444;
+}
+
+.scoreControl {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.scoreBtn {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: white;
+  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scoreBtn:hover {
+  background: rgba(255,255,255,0.2);
+}

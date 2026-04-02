@@ -1,0 +1,128 @@
+.container {
+  padding: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.iconBtn {
+  background: var(--panel);
+  color: var(--foreground);
+  padding: 0.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+}
+
+.generateBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--accent);
+  color: black;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.emptyState {
+  background: var(--panel);
+  border: 1px dashed var(--panel-border);
+  padding: 6rem 2rem;
+  border-radius: 24px;
+  text-align: center;
+  color: rgba(255,255,255,0.7);
+  font-size: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.promptsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.promptCard {
+  background: rgba(255,255,255,0.05);
+  border-left: 4px solid var(--accent);
+  padding: 1.5rem 2rem;
+  border-radius: 0 16px 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.promptNumber {
+  font-size: 2rem;
+  font-weight: 800;
+  color: rgba(255,255,255,0.2);
+}
+
+.promptText {
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.feedbackLoop {
+  margin-top: auto;
+  background: var(--panel);
+  padding: 2rem;
+  border-radius: 20px;
+  text-align: center;
+}
+
+.feedbackLoop h3 {
+  color: var(--accent);
+  margin-bottom: 1.5rem;
+}
+
+.feedbackBtns {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.feedbackBtns button {
+  background: rgba(0,0,0,0.4);
+  color: white;
+  border: 1px solid var(--panel-border);
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: none;
+}
+
+.feedbackBtns button:hover {
+  background: rgba(255,255,255,0.1);
+  transform: translateY(-2px);
+}
+
+.iconRotated {
+  transform: rotate(180deg);
+}
+
+.successMsg {
+  color: var(--success);
+  font-size: 1.25rem;
+  font-weight: 600;
+}

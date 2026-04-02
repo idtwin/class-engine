@@ -1,0 +1,79 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modal {
+  background: var(--danger);
+  padding: 4rem;
+  border-radius: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2rem;
+  box-shadow: 0 0 100px rgba(255, 77, 77, 0.5);
+  animation: punchIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  max-width: 90vw;
+}
+
+.modal h1 {
+  font-size: 5rem;
+  color: white;
+  text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  margin: 0;
+}
+
+.twistText {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: white;
+  line-height: 1.2;
+}
+
+.iconWrap {
+  animation: pulseRotate 2s infinite linear;
+}
+
+.icon {
+  color: #fff;
+  filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
+}
+
+.closeBtn {
+  background: white;
+  color: var(--danger);
+  font-size: 2rem;
+  padding: 1.5rem 4rem;
+  border-radius: 20px;
+  margin-top: 2rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.closeBtn:hover {
+  background: #f0f0f0;
+  transform: scale(1.05);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes punchIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes pulseRotate {
+  0% { transform: scale(1) rotate(-5deg); }
+  50% { transform: scale(1.1) rotate(5deg); }
+  100% { transform: scale(1) rotate(-5deg); }
+}

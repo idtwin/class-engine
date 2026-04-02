@@ -1,0 +1,356 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg, #111);
+  color: var(--text, #fff);
+  font-family: system-ui, sans-serif;
+}
+
+.header {
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border, #333);
+  background: var(--surface, #222);
+}
+
+.homeBtn {
+  background: var(--panel, #333);
+  color: var(--text, #fff);
+  border: 1px solid var(--border, #444);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.homeBtn:hover {
+  background: var(--primary, #4562ff);
+  border-color: var(--primary, #4562ff);
+}
+
+.setupContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  gap: 1.5rem;
+}
+
+.formBox {
+  background: var(--panel, #222);
+  padding: 3rem;
+  border-radius: 20px;
+  border: 1px solid var(--border, #444);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.input {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  font-size: 1.25rem;
+  border-radius: 12px;
+  border: 1px solid var(--border, #555);
+  background: rgba(0,0,0,0.4);
+  color: white;
+}
+
+.input:focus {
+  outline: 2px solid var(--accent, #ff4d4d);
+}
+
+.select {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  font-size: 1.25rem;
+  border-radius: 12px;
+  border: 1px solid var(--border, #555);
+  background: rgba(0,0,0,0.4);
+  color: white;
+}
+
+.btn {
+  padding: 1.25rem;
+  font-size: 1.5rem;
+  background: var(--primary, #4562ff);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.btn:hover {
+  background: var(--accent, #ff4d4d);
+  transform: translateY(-2px);
+}
+
+.btn:disabled {
+  background: #333;
+  color: #777;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Gameplay Styles */
+.gameContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2rem;
+  overflow: hidden;
+}
+
+.gameHeader {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  color: rgba(255,255,255,0.6);
+  font-size: 1.2rem;
+  padding: 0 2rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.questionBox {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 2rem;
+  padding: 0 4rem;
+  width: 100%;
+}
+
+.metadataBadge {
+  background: rgba(255,255,255,0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 1rem;
+  color: rgba(255,255,255,0.7);
+}
+
+.questionText {
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.answerText {
+  font-size: 2.5rem;
+  color: var(--accent, #ff4d4d);
+  font-weight: bold;
+  text-transform: uppercase;
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Timer */
+.timerWrapper {
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.timerBarContainer {
+  flex: 1;
+  height: 20px;
+  background: var(--panel, #333);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.timerBar {
+  height: 100%;
+  background: var(--accent, #ff4d4d);
+  transition: width 1s linear;
+}
+
+.timerNumber {
+  font-size: 3rem;
+  font-weight: 400;
+  color: white;
+  font-variant-numeric: tabular-nums;
+  min-width: 60px;
+}
+
+.timesUpAlert {
+  width: 100%;
+  max-width: 1000px;
+  background: rgba(255, 230, 204, 0.9);
+  color: #a04000;
+  padding: 1rem;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 1rem 0;
+  animation: timesUpShake 0.5s;
+}
+
+@keyframes timesUpShake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  50% { transform: translateX(10px); }
+  75% { transform: translateX(-10px); }
+  100% { transform: translateX(0); }
+}
+
+
+/* Teams & Buzz In */
+.teamsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  width: 100%;
+  max-width: 1200px;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.teamCard {
+  background: var(--panel, #222);
+  border: 1px solid var(--border, #444);
+  border-radius: 20px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.teamCardActive {
+  background: rgba(69, 98, 255, 0.1);
+  border: 2px solid var(--primary, #4562ff);
+  box-shadow: 0 0 20px rgba(69, 98, 255, 0.3);
+}
+
+.teamHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.teamName {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.teamScore {
+  font-size: 2.5rem;
+  font-weight: 900;
+}
+
+.buzzBtn {
+  width: 100%;
+  padding: 1.5rem;
+  font-size: 1.5rem;
+  border-radius: 12px;
+  background: transparent;
+  color: white;
+  border: 2px solid rgba(255,255,255,0.2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.buzzBtn:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.4);
+}
+
+.activeStudentState {
+  background: var(--primary, #4562ff);
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.selectedStudentName {
+  font-size: 2.5rem;
+  font-weight: 900;
+  margin-bottom: 1rem;
+}
+
+.selectedStudentInstruction {
+  font-size: 1.2rem;
+  color: rgba(255,255,255,0.8);
+}
+
+/* Teacher Controls */
+.teacherControls {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.controlBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  border-radius: 30px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: transform 0.1s;
+}
+
+.controlBtn:hover {
+  transform: translateY(-2px);
+}
+
+.btnCorrect {
+  background: #2ecc71;
+  color: white;
+}
+.btnWrong {
+  background: var(--accent, #ff4d4d);
+  color: white;
+}
+.btnSkip {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}

@@ -1,0 +1,113 @@
+.screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #111;
+  color: white;
+  padding: 1.5rem;
+  text-align: center;
+  gap: 2rem;
+}
+
+.giantBuzzer {
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ff4d4d, #cc0000);
+  border: 15px solid #aa0000;
+  box-shadow: 0 20px 50px rgba(255,0,0,0.5), inset 0 10px 20px rgba(255,255,255,0.4);
+  color: white;
+  font-size: 3.5rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.1s;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.giantBuzzer:active {
+  transform: scale(0.95) translateY(10px);
+  box-shadow: 0 10px 20px rgba(255,0,0,0.5), inset 0 5px 10px rgba(255,255,255,0.4);
+}
+
+.buzzerPressed {
+  background: #333;
+  border-color: #222;
+  box-shadow: inset 0 10px 20px rgba(0,0,0,0.5);
+  color: #666;
+  pointer-events: none;
+}
+
+.grid2x2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  width: 100%;
+  max-width: 600px;
+}
+
+.cardBtn {
+  background: #222;
+  border: 2px solid rgba(255,255,255,0.1);
+  padding: 4rem 1rem;
+  border-radius: 16px;
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+  word-wrap: break-word;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cardBtn:active {
+  background: rgba(255,255,255,0.05);
+}
+
+.cardSelected {
+  background: var(--accent, #2dd4bf);
+  color: #111;
+  border-color: var(--accent, #2dd4bf);
+  pointer-events: none;
+}
+
+.textArea {
+  width: 100%;
+  max-width: 500px;
+  height: 180px;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.2);
+  background: #222;
+  color: white;
+  font-size: 1.5rem;
+  resize: none;
+  outline: none;
+}
+
+.textArea:focus {
+  border-color: var(--accent, #2dd4bf);
+}
+
+.submitBtn {
+  background: var(--accent, #2dd4bf);
+  color: #111;
+  font-size: 1.5rem;
+  font-weight: bold;
+  padding: 1.5rem;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  border: none;
+  cursor: pointer;
+}
+
+.submitBtn:disabled {
+  background: #444;
+  color: #888;
+  pointer-events: none;
+}

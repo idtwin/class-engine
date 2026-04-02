@@ -1,0 +1,135 @@
+.container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.iconBtn {
+  background: var(--panel);
+  color: var(--foreground);
+  padding: 0.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+}
+
+.controls {
+  display: flex;
+  gap: 1rem;
+}
+
+.select {
+  background: rgba(0,0,0,0.6);
+  color: white;
+  border: 1px solid var(--panel-border);
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 1.25rem;
+}
+
+.generateBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.emptyState {
+  background: var(--panel);
+  padding: 4rem;
+  text-align: center;
+  border-radius: 24px;
+  font-size: 1.5rem;
+  color: rgba(255,255,255,0.5);
+}
+
+.teamsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.teamCard {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 24px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.teamHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 1rem;
+}
+
+.scoreControl {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(0,0,0,0.4);
+  padding: 0.5rem;
+  border-radius: 12px;
+}
+
+.scoreControl button {
+  padding: 0.5rem 1rem;
+  font-size: 1.5rem;
+  background: transparent;
+  color: var(--accent);
+  box-shadow: none;
+}
+
+.scoreControl button:hover {
+  background: rgba(0, 255, 204, 0.1);
+}
+
+.score {
+  font-size: 2rem;
+  font-weight: 700;
+  min-width: 40px;
+  text-align: center;
+}
+
+.studentList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.studentItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  align-items: center;
+}
+
+.moveSelect {
+  background: transparent;
+  color: rgba(255,255,255,0.5);
+  border: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.moveSelect:focus {
+  outline: none;
+  color: var(--accent);
+}

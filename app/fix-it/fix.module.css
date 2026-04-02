@@ -1,0 +1,282 @@
+.container {
+  min-height: 100vh;
+  padding: 2rem;
+  background-color: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--panel);
+  padding: 1.5rem 2rem;
+  border-radius: 16px;
+  margin-bottom: 2rem;
+}
+
+.iconBtn {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.iconBtn:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.aiControls {
+  display: flex;
+  gap: 1rem;
+}
+
+.topicInput {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  color: white;
+  min-width: 250px;
+}
+
+.genBtn {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem 1.5rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: opacity 0.2s;
+}
+
+.genBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.loadingState, .emptyState {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.5);
+}
+
+.spinIcon {
+  animation: spin 2s linear infinite;
+  margin-bottom: 1rem;
+  color: var(--accent);
+}
+
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* Game Logic Elements */
+.modeTabs {
+  display: flex;
+  gap: 0;
+  background: rgba(0,0,0,0.3);
+  padding: 0.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  justify-content: center;
+  width: 100%;
+}
+
+.tabBtn {
+  flex: 1;
+  background: transparent;
+  color: rgba(255,255,255,0.5);
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tabBtn.active {
+  background: var(--accent);
+  color: #111;
+  box-shadow: 0 4px 15px rgba(45, 212, 191, 0.2);
+}
+
+.gameBoard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.questionMeta {
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.errorTypeBadge {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 0.2rem 0.8rem;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.questionCard {
+  background: var(--panel);
+  border: 2px solid rgba(255,255,255,0.1);
+  padding: 4rem;
+  border-radius: 24px;
+  font-size: 3rem;
+  font-weight: 800;
+  text-align: center;
+  color: white;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  width: 100%;
+  margin-bottom: 2rem;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.questionCardSuccess {
+  border-color: #2dd4bf;
+  background: rgba(45, 212, 191, 0.05);
+}
+
+.answerText {
+  color: #2dd4bf;
+  animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.controlsRow {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0,0,0,0.3);
+  padding: 1.5rem;
+  border-radius: 16px;
+  margin-top: 1.5rem;
+}
+
+.hintBox {
+  background: rgba(45, 212, 191, 0.1);
+  padding: 1.5rem;
+  border-radius: 12px;
+  width: 100%;
+  font-size: 1.4rem;
+  font-style: italic;
+  text-align: center;
+  color: var(--accent);
+  border: 2px dashed var(--accent);
+  margin-bottom: 1rem;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Local Scoreboard Elements specifically for Auction Mode */
+.teamScoreList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  width: 100%;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.teamCard {
+  background: var(--panel);
+  padding: 1.5rem;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.teamHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bettingControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0,0,0,0.2);
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.betInput {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: 1.5rem;
+  font-weight: 800;
+  width: 40px;
+  text-align: center;
+  outline: none;
+}
+
+.scoreControl {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.scoreBtn {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: white;
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.scoreBtn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.scoreBtnWin { background: rgba(45, 212, 191, 0.2); color: #2dd4bf; }
+.scoreBtnWin:hover { background: rgba(45, 212, 191, 0.4); }
+.scoreBtnLose { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+.scoreBtnLose:hover { background: rgba(239, 68, 68, 0.4); }

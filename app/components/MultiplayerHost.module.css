@@ -1,0 +1,138 @@
+.triggerBtn {
+  background: transparent;
+  border: 1px solid var(--accent, #2dd4bf);
+  color: var(--accent, #2dd4bf);
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.triggerBtn:hover {
+  background: rgba(45, 212, 191, 0.1);
+}
+
+.overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: var(--panel, #1a1a1a);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 2.5rem;
+  border-radius: 24px;
+  width: 90%;
+  max-width: 800px;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.closeBtn {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+}
+.closeBtn:hover { color: white; }
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  margin: 2rem 0;
+}
+
+.qrCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.codeBox {
+  background: rgba(45, 212, 191, 0.1);
+  border: 2px dashed var(--accent, #2dd4bf);
+  color: var(--accent, #2dd4bf);
+  font-size: 3rem;
+  font-weight: 900;
+  letter-spacing: 12px;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  width: 100%;
+  text-align: center;
+}
+
+.rosterCol {
+  background: rgba(0,0,0,0.3);
+  padding: 1.5rem;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.rosterList {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 250px;
+}
+
+.rosterItem {
+  background: rgba(255,255,255,0.05);
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-weight: bold;
+}
+
+.statusDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2dd4bf;
+  box-shadow: 0 0 10px #2dd4bf;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(45, 212, 191, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(45, 212, 191, 0); }
+}
+
+.endBtn {
+  width: 100%;
+  padding: 1.2rem;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: 12px;
+  font-weight: bold;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 1rem;
+}
+
+.endBtn:hover {
+  background: #ef4444;
+  color: white;
+}

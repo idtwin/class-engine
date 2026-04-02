@@ -1,0 +1,159 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--background);
+}
+
+.header {
+  padding: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: absolute;
+  top: 0; left: 0; width: 100%;
+  z-index: 10;
+}
+
+.iconBtn, .twistBtn {
+  background: rgba(0,0,0,0.5);
+  color: white;
+  padding: 0.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: none;
+}
+
+.twistBtn {
+  width: auto;
+  border-radius: 12px;
+  padding: 0.8rem 1.5rem;
+  gap: 0.5rem;
+}
+
+.aiControls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-left: 2rem;
+}
+
+.topicInput {
+  background: rgba(0,0,0,0.8);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  width: 300px;
+}
+
+.topicInput:focus {
+  outline: 2px solid var(--accent);
+}
+
+.genBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(0,0,0,0.8);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 0.8rem 1.5rem;
+  border-radius: 12px;
+}
+
+.genBtn:disabled {
+  border-color: rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.5);
+}
+
+.loadingState, .emptyState {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  height: 100vh;
+  gap: 1rem;
+}
+
+.spinIcon { animation: spin 2s linear infinite; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* Match Area Split Screen */
+.splitScreen {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+}
+
+.choicePanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 6rem;
+  text-align: center;
+  transition: all 0.3s;
+}
+
+.choicePanel.red { background: #b91d47; }
+.choicePanel.blue { background: #1d70b8; }
+
+.vsCircle {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 150px;
+  height: 150px;
+  background: #1a1a1a;
+  border: 8px solid white;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 4rem;
+  font-weight: 900;
+  color: white;
+  z-index: 5;
+  box-shadow: 0 0 40px rgba(0,0,0,0.5);
+}
+
+.promptText {
+  font-size: clamp(3rem, 6vw, 4.5rem);
+  font-weight: 800;
+  color: white;
+  line-height: 1.2;
+  text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  animation: zoom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.nextBtn {
+  position: absolute;
+  bottom: 3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  color: black;
+  font-size: 1.5rem;
+  font-weight: 800;
+  padding: 1rem 3rem;
+  border-radius: 32px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  z-index: 10;
+}
+
+.nextBtn:hover { transform: translateX(-50%) scale(1.05); }
+
+@keyframes zoom {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
