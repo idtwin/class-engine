@@ -7,8 +7,7 @@ import { useClassroomStore } from "../store/useClassroomStore";
 import { X, Users, Link2, MonitorPlay } from "lucide-react";
 
 export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
-  const { currentTeams, classes, activeClassId } = useClassroomStore();
-  const [roomCode, setRoomCode] = useState<string | null>(null);
+  const { currentTeams, classes, activeClassId, activeRoomCode, setActiveRoomCode } = useClassroomStore();
   const [loading, setLoading] = useState(false);
   const [roster, setRoster] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -30,7 +29,7 @@ export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
       });
       const data = await res.json();
       if (res.ok) {
-        setRoomCode(data.code);
+        setActiveRoomCode(data.code);
       }
     } catch (e) {
       console.error(e);
@@ -39,23 +38,35 @@ export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
   };
 
   const endSession = async () => {
-    if (!roomCode) return setIsOpen(false);
+    if (!activeRoomCode) return setIsOpen(false);
     try {
       await fetch("/api/room/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: roomCode, action: "end_session", payload: {} })
+        body: JSON.stringify({ code: activeRoomCode, action: "end_session", payload: {} })
       });
     } catch (e) {
       console.error(e);
     }
-    setRoomCode(null);
+    setActiveRoomCode(null);
+    setIsOpen(false);
+  };
+
+  const launchMatch = async () => {
+    if (!activeRoomCode) return;
+    try {
+      await fetch("/api/room/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: activeRoomCode, action: "update_status", payload: { status: "playing" } })
+      });
+    } catch (e) {}
     setIsOpen(false);
   };
 
   useEffect(() => {
-    if (!roomCode) return;
-    const source = new EventSource(`/api/room/stream?code=${roomCode}`);
+    if (!activeRoomCode) return;
+    const source = new EventSource(`/api/room/stream?code=${activeRoomCode}`);
     source.onmessage = (e) => {
       try {
         const data = JSON.parse(e.data);
@@ -65,25 +76,25 @@ export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
       } catch (err) {}
     };
     return () => source.close();
-  }, [roomCode]);
+  }, [activeRoomCode]);
 
   if (!isOpen) {
     return (
       <button 
          className={styles.triggerBtn} 
-         onClick={startSession}
+         onClick={() => activeRoomCode ? setIsOpen(true) : startSession()}
       >
-        <MonitorPlay size={20} /> Host Live Multiplayer
+        <MonitorPlay size={20} /> {activeRoomCode ? `Live Roster: ${roster.length}` : "Host Live Multiplayer"}
       </button>
     );
   }
 
-  const joinUrl = typeof window !== 'undefined' ? `${window.location.origin}/join?code=${roomCode}` : '';
+  const joinUrl = typeof window !== 'undefined' ? `${window.location.origin}/join?code=${activeRoomCode}` : '';
 
   return (
     <div className={styles.overlay}>
        <div className={styles.modal}>
-          <button className={styles.closeBtn} onClick={endSession}><X /></button>
+          <button className={styles.closeBtn} onClick={() => setIsOpen(false)}><X /></button>
           
           <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: 'var(--accent)' }}>Live Session Active</h2>
           
@@ -95,7 +106,7 @@ export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
                    <div style={{ background: 'white', padding: '1.5rem', borderRadius: '16px', display: 'inline-block' }}>
                      <QRCodeSVG value={joinUrl} size={200} />
                    </div>
-                   <div className={styles.codeBox}>{roomCode}</div>
+                   <div className={styles.codeBox}>{activeRoomCode}</div>
                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: 0.7 }}>
                      <Link2 size={16} /> <span>{joinUrl.replace('http://', '').replace('https://', '')}</span>
                    </div>
@@ -118,9 +129,14 @@ export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
              </div>
           )}
           
-          <button className={styles.endBtn} onClick={endSession}>
-            End Live Session
-          </button>
+          <div style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '1rem' }}>
+            <button className={styles.endBtn} onClick={endSession} style={{ flex: 1 }}>
+              End Session
+            </button>
+            <button className={styles.endBtn} onClick={launchMatch} style={{ flex: 2, background: 'var(--accent)', color: 'black' }}>
+              LAUNCH GAME 🚀
+            </button>
+          </div>
        </div>
     </div>
   )

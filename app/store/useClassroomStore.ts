@@ -40,6 +40,8 @@ interface ClassroomState {
   submitFeedback: (type: "Too easy" | "Too hard" | "Low energy" | "High engagement") => void;
   geminiKey: string;
   setGeminiKey: (key: string) => void;
+  activeRoomCode: string | null;
+  setActiveRoomCode: (code: string | null) => void;
   generateTeams: (classId: string, numberOfTeams: number) => void;
   updateTeamScore: (teamId: string, delta: number) => void;
   updateTeamName: (teamId: string, name: string) => void;
@@ -243,7 +245,9 @@ export const useClassroomStore = create<ClassroomState>()(
       }),
       
       geminiKey: "",
-      setGeminiKey: (key) => set({ geminiKey: key })
+      setGeminiKey: (key) => set({ geminiKey: key }),
+      activeRoomCode: null,
+      setActiveRoomCode: (code) => set({ activeRoomCode: code })
     }),
     {
       name: "classroom-engine-storage",

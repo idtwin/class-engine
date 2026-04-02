@@ -12,7 +12,7 @@ type Question = { level: string, errorType: string, brokenSentence: string, corr
 
 export default function FixIt() {
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, geminiKey } = useClassroomStore();
+  const { currentTeams, updateTeamScore, geminiKey, activeRoomCode } = useClassroomStore();
   
   const [topic, setTopic] = useState("");
   const [levelFilter, setLevelFilter] = useState("Mixed Level");
@@ -27,6 +27,22 @@ export default function FixIt() {
 
   // Auction mode local betting state mapping TeamID -> bet amount
   const [teamBets, setTeamBets] = useState<Record<string, string>>({});
+
+  // Broadcast Live Question to connected mobile devices via Upstash
+  useEffect(() => {
+    const activeQ = questions?.[currentIndex];
+    if (activeRoomCode && activeQ) {
+       fetch("/api/room/action", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({
+            code: activeRoomCode,
+            action: "set_question",
+            payload: { question: activeQ }
+         })
+       }).catch((e) => console.error("Sync Error", e));
+    }
+  }, [currentIndex, questions, activeRoomCode]);
 
   useEffect(() => setMounted(true), []);
 
@@ -73,6 +89,15 @@ export default function FixIt() {
       setShowHint(false);
       setShowErrorFlag(false);
       setShowAnswer(false);
+      
+      // Clear all phone buzzers/inputs for the completely new question
+      if (activeRoomCode) {
+        fetch("/api/room/action", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: activeRoomCode, action: "clear_answers", payload: {} })
+        }).catch(()=>{});
+      }
     }
   };
 
