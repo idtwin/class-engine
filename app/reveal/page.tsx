@@ -108,7 +108,12 @@ export default function PictureRevealMode() {
         </div>
       ) : reviewMode && gameData ? (
         <div className={styles.reviewContainer}>
-          <h2 style={{ marginBottom: '1rem', color: 'var(--accent)' }}>Review Image & Questions</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h2 style={{ color: 'var(--accent)', margin: 0 }}>Review Image & Questions</h2>
+            <button onClick={() => setReviewMode(false)} className={styles.genBtn} style={{ padding: '0.8rem 2rem', fontSize: '1.1rem', borderRadius: '8px' }}>
+              Approve Board & Hide Image
+            </button>
+          </div>
           <div className={styles.reviewScroll}>
             
             <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -165,9 +170,6 @@ export default function PictureRevealMode() {
               </div>
             ))}
           </div>
-          <button onClick={() => setReviewMode(false)} className={styles.genBtn} style={{ marginTop: '1.5rem', justifyContent: 'center', padding: '1rem', fontSize: '1.2rem', width: '100%' }}>
-            Approve Board & Hide Image
-          </button>
         </div>
       ) : !gameData ? (
         <div className={styles.emptyState}>

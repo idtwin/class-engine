@@ -161,7 +161,12 @@ export default function GameBoard() {
         </div>
       ) : reviewMode ? (
         <div className={styles.reviewContainer}>
-          <h2 style={{ marginBottom: '1rem', color: 'var(--accent)' }}>Review & Edit Questions</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h2 style={{ color: 'var(--accent)', margin: 0 }}>Review & Edit Questions</h2>
+            <button onClick={() => setReviewMode(false)} className={styles.genBtn} style={{ padding: '0.8rem 2rem', fontSize: '1.1rem', borderRadius: '8px' }}>
+              Approve & Start Game
+            </button>
+          </div>
           <div className={styles.reviewScroll}>
             {board.map((col, cIndex) => (
               <div key={cIndex} className={styles.reviewCategory}>
@@ -207,9 +212,6 @@ export default function GameBoard() {
               </div>
             ))}
           </div>
-          <button onClick={() => setReviewMode(false)} className={styles.genBtn} style={{ marginTop: '1.5rem', justifyContent: 'center', width: '100%', fontSize: '1.2rem', padding: '1rem' }}>
-            Approve & Start Game
-          </button>
         </div>
       ) : (
         <div className={styles.boardGrid}>
