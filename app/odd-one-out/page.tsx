@@ -5,13 +5,14 @@ import styles from "./odd.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
 import Link from "next/link";
 import { ArrowLeft, Sparkles, Lightbulb, ChevronRight, Ban } from "lucide-react";
+import MultiplayerHost from "../components/MultiplayerHost";
 
 type Mode = "Classic" | "Debate" | "Elimination";
 type Question = { level: string, words: string[], answer: string, hint: string };
 
 export default function OddOneOut() {
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, geminiKey } = useClassroomStore();
+  const { currentTeams, geminiKey, activeRoomCode } = useClassroomStore();
   
   const [topic, setTopic] = useState("");
   const [levelFilter, setLevelFilter] = useState("Mixed Level");
@@ -64,6 +65,18 @@ export default function OddOneOut() {
       setCurrentIndex(c => c + 1);
       setSelectedWord(null);
       setShowHint(false);
+      // Push new words to Redis + clear answers
+      if (activeRoomCode && questions[currentIndex + 1]) {
+        fetch("/api/room/action", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: activeRoomCode, action: "clear_answers", payload: {} })
+        }).then(() => {
+          fetch("/api/room/action", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: activeRoomCode, action: "set_question", payload: { question: { words: questions[currentIndex + 1].words } } })
+          });
+        }).catch(() => {});
+      }
     }
   };
 
@@ -88,6 +101,7 @@ export default function OddOneOut() {
            </div>
            
            <div className={styles.aiControls} style={{ marginLeft: '1rem' }}>
+             <MultiplayerHost gameMode="oddoneout" />
              <select 
                value={levelFilter} 
                onChange={e => setLevelFilter(e.target.value)}

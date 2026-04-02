@@ -5,6 +5,7 @@ import styles from "./game.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
 import Link from "next/link";
 import { ArrowLeft, Clock, Zap, Sparkles } from "lucide-react";
+import MultiplayerHost from "../components/MultiplayerHost";
 
 const DEFAULT_GAME_BOARD = [
   {
@@ -61,7 +62,7 @@ const DEFAULT_GAME_BOARD = [
 
 export default function GameBoard() {
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, triggerTwist, geminiKey } = useClassroomStore();
+  const { currentTeams, updateTeamScore, triggerTwist, geminiKey, activeRoomCode } = useClassroomStore();
   const [board, setBoard] = useState<any[]>(DEFAULT_GAME_BOARD);
   const [activeQuestion, setActiveQuestion] = useState<any>(null);
   const [showAnswer, setShowAnswer] = useState(false);
@@ -70,6 +71,24 @@ export default function GameBoard() {
   
   const [topic, setTopic] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [roomBuzzes, setRoomBuzzes] = useState<any[]>([]);
+
+  // Poll for buzzes when active room
+  useEffect(() => {
+    if (!activeRoomCode) return;
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/room/get?code=${activeRoomCode}`);
+        if (res.ok) {
+          const data = await res.json();
+          setRoomBuzzes(data.buzzes || []);
+        }
+      } catch (e) {}
+    };
+    poll();
+    const id = setInterval(poll, 1500);
+    return () => clearInterval(id);
+  }, [activeRoomCode]);
 
   useEffect(() => setMounted(true), []);
 
@@ -119,6 +138,19 @@ export default function GameBoard() {
     setActiveQuestion({ ...board[cIndex].questions[qIndex], cIndex, qIndex, category: board[cIndex].category });
     setShowAnswer(false);
     setTimeLeft(10);
+    setRoomBuzzes([]);
+    // Push question to Redis + clear buzzes
+    if (activeRoomCode) {
+      fetch("/api/room/action", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: activeRoomCode, action: "clear_buzzes", payload: {} })
+      }).then(() => {
+        fetch("/api/room/action", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: activeRoomCode, action: "set_question", payload: { question: { text: board[cIndex].questions[qIndex].text, category: board[cIndex].category, points: board[cIndex].questions[qIndex].points } } })
+        });
+      }).catch(() => {});
+    }
   };
 
   const closeQuestion = (markAnswered = true) => {
@@ -134,8 +166,9 @@ export default function GameBoard() {
     <div className={styles.container}>
       <header className={styles.header}>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <Link href="/dashboard"><button className={styles.iconBtn}><ArrowLeft /></button></Link>
+          <Link href="/games"><button className={styles.iconBtn}><ArrowLeft /></button></Link>
           <h1>Jeopardy</h1>
+          <MultiplayerHost gameMode="jeopardy" />
           
           <div className={styles.aiControls}>
             <input 
@@ -259,6 +292,18 @@ export default function GameBoard() {
                 className={styles.modalImage}
                 onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')}
               />
+            )}
+
+            {/* Buzz-in Banner */}
+            {activeRoomCode && roomBuzzes.length > 0 && (
+              <div style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: 'rgba(45,212,191,0.15)', border: '2px solid var(--accent)', marginBottom: '1rem' }}>
+                <div style={{ fontWeight: 800, color: 'var(--accent)', marginBottom: '0.5rem' }}>🔔 Buzz Order:</div>
+                {roomBuzzes.sort((a: any, b: any) => a.time - b.time).map((b: any, i: number) => (
+                  <div key={i} style={{ fontSize: '1.2rem', fontWeight: i === 0 ? 900 : 400, color: i === 0 ? '#fff' : 'rgba(255,255,255,0.5)' }}>
+                    {i + 1}. {b.name} {i === 0 && '🏆'}
+                  </div>
+                ))}
+              </div>
             )}
 
             {showAnswer ? (

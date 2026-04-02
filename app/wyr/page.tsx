@@ -5,15 +5,34 @@ import styles from "./wyr.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
 import Link from "next/link";
 import { ArrowLeft, Sparkles, Zap } from "lucide-react";
+import MultiplayerHost from "../components/MultiplayerHost";
 
 export default function WouldYouRatherMode() {
   const [mounted, setMounted] = useState(false);
-  const { triggerTwist, geminiKey } = useClassroomStore();
+  const { triggerTwist, geminiKey, activeRoomCode } = useClassroomStore();
   
   const [topic, setTopic] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [prompts, setPrompts] = useState<{ optionA: string, optionB: string }[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [roomStudents, setRoomStudents] = useState<any[]>([]);
+
+  // Poll for votes
+  useEffect(() => {
+    if (!activeRoomCode) return;
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/room/get?code=${activeRoomCode}`);
+        if (res.ok) {
+          const data = await res.json();
+          setRoomStudents(data.students || []);
+        }
+      } catch (e) {}
+    };
+    poll();
+    const id = setInterval(poll, 1500);
+    return () => clearInterval(id);
+  }, [activeRoomCode]);
 
   useEffect(() => setMounted(true), []);
 
@@ -67,8 +86,8 @@ export default function WouldYouRatherMode() {
           <Link href="/games"><button className={styles.iconBtn}><ArrowLeft /></button></Link>
           
           <div className={styles.aiControls}>
-             {/* Invisible placeholder for title styling flow */}
              <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'white', marginRight: '1rem', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>Would You Rather?</span>
+             <MultiplayerHost gameMode="wyr" />
             <input 
               placeholder="Topic (e.g. Aliens vs Future)" 
               value={topic}
@@ -107,8 +126,40 @@ export default function WouldYouRatherMode() {
             <p className={styles.promptText}>{currentPrompt.optionB}</p>
           </div>
 
+          {/* Live Vote Split */}
+          {activeRoomCode && roomStudents.filter((s: any) => s.answered).length > 0 && (() => {
+            const votedStudents = roomStudents.filter((s: any) => s.answered);
+            const votesA = votedStudents.filter((s: any) => s.lastAnswer === 'A').length;
+            const votesB = votedStudents.filter((s: any) => s.lastAnswer === 'B').length;
+            const total = votesA + votesB;
+            const pctA = total > 0 ? Math.round((votesA / total) * 100) : 0;
+            const pctB = total > 0 ? Math.round((votesB / total) * 100) : 0;
+            return (
+              <div style={{ position: 'absolute', bottom: '100px', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.8)', borderRadius: '16px', padding: '1rem 2rem', display: 'flex', gap: '2rem', alignItems: 'center', zIndex: 10 }}>
+                <span style={{ color: '#ff4d4d', fontWeight: 900, fontSize: '1.5rem' }}>{pctA}%</span>
+                <span style={{ color: 'rgba(255,255,255,0.5)' }}>{total} votes</span>
+                <span style={{ color: '#4d9fff', fontWeight: 900, fontSize: '1.5rem' }}>{pctB}%</span>
+              </div>
+            );
+          })()}
+
           {currentIndex < prompts.length - 1 ? (
-             <button className={styles.nextBtn} onClick={() => setCurrentIndex(c => c + 1)}>
+             <button className={styles.nextBtn} onClick={() => {
+               const nextIdx = currentIndex + 1;
+               setCurrentIndex(nextIdx);
+               // Push next scenario + clear votes
+               if (activeRoomCode) {
+                 fetch("/api/room/action", {
+                   method: "POST", headers: { "Content-Type": "application/json" },
+                   body: JSON.stringify({ code: activeRoomCode, action: "clear_answers", payload: {} })
+                 }).then(() => {
+                   fetch("/api/room/action", {
+                     method: "POST", headers: { "Content-Type": "application/json" },
+                     body: JSON.stringify({ code: activeRoomCode, action: "set_question", payload: { question: prompts[nextIdx] } })
+                   });
+                 }).catch(() => {});
+               }
+             }}>
                Next Scenario (Space)
              </button>
           ) : (

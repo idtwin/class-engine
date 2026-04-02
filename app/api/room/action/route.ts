@@ -22,6 +22,7 @@ export async function POST(req: Request) {
     // Handle Teacher actions mapping
     if (action === "update_status") room.status = payload.status;
     if (action === "set_question") room.currentQuestion = payload.question;
+    if (action === "set_game_mode") room.gameMode = payload.gameMode;
     if (action === "end_session") room.status = "ended";
     
     // Handle Student actions mapping
@@ -32,10 +33,35 @@ export async function POST(req: Request) {
         student.lastAnswer = payload.answer;
       }
     }
+
+    // Buzz-in system (records timestamp for ordering)
+    if (action === "buzz_in") {
+      if (!room.buzzes) room.buzzes = [];
+      const alreadyBuzzed = room.buzzes.find((b: any) => b.studentId === payload.studentId);
+      if (!alreadyBuzzed) {
+        room.buzzes.push({ studentId: payload.studentId, name: payload.name, time: Date.now() });
+      }
+    }
+
+    // Clear buzzes for next question
+    if (action === "clear_buzzes") {
+      room.buzzes = [];
+      room.students = room.students.map((s: any) => ({ ...s, answered: false, lastAnswer: null }));
+    }
+
+    // Vote system (for WYR: A/B voting)
+    if (action === "student_vote") {
+      const student = room.students.find((s: any) => s.id === payload.studentId);
+      if (student) {
+        student.answered = true;
+        student.lastAnswer = payload.vote;
+      }
+    }
     
     // System utility mapping
     if (action === "clear_answers") {
       room.students = room.students.map((s: any) => ({ ...s, answered: false, lastAnswer: null }));
+      room.buzzes = [];
     }
 
     await redis.set(roomCode, room, { ex: 14400 });

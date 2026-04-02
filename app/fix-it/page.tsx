@@ -28,6 +28,10 @@ export default function FixIt() {
   // Auction mode local betting state mapping TeamID -> bet amount
   const [teamBets, setTeamBets] = useState<Record<string, string>>({});
 
+  // Live student responses from Redis polling
+  const [roomStudents, setRoomStudents] = useState<any[]>([]);
+  const [roomBuzzes, setRoomBuzzes] = useState<any[]>([]);
+
   // Broadcast Live Question to connected mobile devices via Upstash
   useEffect(() => {
     const activeQ = questions?.[currentIndex];
@@ -43,6 +47,24 @@ export default function FixIt() {
        }).catch((e) => console.error("Sync Error", e));
     }
   }, [currentIndex, questions, activeRoomCode]);
+
+  // Poll for student responses
+  useEffect(() => {
+    if (!activeRoomCode) return;
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/room/get?code=${activeRoomCode}`);
+        if (res.ok) {
+          const data = await res.json();
+          setRoomStudents(data.students || []);
+          setRoomBuzzes(data.buzzes || []);
+        }
+      } catch (e) {}
+    };
+    poll();
+    const id = setInterval(poll, 1500);
+    return () => clearInterval(id);
+  }, [activeRoomCode]);
 
   useEffect(() => setMounted(true), []);
 
@@ -250,6 +272,30 @@ export default function FixIt() {
               ))}
             </div>
           )}
+
+          {/* Live Student Responses Panel */}
+          {showAnswer && activeRoomCode && roomStudents.filter((s: any) => s.answered).length > 0 && (
+            <div style={{ marginTop: '2rem', width: '100%', borderTop: '2px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem' }}>
+              <h3 style={{ textAlign: 'center', marginBottom: '1rem', color: 'var(--accent)' }}>📱 Student Responses</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '0.75rem' }}>
+                {roomStudents.filter((s: any) => s.answered).map((s: any, i: number) => {
+                  const isCorrect = currentQ && s.lastAnswer?.toLowerCase().trim() === currentQ.correctedSentence.toLowerCase().trim();
+                  return (
+                    <div key={i} style={{
+                      padding: '0.8rem 1rem',
+                      borderRadius: '10px',
+                      border: `2px solid ${isCorrect ? '#22c55e' : '#ef4444'}`,
+                      background: isCorrect ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                    }}>
+                      <div style={{ fontWeight: 800, marginBottom: '0.3rem' }}>{s.name} {isCorrect ? '✅' : '❌'}</div>
+                      <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>"{s.lastAnswer}"</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
 
         </div>
       )}

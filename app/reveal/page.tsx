@@ -5,6 +5,7 @@ import styles from "./reveal.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
 import Link from "next/link";
 import { ArrowLeft, Sparkles, Zap } from "lucide-react";
+import MultiplayerHost from "../components/MultiplayerHost";
 
 export default function PictureRevealMode() {
   const [mounted, setMounted] = useState(false);
@@ -93,6 +94,7 @@ export default function PictureRevealMode() {
             <button onClick={handleGenerate} disabled={isGenerating} className={styles.genBtn}>
               <Sparkles size={20} /> {isGenerating ? "Generating..." : "Generate Custom Board"}
             </button>
+            <MultiplayerHost gameMode="reveal" />
           </div>
         </div>
         

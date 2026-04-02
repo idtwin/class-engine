@@ -1,0 +1,118 @@
+﻿
+> tmp_app@0.1.0 build
+> next build
+
+node.exe : ΓÜá Warning: 
+Next.js inferred your 
+workspace root, but it 
+may not be correct.
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (Γ  
+  Üá Warning: Ne...not    
+ be correct.:String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+ We detected multiple 
+lockfiles and selected 
+the directory of 
+C:\Users\ROG 
+Michael\package-lock.json 
+as the root directory.
+ To silence this warning, 
+set `turbopack.root` in 
+your Next.js config, or 
+consider removing one of 
+the lockfiles if it's not 
+needed.
+   See https://nextjs.org/
+docs/app/api-reference/con
+fig/next-config-js/turbopa
+ck#root-directory for 
+more information.
+ Detected additional 
+lockfiles: 
+   * C:\Users\ROG 
+Michael\Code\Class 
+Engine\package-lock.json
+
+Γû▓ Next.js 16.2.0 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build 
+failed with 1 errors:
+./Code/Class Engine/app/pl
+ay/[code]/page.tsx:4:1
+Module not found: Can't 
+resolve 
+'./play.module.css'
+  [90m2 |[0m
+  [90m3 |[0m 
+[36mimport[0m { 
+useState, useEffect } 
+[36mfrom[0m 
+[32m"react"[0m;
+[31m[1m>[0m [90m4 
+|[0m [36mimport[0m 
+styles [36mfrom[0m [32m
+"./play.module.css"[0m;
+  [90m  |[0m [31m[1m^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^[0m
+  [90m5 |[0m 
+[36mimport[0m 
+[33mReact[0m 
+[36mfrom[0m 
+[32m"react"[0m;
+  [90m6 |[0m
+  [90m7 |[0m 
+[36mexport[0m 
+[36mdefault[0m 
+[36mfunction[0m 
+[33mPlayPage[0m({ 
+params }: { params: { 
+code: string } }) {
+
+
+
+Import traces:
+  Client Component 
+Browser:
+    ./Code/Class Engine/ap
+p/play/[code]/page.tsx 
+[Client Component Browser]
+    ./Code/Class Engine/ap
+p/play/[code]/page.tsx 
+[Server Component]
+
+  Client Component SSR:
+    ./Code/Class Engine/ap
+p/play/[code]/page.tsx 
+[Client Component SSR]
+    ./Code/Class Engine/ap
+p/play/[code]/page.tsx 
+[Server Component]
+
+https://nextjs.org/docs/me
+ssages/module-not-found
+
+
+    at <unknown> 
+(./Code/Class Engine/app/p
+lay/[code]/page.tsx:4:1)
+    at <unknown> (https://
+nextjs.org/docs/messages/m
+odule-not-found)

@@ -5,6 +5,7 @@ import styles from "./hotseat.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
 import Link from "next/link";
 import { ArrowLeft, Sparkles, Zap } from "lucide-react";
+import MultiplayerHost from "../components/MultiplayerHost";
 
 export default function HotSeatMode() {
   const [mounted, setMounted] = useState(false);
@@ -116,6 +117,7 @@ export default function HotSeatMode() {
           <h1>The Hot Seat</h1>
           
           <div className={styles.aiControls}>
+            <MultiplayerHost gameMode="hotseat" />
             <input 
               placeholder="Topic (e.g. Winter Holidays)" 
               value={topic}

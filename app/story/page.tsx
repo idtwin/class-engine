@@ -5,6 +5,7 @@ import styles from "./story.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
 import Link from "next/link";
 import { ArrowLeft, Sparkles, Zap } from "lucide-react";
+import MultiplayerHost from "../components/MultiplayerHost";
 
 export default function StoryChainMode() {
   const [mounted, setMounted] = useState(false);
@@ -94,6 +95,7 @@ export default function StoryChainMode() {
           <h1>Story Chain</h1>
           
           <div className={styles.aiControls}>
+            <MultiplayerHost gameMode="story" />
             <input 
               placeholder="Topic (e.g. Magic Forest)" 
               value={topic}

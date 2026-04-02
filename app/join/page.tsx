@@ -59,6 +59,7 @@ function JoinLogic() {
       const data = await res.json();
       if (res.ok) {
         localStorage.setItem(`studentId_${code}`, data.studentId);
+        localStorage.setItem(`studentName_${code}`, selectedName);
         router.push(`/play/${code}`);
       } else {
         setError(data.error);

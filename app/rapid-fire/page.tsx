@@ -5,6 +5,7 @@ import { useClassroomStore, Level } from "../store/useClassroomStore";
 import Link from "next/link";
 import { ArrowLeft, Play, Zap, FastForward, Loader2, Eye } from "lucide-react";
 import styles from "./rapid-fire.module.css";
+import MultiplayerHost from "../components/MultiplayerHost";
 
 interface RapidFireQuestion {
   text: string;
@@ -16,8 +17,9 @@ interface RapidFireQuestion {
 type GameState = "SETUP" | "LOADING" | "READY" | "PLAYING" | "REVEALED" | "FINISHED";
 
 export default function RapidFire() {
-  const { currentTeams, geminiKey, triggerTwist } = useClassroomStore();
+  const { currentTeams, geminiKey, triggerTwist, activeRoomCode } = useClassroomStore();
   const [mounted, setMounted] = useState(false);
+  const [roomBuzzes, setRoomBuzzes] = useState<any[]>([]);
   
   const [gameState, setGameState] = useState<GameState>("SETUP");
   const [topic, setTopic] = useState("");
@@ -43,6 +45,23 @@ export default function RapidFire() {
     }
     return () => clearInterval(interval);
   }, [timerActive, timeLeft]);
+
+  // Poll for buzzes
+  useEffect(() => {
+    if (!activeRoomCode) return;
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/room/get?code=${activeRoomCode}`);
+        if (res.ok) {
+          const data = await res.json();
+          setRoomBuzzes(data.buzzes || []);
+        }
+      } catch (e) {}
+    };
+    poll();
+    const id = setInterval(poll, 1500);
+    return () => clearInterval(id);
+  }, [activeRoomCode]);
 
   if (!mounted) return null;
 
@@ -88,6 +107,19 @@ export default function RapidFire() {
     setCursor(0);
     setGameState("PLAYING");
     startTimer();
+    setRoomBuzzes([]);
+    // Push first question to Redis
+    if (activeRoomCode && questions.length > 0) {
+      fetch("/api/room/action", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: activeRoomCode, action: "clear_buzzes", payload: {} })
+      }).then(() => {
+        fetch("/api/room/action", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: activeRoomCode, action: "set_question", payload: { question: questions[0] } })
+        });
+      }).catch(() => {});
+    }
   };
 
   const startTimer = () => {
@@ -100,9 +132,23 @@ export default function RapidFire() {
       setGameState("FINISHED");
       setTimerActive(false);
     } else {
-      setCursor(cursor + 1);
+      const nextIdx = cursor + 1;
+      setCursor(nextIdx);
       setGameState("PLAYING");
       startTimer();
+      setRoomBuzzes([]);
+      // Push next question + clear buzzes
+      if (activeRoomCode) {
+        fetch("/api/room/action", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: activeRoomCode, action: "clear_buzzes", payload: {} })
+        }).then(() => {
+          fetch("/api/room/action", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: activeRoomCode, action: "set_question", payload: { question: questions[nextIdx] } })
+          });
+        }).catch(() => {});
+      }
     }
   };
 
@@ -116,11 +162,12 @@ export default function RapidFire() {
   return (
     <div className={styles.container} style={{ paddingBottom: '100px' }}>
       <header className={styles.header}>
-        <Link href="/dashboard" className={styles.homeBtn}><ArrowLeft size={20} /> Exit Game</Link>
+        <Link href="/games" className={styles.homeBtn}><ArrowLeft size={20} /> Exit Game</Link>
         <div style={{ textAlign: "center" }}>
           <div style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.8rem", textTransform: "uppercase" }}>Game</div>
           <div style={{ fontWeight: "bold", fontSize: "1.2rem" }}>Rapid Fire</div>
         </div>
+        <MultiplayerHost gameMode="rapidfire" />
         {gameState !== "SETUP" && gameState !== "LOADING" && gameState !== "FINISHED" && (
           <div style={{ textAlign: "center" }}>
             <div style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.8rem", textTransform: "uppercase" }}>Round</div>
@@ -190,6 +237,18 @@ export default function RapidFire() {
               </div>
             ) : (
               <div style={{ height: "2.5rem" }}></div> /* spacer to prevent layout shift */
+            )}
+
+            {/* Buzz-in Banner */}
+            {activeRoomCode && roomBuzzes.length > 0 && (
+              <div style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: 'rgba(45,212,191,0.15)', border: '2px solid var(--accent)', marginTop: '1rem' }}>
+                <div style={{ fontWeight: 800, color: 'var(--accent)', marginBottom: '0.5rem' }}>🔔 Buzz Order:</div>
+                {roomBuzzes.sort((a: any, b: any) => a.time - b.time).map((b: any, i: number) => (
+                  <div key={i} style={{ fontSize: '1.1rem', fontWeight: i === 0 ? 900 : 400, color: i === 0 ? '#fff' : 'rgba(255,255,255,0.5)' }}>
+                    {i + 1}. {b.name} {i === 0 && '🏆'}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
