@@ -174,7 +174,7 @@ export default function GameBoard() {
                   }}
                   className={styles.reviewCatInput}
                 />
-                {col.questions.map((q, qIndex) => (
+                {col.questions.map((q: any, qIndex: number) => (
                   <div key={qIndex} className={styles.reviewQuestion}>
                     <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                       <span className={styles.reviewPoints}>{q.points}</span>
@@ -216,7 +216,7 @@ export default function GameBoard() {
           {board?.map((col, cIndex) => (
             <div key={cIndex} className={styles.column}>
               <div className={styles.categoryHeader}>{col.category}</div>
-              {col.questions.map((q, qIndex) => (
+              {col.questions.map((q: any, qIndex: number) => (
                 <button 
                   key={qIndex} 
                   className={`${styles.tile} ${q.answered ? styles.answered : ''}`}
@@ -255,7 +255,7 @@ export default function GameBoard() {
                 src={`https://image.pollinations.ai/prompt/${encodeURIComponent(activeQuestion.imagePrompt)}?width=800&height=400&nologo=true`} 
                 alt={activeQuestion.imagePrompt}
                 className={styles.modalImage}
-                onError={(e) => (e.currentTarget.style.display = 'none')}
+                onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')}
               />
             )}
 

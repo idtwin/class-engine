@@ -131,7 +131,7 @@ export default function PictureRevealMode() {
               src={`https://image.pollinations.ai/prompt/${encodeURIComponent(`${debouncedAnswer || gameData.imageAnswer}, ${gameData.imagePrompt}`)}?width=900&height=600&nologo=true&model=flux&seed=${Math.floor(Math.random() * 1000)}`} 
               alt="Preview"
               className={styles.reviewImagePreview}
-              onError={(e) => { e.currentTarget.src = `https://loremflickr.com/900/600/${encodeURIComponent((debouncedAnswer || gameData?.imageAnswer || topic).replace(/ /g, ','))}/all`; }}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = `https://loremflickr.com/900/600/${encodeURIComponent((debouncedAnswer || gameData?.imageAnswer || topic).replace(/ /g, ','))}/all`; }}
             />
 
             {gameData.questions.map((q, qIndex) => (
@@ -180,7 +180,7 @@ export default function PictureRevealMode() {
               src={`https://image.pollinations.ai/prompt/${encodeURIComponent(`${debouncedAnswer || gameData.imageAnswer}, ${gameData.imagePrompt}`)}?width=900&height=600&nologo=true&model=flux&seed=${Math.floor(Math.random() * 1000)}`} 
               alt="Hidden Image"
               className={styles.hiddenImage}
-              onError={(e) => { e.currentTarget.src = `https://loremflickr.com/900/600/${encodeURIComponent((debouncedAnswer || gameData?.imageAnswer || topic).replace(/ /g, ','))}/all`; }}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = `https://loremflickr.com/900/600/${encodeURIComponent((debouncedAnswer || gameData?.imageAnswer || topic).replace(/ /g, ','))}/all`; }}
             />
             
             <div className={styles.gridOverlay}>

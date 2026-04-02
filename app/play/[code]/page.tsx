@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import styles from "./play.module.css";
+import styles from "../play.module.css";
 import React from "react";
 
 export default function PlayPage({ params }: { params: { code: string } }) {
