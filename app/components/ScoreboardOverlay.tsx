@@ -16,8 +16,8 @@ export default function ScoreboardOverlay() {
 
   if (!mounted) return null;
 
-  // Do not show the scoreboard on the Dashboard, Teams editor, or root URL
-  if (pathname === "/" || pathname === "/dashboard" || pathname === "/teams") {
+  // Do not show the scoreboard on the Dashboard, Teams editor, Games hub, or root URL
+  if (pathname === "/" || pathname === "/dashboard" || pathname === "/teams" || pathname === "/games" || pathname === "/join") {
     return null;
   }
 

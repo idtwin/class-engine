@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import styles from "../play.module.css";
 import React from "react";
+import { useParams } from "next/navigation";
 
-export default function PlayPage({ params }: { params: { code: string } }) {
-  // Extracting from generic params payload manually mapping for next13/14
-  const code = params.code;
+export default function PlayPage() {
+  const params = useParams();
+  const code = params.code as string;
 
   const [room, setRoom] = useState<any>(null);
   const [error, setError] = useState("");
