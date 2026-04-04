@@ -3,7 +3,7 @@ import { generateJSON } from "../../lib/llm";
 
 export async function POST(req: Request) {
   try {
-    const { apiKey, ollamaModel, topic, level } = await req.json();
+    const { apiKey, provider, ollamaModel, topic, level } = await req.json();
 
     const systemPrompt = `You are a creative ESL teacher designing a rapid-fire trivia game.
 Generate 15 engaging, fast-paced questions based on the topic.
@@ -23,7 +23,7 @@ Match the target class level (${level}) in general. No markdown.`;
 
     const userPrompt = `Topic: ${topic}\nTarget Class Level: ${level}\n\nGenerate the 15 questions now!`;
 
-    const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.9, ollamaModel });
+    const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.9, ollamaModel, provider });
 
     return NextResponse.json({ questions: parsed });
   } catch (error: any) {

@@ -3,7 +3,7 @@ import { generateJSON } from "../../lib/llm";
 
 export async function POST(req: Request) {
   try {
-    const { apiKey, ollamaModel, topic, level } = await req.json();
+    const { apiKey, provider, ollamaModel, topic, level } = await req.json();
 
     let levelPrompt = `Generate EXACTLY 12 sets matching the ${level} difficulty level.`;
     if (level === "Mixed Level") levelPrompt = `Generate EXACTLY 12 sets: 4 Low difficulty, 4 Mid difficulty, 4 High difficulty.`;
@@ -27,7 +27,7 @@ Make sure "words" has EXACTLY 4 strings. No markdown.`;
 
     const userPrompt = `Topic: ${topic}\n\nGenerate the 12 sets now!`;
 
-    const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.9, ollamaModel });
+    const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.9, ollamaModel, provider });
 
     return NextResponse.json({ questions: parsed });
   } catch (error: any) {

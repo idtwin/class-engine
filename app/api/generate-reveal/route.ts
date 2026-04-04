@@ -3,7 +3,7 @@ import { generateJSON } from "../../lib/llm";
 
 export async function POST(req: Request) {
   try {
-    const { apiKey, ollamaModel, topic, level } = await req.json();
+    const { apiKey, provider, ollamaModel, topic, level } = await req.json();
 
     const systemPrompt = `You are a creative ESL teacher. Generate a 16-question set and a hidden image prompt for a Picture Reveal game.
 Topic: ${topic}
@@ -27,7 +27,7 @@ Rules:
 
     const userPrompt = `Topic: ${topic}\nLevel: ${level}\nRandom entropy: ${Math.random()}\nGenerate JSON now!`;
 
-    const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.95, ollamaModel });
+    const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.95, ollamaModel, provider });
 
     return NextResponse.json(parsed);
   } catch (error: any) {

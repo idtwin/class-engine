@@ -12,7 +12,7 @@ type Question = { level: string, words: string[], answer: string, hint: string }
 
 export default function OddOneOut() {
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, geminiKey, ollamaModel, activeRoomCode } = useClassroomStore();
+  const { currentTeams, geminiKey, ollamaModel, llmProvider, activeRoomCode } = useClassroomStore();
   
   const [topic, setTopic] = useState("");
   const [levelFilter, setLevelFilter] = useState("Mixed Level");
@@ -46,7 +46,7 @@ export default function OddOneOut() {
       const res = await fetch("/api/generate-odd-one-out", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: geminiKey, ollamaModel, topic, level: levelFilter })
+        body: JSON.stringify({ apiKey: geminiKey, ollamaModel, provider: llmProvider, llmProvider, topic, level: levelFilter })
       });
       const data = await res.json();
       if (res.ok && data.questions) {

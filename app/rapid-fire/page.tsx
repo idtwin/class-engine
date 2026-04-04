@@ -17,7 +17,7 @@ interface RapidFireQuestion {
 type GameState = "SETUP" | "LOADING" | "READY" | "PLAYING" | "REVEALED" | "FINISHED";
 
 export default function RapidFire() {
-  const { currentTeams, geminiKey, ollamaModel, triggerTwist, activeRoomCode } = useClassroomStore();
+  const { currentTeams, geminiKey, ollamaModel, llmProvider, triggerTwist, activeRoomCode } = useClassroomStore();
   const [mounted, setMounted] = useState(false);
   const [roomBuzzes, setRoomBuzzes] = useState<any[]>([]);
   
@@ -89,7 +89,7 @@ export default function RapidFire() {
       const res = await fetch("/api/generate-rapid-fire", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: geminiKey, ollamaModel, topic, level: targetLevel })
+        body: JSON.stringify({ apiKey: geminiKey, ollamaModel, provider: llmProvider, llmProvider, topic, level: targetLevel })
       });
       const data = await res.json();
       

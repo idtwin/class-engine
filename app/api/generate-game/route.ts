@@ -3,7 +3,7 @@ import { generateJSON } from "../../lib/llm";
 
 export async function POST(req: Request) {
   try {
-    const { apiKey, ollamaModel, topic, level } = await req.json();
+    const { apiKey, provider, ollamaModel, topic, level } = await req.json();
 
     const systemPrompt = `You are a creative ESL teacher. Generate a 5x5 Jeopardy game board in JSON format.
 
@@ -24,7 +24,7 @@ Return ONLY valid JSON matching this schema exactly. No markdown.`;
 
     const userPrompt = `Topic: ${topic}\nTarget Class Level: ${level}\n\nGenerate the board JSON now!`;
 
-    const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.8, ollamaModel });
+    const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.8, ollamaModel, provider });
 
     return NextResponse.json(parsed);
   } catch (error: any) {

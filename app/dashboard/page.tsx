@@ -55,33 +55,55 @@ export default function Dashboard() {
           {/* ── LLM Provider Toggle ── */}
           <div>
             <label style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.7)', display: 'block', marginBottom: '0.75rem' }}>AI Provider</label>
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => setLlmProvider('lmstudio')}
+                style={{
+                  flex: 1, minWidth: '130px', padding: '0.9rem', borderRadius: '10px', border: '2px solid',
+                  borderColor: llmProvider === 'lmstudio' ? '#a78bfa' : 'rgba(255,255,255,0.15)',
+                  background: llmProvider === 'lmstudio' ? 'rgba(167,139,250,0.15)' : 'rgba(255,255,255,0.04)',
+                  color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '1rem',
+                  transition: 'all 0.2s'
+                }}
+              >
+                🖥️ LM Studio <span style={{ fontWeight: 400, fontSize: '0.8rem', opacity: 0.6, display: 'block' }}>Local · Free · GUI</span>
+              </button>
               <button
                 onClick={() => setLlmProvider('ollama')}
                 style={{
-                  flex: 1, padding: '0.9rem', borderRadius: '10px', border: '2px solid',
+                  flex: 1, minWidth: '130px', padding: '0.9rem', borderRadius: '10px', border: '2px solid',
                   borderColor: llmProvider === 'ollama' ? 'var(--accent)' : 'rgba(255,255,255,0.15)',
                   background: llmProvider === 'ollama' ? 'rgba(45,212,191,0.15)' : 'rgba(255,255,255,0.04)',
                   color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '1rem',
                   transition: 'all 0.2s'
                 }}
               >
-                🦙 Ollama <span style={{ fontWeight: 400, fontSize: '0.85rem', opacity: 0.6, display: 'block' }}>Local · Free · No key needed</span>
+                🦙 Ollama <span style={{ fontWeight: 400, fontSize: '0.8rem', opacity: 0.6, display: 'block' }}>Local · Free · CLI</span>
               </button>
               <button
                 onClick={() => setLlmProvider('gemini')}
                 style={{
-                  flex: 1, padding: '0.9rem', borderRadius: '10px', border: '2px solid',
+                  flex: 1, minWidth: '130px', padding: '0.9rem', borderRadius: '10px', border: '2px solid',
                   borderColor: llmProvider === 'gemini' ? '#4d9fff' : 'rgba(255,255,255,0.15)',
                   background: llmProvider === 'gemini' ? 'rgba(77,159,255,0.15)' : 'rgba(255,255,255,0.04)',
                   color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '1rem',
                   transition: 'all 0.2s'
                 }}
               >
-                ✨ Gemini <span style={{ fontWeight: 400, fontSize: '0.85rem', opacity: 0.6, display: 'block' }}>Cloud · Faster · API key required</span>
+                ✨ Gemini <span style={{ fontWeight: 400, fontSize: '0.8rem', opacity: 0.6, display: 'block' }}>Cloud · Fast · Key needed</span>
               </button>
             </div>
           </div>
+
+          {/* ── LM Studio info (only shown when LM Studio is selected) ── */}
+          {llmProvider === 'lmstudio' && (
+            <div style={{ background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.3)', borderRadius: '10px', padding: '1rem' }}>
+              <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.4rem' }}>Using: Gemma 4 E4B Q4_K_M (or whichever model is loaded)</p>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', marginBottom: '0.3rem' }}>Make sure LM Studio&apos;s local server is running:</p>
+              <code style={{ background: 'rgba(255,255,255,0.08)', padding: '4px 10px', borderRadius: '6px', fontSize: '0.85rem', display: 'block', marginBottom: '0.5rem' }}>Developer tab → Start Server (port 1234)</code>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Load your model in the top dropdown before generating.</p>
+            </div>
+          )}
 
           {/* ── Gemini Key (only shown when Gemini is selected) ── */}
           {llmProvider === 'gemini' && (

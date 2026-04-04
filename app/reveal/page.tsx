@@ -9,7 +9,7 @@ import MultiplayerHost from "../components/MultiplayerHost";
 
 export default function PictureRevealMode() {
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, triggerTwist, geminiKey, ollamaModel } = useClassroomStore();
+  const { currentTeams, updateTeamScore, triggerTwist, geminiKey, ollamaModel, llmProvider } = useClassroomStore();
   
   const [topic, setTopic] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -45,7 +45,7 @@ export default function PictureRevealMode() {
       const res = await fetch("/api/generate-reveal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: geminiKey, ollamaModel, topic, level: "Mixed Level" })
+        body: JSON.stringify({ apiKey: geminiKey, ollamaModel, provider: llmProvider, llmProvider, topic, level: "Mixed Level" })
       });
       const data = await res.json();
       if (res.ok && data.questions) {

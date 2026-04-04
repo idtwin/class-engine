@@ -62,7 +62,7 @@ const DEFAULT_GAME_BOARD = [
 
 export default function GameBoard() {
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, triggerTwist, geminiKey, ollamaModel, activeRoomCode } = useClassroomStore();
+  const { currentTeams, updateTeamScore, triggerTwist, geminiKey, ollamaModel, llmProvider, activeRoomCode } = useClassroomStore();
   const [board, setBoard] = useState<any[]>(DEFAULT_GAME_BOARD);
   const [activeQuestion, setActiveQuestion] = useState<any>(null);
   const [showAnswer, setShowAnswer] = useState(false);

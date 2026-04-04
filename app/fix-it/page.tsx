@@ -12,7 +12,7 @@ type Question = { level: string, errorType: string, brokenSentence: string, corr
 
 export default function FixIt() {
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, geminiKey, ollamaModel, activeRoomCode } = useClassroomStore();
+  const { currentTeams, updateTeamScore, geminiKey, ollamaModel, llmProvider, activeRoomCode } = useClassroomStore();
   
   const [topic, setTopic] = useState("");
   const [levelFilter, setLevelFilter] = useState("Mixed Level");
@@ -84,7 +84,7 @@ export default function FixIt() {
       const res = await fetch("/api/generate-fix-it", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: geminiKey, ollamaModel, topic, level: levelFilter })
+        body: JSON.stringify({ apiKey: geminiKey, ollamaModel, provider: llmProvider, llmProvider, topic, level: levelFilter })
       });
       const data = await res.json();
       if (res.ok && data.questions) {
