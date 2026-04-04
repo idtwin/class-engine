@@ -20,7 +20,7 @@ export default function Dashboard() {
   const activeClass = classes.find(c => c.id === activeClassId);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const { geminiKey, setGeminiKey } = useClassroomStore();
+  const { geminiKey, setGeminiKey, llmProvider, setLlmProvider, ollamaModel, setOllamaModel } = useClassroomStore();
 
   const insights = useMemo(() => {
     if (!activeClass || activeClass.students.length === 0) return { predominantLevel: "Unknown", predominantEnergy: "Unknown", suggestion: "Add students to see insights." };
@@ -50,22 +50,83 @@ export default function Dashboard() {
     <div className={styles.modalOverlay}>
       <div className={styles.modal}>
         <h2 style={{ color: 'var(--accent)' }}>System Settings</h2>
-        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'left' }}>
-          <label style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.7)' }}>Google Gemini API Key</label>
-          <input 
-            type="password" 
-            value={geminiKey} 
-            onChange={e => setGeminiKey(e.target.value)} 
-            className={styles.input} 
-            placeholder="AIza..." 
-            style={{ width: '100%' }}
-          />
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem' }}>Keys are stored 100% locally in your browser memory and never sent anywhere except directly to Google's Gemini API.</p>
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left' }}>
+
+          {/* ── LLM Provider Toggle ── */}
+          <div>
+            <label style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.7)', display: 'block', marginBottom: '0.75rem' }}>AI Provider</label>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => setLlmProvider('ollama')}
+                style={{
+                  flex: 1, padding: '0.9rem', borderRadius: '10px', border: '2px solid',
+                  borderColor: llmProvider === 'ollama' ? 'var(--accent)' : 'rgba(255,255,255,0.15)',
+                  background: llmProvider === 'ollama' ? 'rgba(45,212,191,0.15)' : 'rgba(255,255,255,0.04)',
+                  color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '1rem',
+                  transition: 'all 0.2s'
+                }}
+              >
+                🦙 Ollama <span style={{ fontWeight: 400, fontSize: '0.85rem', opacity: 0.6, display: 'block' }}>Local · Free · No key needed</span>
+              </button>
+              <button
+                onClick={() => setLlmProvider('gemini')}
+                style={{
+                  flex: 1, padding: '0.9rem', borderRadius: '10px', border: '2px solid',
+                  borderColor: llmProvider === 'gemini' ? '#4d9fff' : 'rgba(255,255,255,0.15)',
+                  background: llmProvider === 'gemini' ? 'rgba(77,159,255,0.15)' : 'rgba(255,255,255,0.04)',
+                  color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '1rem',
+                  transition: 'all 0.2s'
+                }}
+              >
+                ✨ Gemini <span style={{ fontWeight: 400, fontSize: '0.85rem', opacity: 0.6, display: 'block' }}>Cloud · Faster · API key required</span>
+              </button>
+            </div>
+          </div>
+
+          {/* ── Gemini Key (only shown when Gemini is selected) ── */}
+          {llmProvider === 'gemini' && (
+            <div>
+              <label style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.7)', display: 'block', marginBottom: '0.5rem' }}>Google Gemini API Key</label>
+              <input 
+                type="password" 
+                value={geminiKey} 
+                onChange={e => setGeminiKey(e.target.value)} 
+                className={styles.input} 
+                placeholder="AIza..." 
+                style={{ width: '100%' }}
+              />
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', marginTop: '0.4rem' }}>Stored locally in your browser only — never sent anywhere except directly to Google.</p>
+            </div>
+          )}
+
+          {/* ── Ollama Model (only shown when Ollama is selected) ── */}
+          {llmProvider === 'ollama' && (
+            <div>
+              <label style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.7)', display: 'block', marginBottom: '0.5rem' }}>Ollama Model</label>
+              <select
+                value={ollamaModel}
+                onChange={e => setOllamaModel(e.target.value)}
+                className={styles.input}
+                style={{ width: '100%' }}
+              >
+                <option value="gemma3:4b">gemma3:4b — Recommended (RTX 4050)</option>
+                <option value="gemma3:12b">gemma3:12b — Higher quality (12GB+ VRAM)</option>
+                <option value="llama3.2:3b">llama3.2:3b — Fastest (low VRAM)</option>
+                <option value="llama3.1:8b">llama3.1:8b — Balanced</option>
+                <option value="mistral:7b">mistral:7b — Alternative 7B</option>
+                <option value="qwen2.5:7b">qwen2.5:7b — Strong JSON output</option>
+              </select>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', marginTop: '0.4rem' }}>Make sure Ollama is running: <code style={{ background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px' }}>ollama serve</code></p>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Pull model: <code style={{ background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px' }}>ollama pull {ollamaModel}</code></p>
+            </div>
+          )}
+
         </div>
-        <button onClick={() => setSettingsOpen(false)} style={{ marginTop: '2rem' }}>Save & Close</button>
+        <button onClick={() => setSettingsOpen(false)} style={{ marginTop: '2rem' }}>Save &amp; Close</button>
       </div>
     </div>
   );
+
 
   if (!activeClass) {
     return (

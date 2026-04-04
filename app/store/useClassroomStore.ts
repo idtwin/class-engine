@@ -40,6 +40,10 @@ interface ClassroomState {
   submitFeedback: (type: "Too easy" | "Too hard" | "Low energy" | "High engagement") => void;
   geminiKey: string;
   setGeminiKey: (key: string) => void;
+  llmProvider: "gemini" | "ollama";
+  setLlmProvider: (p: "gemini" | "ollama") => void;
+  ollamaModel: string;
+  setOllamaModel: (m: string) => void;
   activeRoomCode: string | null;
   setActiveRoomCode: (code: string | null) => void;
   generateTeams: (classId: string, numberOfTeams: number) => void;
@@ -246,6 +250,10 @@ export const useClassroomStore = create<ClassroomState>()(
       
       geminiKey: "",
       setGeminiKey: (key) => set({ geminiKey: key }),
+      llmProvider: "gemini",
+      setLlmProvider: (p) => set({ llmProvider: p }),
+      ollamaModel: "gemma3:4b",
+      setOllamaModel: (m) => set({ ollamaModel: m }),
       activeRoomCode: null,
       setActiveRoomCode: (code) => set({ activeRoomCode: code })
     }),

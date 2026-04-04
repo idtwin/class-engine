@@ -9,7 +9,7 @@ import MultiplayerHost from "../components/MultiplayerHost";
 
 export default function WouldYouRatherMode() {
   const [mounted, setMounted] = useState(false);
-  const { triggerTwist, geminiKey, activeRoomCode } = useClassroomStore();
+  const { triggerTwist, geminiKey, ollamaModel, activeRoomCode } = useClassroomStore();
   
   const [topic, setTopic] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -62,7 +62,7 @@ export default function WouldYouRatherMode() {
       const res = await fetch("/api/generate-wyr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: geminiKey, topic, level: "Mixed Level" })
+        body: JSON.stringify({ apiKey: geminiKey, ollamaModel, topic, level: "Mixed Level" })
       });
       const data = await res.json();
       if (res.ok && data.prompts) {
