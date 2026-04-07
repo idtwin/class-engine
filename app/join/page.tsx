@@ -17,8 +17,7 @@ function JoinLogic() {
   const [error, setError] = useState("");
   
   const [teams, setTeams] = useState<any[]>([]);
-  const [name, setName] = useState("");
-  const [matchedTeam, setMatchedTeam] = useState<any>(null);
+  const [selectedValue, setSelectedValue] = useState("");
 
   const handleFetchRoom = async () => {
     if (code.length !== 4) return;
@@ -48,27 +47,11 @@ function JoinLogic() {
     }
   }, [initialCode]);
 
-  // Auto-match name to team
-  useEffect(() => {
-    if (!name.trim() || teams.length === 0) {
-      setMatchedTeam(null);
-      return;
-    }
-    const lower = name.trim().toLowerCase();
-    for (let i = 0; i < teams.length; i++) {
-      const t = teams[i];
-      const match = t.students?.some((s: any) => s.name.toLowerCase() === lower);
-      if (match) {
-        setMatchedTeam({ ...t, colorIndex: i });
-        return;
-      }
-    }
-    setMatchedTeam(null);
-  }, [name, teams]);
+  // Parse selected value -> { name, teamId, teamName, teamColor }
+  const parsed = selectedValue ? JSON.parse(selectedValue) : null;
 
   const handleJoin = async () => {
-    if (!name.trim()) return setError("Please enter your name");
-    if (!matchedTeam) return setError("Your name was not found in any team. Ask your teacher for help.");
+    if (!parsed) return setError("Please select your name");
     setLoading(true);
     setError("");
 
@@ -76,12 +59,12 @@ function JoinLogic() {
       const res = await fetch(`/api/room/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, name: name.trim(), teamId: matchedTeam.id, teamName: matchedTeam.name })
+        body: JSON.stringify({ code, name: parsed.name, teamId: parsed.teamId, teamName: parsed.teamName })
       });
       const data = await res.json();
       if (res.ok) {
         localStorage.setItem(`studentId_${code}`, data.studentId);
-        localStorage.setItem(`studentName_${code}`, name.trim());
+        localStorage.setItem(`studentName_${code}`, parsed.name);
         router.push(`/play/${code}`);
       } else {
         setError(data.error);
@@ -91,8 +74,6 @@ function JoinLogic() {
     }
     setLoading(false);
   };
-
-  const teamColor = matchedTeam ? TEAM_COLORS[matchedTeam.colorIndex % TEAM_COLORS.length] : null;
 
   return (
     <div className={styles.box}>
@@ -118,40 +99,47 @@ function JoinLogic() {
 
       {step === 2 && (
         <>
-          <p style={{ opacity: 0.7 }}>Enter your name to find your team</p>
-          <input 
-            type="text"
-            className={styles.input}
-            placeholder="Your name..."
-            value={name}
-            onChange={e => setName(e.target.value)}
-            autoFocus
-          />
-          
-          {/* Team Match Indicator */}
-          {matchedTeam ? (
+          <p style={{ opacity: 0.7 }}>Select your name</p>
+          <select 
+            className={styles.select}
+            value={selectedValue}
+            onChange={e => setSelectedValue(e.target.value)}
+          >
+            <option value="" disabled>Choose your name...</option>
+            {teams.map((team, tIdx) => {
+              const color = TEAM_COLORS[tIdx % TEAM_COLORS.length];
+              return (
+                <optgroup key={team.id} label={`── ${team.name} ──`}>
+                  {team.students?.map((s: any) => (
+                    <option 
+                      key={s.id} 
+                      value={JSON.stringify({ name: s.name, teamId: team.id, teamName: team.name, color })}
+                    >
+                      {s.name}
+                    </option>
+                  ))}
+                </optgroup>
+              );
+            })}
+          </select>
+
+          {/* Team Preview Card */}
+          {parsed && (
             <div style={{ 
               padding: '1rem', 
               borderRadius: '12px', 
-              border: `2px solid ${teamColor}`, 
-              background: `${teamColor}15`,
+              border: `2px solid ${parsed.color}`, 
+              background: `${parsed.color}15`,
               transition: 'all 0.3s ease'
             }}>
-              <div style={{ fontSize: '0.8rem', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.3rem' }}>Your Team</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 900, color: teamColor || undefined }}>{matchedTeam.name}</div>
-              <div style={{ fontSize: '0.85rem', opacity: 0.6, marginTop: '0.3rem' }}>
-                {matchedTeam.students?.length} members
-              </div>
+              <div style={{ fontSize: '0.75rem', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.3rem' }}>Your Team</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 900, color: parsed.color }}>{parsed.teamName}</div>
             </div>
-          ) : name.trim().length > 0 ? (
-            <div style={{ padding: '0.8rem', borderRadius: '8px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', fontSize: '0.9rem', color: '#ef4444' }}>
-              Name not found in any team. Check spelling or ask your teacher.
-            </div>
-          ) : null}
+          )}
 
           {error && <div style={{ color: '#ef4444' }}>{error}</div>}
-          <button className={styles.btn} onClick={handleJoin} disabled={!matchedTeam || loading}>
-            {loading ? "Connecting..." : matchedTeam ? `Join as ${name.trim()}` : "Enter your name above"}
+          <button className={styles.btn} onClick={handleJoin} disabled={!parsed || loading}>
+            {loading ? "Connecting..." : parsed ? `Join as ${parsed.name}` : "Select your name above"}
           </button>
         </>
       )}
