@@ -172,54 +172,68 @@ export default function RapidFire() {
     }
   };
 
-  const handleReveal = () => {
+  const handleReveal = async () => {
     setTimerActive(false);
     setGameState("REVEALED");
 
     if (activeRoomCode) {
-      fetch("/api/room/action", {
+      // Send reveal action
+      await fetch("/api/room/action", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: {} })
       }).catch(() => {});
-    }
 
-    // Auto-scoring for MC mode
-    if (rfMode === "mc" && currentQ) {
-      const answeredStudents = roomStudents.filter((s: any) => s.answered && s.lastAnswer);
-      const correctAnswers: any[] = [];
-      const wrongAnswers: any[] = [];
-      
-      answeredStudents.forEach((s: any) => {
-        const isCorrect = s.lastAnswer === currentQ.correctLetter;
-        if (isCorrect) correctAnswers.push(s);
-        else wrongAnswers.push(s);
-      });
-      
-      correctAnswers.sort((a, b) => (a.answerTime || 0) - (b.answerTime || 0));
-      
-      const newPointsEarned: Record<string, number> = {};
-      
-      correctAnswers.forEach((s, idx) => {
-        let pts = 100;
-        if (idx === 0) pts = 500;
-        else if (idx === 1) pts = 400;
-        else if (idx === 2) pts = 300;
-        else if (idx === 3) pts = 200;
-        
-        newPointsEarned[s.id] = pts;
-        const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
-        if (team) updateTeamScore(team.id, pts);
-      });
-      
-      if (penalizeWrong) {
-        wrongAnswers.forEach(s => {
-          newPointsEarned[s.id] = -100;
-          const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
-          if (team) updateTeamScore(team.id, -100);
-        });
+      // Fetch fresh room data for accurate scoring
+      try {
+        const res = await fetch(`/api/room/get?code=${activeRoomCode}`);
+        if (res.ok) {
+          const freshData = await res.json();
+          const freshStudents = freshData.students || [];
+          setRoomStudents(freshStudents);
+          setRoomData(freshData);
+
+          // Auto-scoring for MC mode
+          if (rfMode === "mc" && currentQ) {
+            const answeredStudents = freshStudents.filter((s: any) => s.answered && s.lastAnswer);
+            const correctAnswers: any[] = [];
+            const wrongAnswers: any[] = [];
+            
+            answeredStudents.forEach((s: any) => {
+              const isCorrect = s.lastAnswer === currentQ.correctLetter;
+              if (isCorrect) correctAnswers.push(s);
+              else wrongAnswers.push(s);
+            });
+            
+            correctAnswers.sort((a: any, b: any) => (a.answerTime || 0) - (b.answerTime || 0));
+            
+            const newPointsEarned: Record<string, number> = {};
+            
+            correctAnswers.forEach((s: any, idx: number) => {
+              let pts = 100;
+              if (idx === 0) pts = 500;
+              else if (idx === 1) pts = 400;
+              else if (idx === 2) pts = 300;
+              else if (idx === 3) pts = 200;
+              
+              newPointsEarned[s.id] = pts;
+              const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
+              if (team) updateTeamScore(team.id, pts);
+            });
+            
+            if (penalizeWrong) {
+              wrongAnswers.forEach((s: any) => {
+                newPointsEarned[s.id] = -100;
+                const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
+                if (team) updateTeamScore(team.id, -100);
+              });
+            }
+            
+            setPointsEarned(newPointsEarned);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch fresh data for scoring", e);
       }
-      
-      setPointsEarned(newPointsEarned);
     }
   };
 
