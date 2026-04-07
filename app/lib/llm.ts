@@ -44,8 +44,8 @@ async function callLMStudio(opts: LLMOptions): Promise<string> {
       temperature: opts.temperature ?? 0.7,
       max_tokens: 4096,
       stream: false,
-      // Request JSON mode — LM Studio supports this via response_format
-      response_format: { type: "json_object" },
+      // LM Studio only supports "text" or "json_schema" — use text and rely on prompt
+      response_format: { type: "text" },
     }),
     // 120s timeout — first generation on a local model can be slow
     signal: AbortSignal.timeout(120_000),
