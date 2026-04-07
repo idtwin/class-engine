@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const { gameMode, activeRoster } = await req.json();
+    const { gameMode, activeRoster, teams } = await req.json();
     
     if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
       return NextResponse.json({ error: "Missing Upstash Redis Credentials in .env.local" }, { status: 500 });
@@ -22,6 +22,7 @@ export async function POST(req: Request) {
       status: "waiting",
       currentQuestion: null,
       activeRoster: activeRoster || [],
+      teams: teams || [],
       students: [],
       scores: {}
     };

@@ -18,14 +18,22 @@ export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
     try {
       const activeClass = classes.find(c => c.id === activeClassId);
       const studentMap = activeClass ? activeClass.students.map(s => ({ id: s.id, name: s.name, type: "student" })) : [];
-      const teamMap = currentTeams.map(t => ({ id: t.id, name: t.name, type: "team" }));
+      const colors = ["#ef4444", "#3b82f6", "#22c55e", "#eab308", "#a855f7", "#f97316", "#ec4899", "#06b6d4"];
+      const teamsPayload = currentTeams.map((t, i) => ({
+         id: t.id,
+         name: t.name,
+         color: colors[i % colors.length],
+         students: t.students.map(s => ({ id: s.id, name: s.name }))
+      }));
       
-      const payloadRoster = [...studentMap, ...teamMap];
+      const teamMap = currentTeams.map(t => ({ id: t.id, name: t.name, type: "team" }));
+
+      const payloadRoster = [...studentMap, ...teamMap]; // kept for backwards compat backwards selection
 
       const res = await fetch("/api/room/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameMode, activeRoster: payloadRoster })
+        body: JSON.stringify({ gameMode, activeRoster: payloadRoster, teams: teamsPayload })
       });
       const data = await res.json();
       if (res.ok) {

@@ -13,6 +13,7 @@ export default function PlayPage() {
   const [error, setError] = useState("");
   const [studentId, setStudentId] = useState("");
   const [studentName, setStudentName] = useState("");
+  const [myTeamInfo, setMyTeamInfo] = useState<{name: string, color: string, activeCount: number} | null>(null);
   
   const [textInput, setTextInput] = useState("");
   const [hasBuzzed, setHasBuzzed] = useState(false);
@@ -67,6 +68,26 @@ export default function PlayPage() {
     }
   }, [room?.currentQuestion]);
 
+  // Derive Team Info
+  useEffect(() => {
+    if (room && room.teams && studentName) {
+      // Find team either by matching student name inside the team, or if the studentName is identically the team name
+      const team = room.teams.find((t: any) => t.name === studentName || t.students.some((s: any) => s.name === studentName));
+      if (team) {
+        // Count how many from this team are actually connected in room.students
+        const activeCount = room.students.filter((connectedStudent: any) => 
+          connectedStudent.name === team.name || team.students.some((s: any) => s.name === connectedStudent.name)
+        ).length;
+        
+        setMyTeamInfo({
+          name: team.name,
+          color: team.color || '#2dd4bf',
+          activeCount
+        });
+      }
+    }
+  }, [room, studentName]);
+
   const sendAction = useCallback(async (action: string, payload: any) => {
     try {
       await fetch(`/api/room/action`, {
@@ -112,12 +133,26 @@ export default function PlayPage() {
     </div>
   );
 
+  // === RENDER HELPERS === //
+  const teamColorStyle = myTeamInfo ? { color: myTeamInfo.color } : {};
+  const teamBgStyle = myTeamInfo ? { background: `radial-gradient(circle at center, ${myTeamInfo.color}22 0%, transparent 70%)` } : {};
+  
+  const renderTeamBanner = () => {
+    if (!myTeamInfo) return null;
+    return (
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '0.75rem', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(10px)', display: 'flex', justifyContent: 'space-between', borderBottom: `2px solid ${myTeamInfo.color}66` }}>
+        <span style={{ fontWeight: 800, color: myTeamInfo.color }}>{myTeamInfo.name}</span>
+        <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>🧑‍🤝‍🧑 {myTeamInfo.activeCount} Online</span>
+      </div>
+    );
+  };
+
   if (room.status === "ended") {
-    return <div className={styles.screen}><h2>Session Ended</h2><p style={{ opacity: 0.5 }}>The host closed this session.</p></div>;
+    return <div className={styles.screen} style={teamBgStyle}>{renderTeamBanner()}<h2>Session Ended</h2><p style={{ opacity: 0.5 }}>The host closed this session.</p></div>;
   }
 
   if (room.status === "waiting") {
-    return <div className={styles.screen}><h2>You&apos;re In! ✅</h2><p style={{ opacity: 0.5 }}>Waiting for the teacher to start the game...</p><p style={{ fontSize: '3rem' }}>📱</p></div>;
+    return <div className={styles.screen} style={teamBgStyle}>{renderTeamBanner()}<h2>You&apos;re In! ✅</h2><p style={{ opacity: 0.5 }}>Waiting for the teacher to start the game...</p><p style={{ fontSize: '3rem' }}>📱</p></div>;
   }
 
   // Active Phase
@@ -126,9 +161,10 @@ export default function PlayPage() {
   // === BUZZER GAMES: Jeopardy, Rapid Fire, Picture Reveal ===
   if (room.gameMode === "jeopardy" || room.gameMode === "rapidfire" || room.gameMode === "reveal") {
     return (
-      <div className={styles.screen}>
+      <div className={styles.screen} style={teamBgStyle}>
+        {renderTeamBanner()}
         {room.currentQuestion && (
-          <div style={{ marginBottom: '2rem', textAlign: 'center', maxWidth: '90%' }}>
+          <div style={{ marginBottom: '2rem', textAlign: 'center', maxWidth: '90%', marginTop: myTeamInfo ? '3rem' : '0' }}>
             <p style={{ fontSize: '1.1rem', opacity: 0.7 }}>
               {room.currentQuestion.category && `${room.currentQuestion.category} • `}
               {room.currentQuestion.points && `${room.currentQuestion.points} pts`}
@@ -152,8 +188,9 @@ export default function PlayPage() {
   if (room.gameMode === "oddoneout") {
     const words = room.currentQuestion?.words || ["...", "...", "...", "..."];
     return (
-      <div className={styles.screen}>
-        <h2 style={{ marginBottom: '1.5rem' }}>Tap the Outlier</h2>
+      <div className={styles.screen} style={teamBgStyle}>
+        {renderTeamBanner()}
+        <h2 style={{ marginBottom: '1.5rem', marginTop: myTeamInfo ? '3rem' : '0' }}>Tap the Outlier</h2>
         <div className={styles.grid2x2}>
           {words.map((w: string, idx: number) => (
             <button 
@@ -183,8 +220,9 @@ export default function PlayPage() {
     const timeSeconds = (sInfo?.answerTime && room.questionStartTime) ? ((sInfo.answerTime - room.questionStartTime) / 1000).toFixed(1) + 's' : '';
 
     return (
-      <div className={styles.screen}>
-        <h2 style={{ marginBottom: '0.5rem' }}>Correct the Sentence</h2>
+      <div className={styles.screen} style={teamBgStyle}>
+        {renderTeamBanner()}
+        <h2 style={{ marginBottom: '0.5rem', marginTop: myTeamInfo ? '3rem' : '0' }}>Correct the Sentence</h2>
         {room.currentQuestion?.brokenSentence && !isRevealed && (
           <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '12px', marginBottom: '1rem', maxWidth: '90%', textAlign: 'center', fontSize: '1.1rem', border: '1px solid rgba(255,255,255,0.1)' }}>
             &ldquo;{room.currentQuestion.brokenSentence}&rdquo;
@@ -243,8 +281,9 @@ export default function PlayPage() {
   // === WOULD YOU RATHER: A/B Vote ===
   if (room.gameMode === "wyr") {
     return (
-      <div className={styles.screen}>
-        <h2 style={{ marginBottom: '1.5rem' }}>Would You Rather?</h2>
+      <div className={styles.screen} style={teamBgStyle}>
+        {renderTeamBanner()}
+        <h2 style={{ marginBottom: '1.5rem', marginTop: myTeamInfo ? '3rem' : '0' }}>Would You Rather?</h2>
         {room.currentQuestion && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '90%', maxWidth: '400px' }}>
             <button 
@@ -275,8 +314,9 @@ export default function PlayPage() {
   // === PASSIVE GAMES: Hot Seat, Story Chain ===
   if (room.gameMode === "hotseat" || room.gameMode === "story") {
     return (
-      <div className={styles.screen}>
-        <h2>🎬 Watch the Projector!</h2>
+      <div className={styles.screen} style={teamBgStyle}>
+        {renderTeamBanner()}
+        <h2 style={{ marginTop: myTeamInfo ? '3rem' : '0' }}>🎬 Watch the Projector!</h2>
         <p style={{ opacity: 0.5, maxWidth: '80%', textAlign: 'center' }}>This game is played live in the classroom. Watch the projector and follow along!</p>
         <div style={{ fontSize: '4rem', marginTop: '1rem' }}>{room.gameMode === "hotseat" ? "🪑" : "📖"}</div>
       </div>

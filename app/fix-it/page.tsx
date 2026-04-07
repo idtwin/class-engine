@@ -24,6 +24,9 @@ export default function FixIt() {
   const [showHint, setShowHint] = useState(false);
   const [showErrorFlag, setShowErrorFlag] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
+  
+  const [penalizeWrong, setPenalizeWrong] = useState(false);
+  const [pointsEarned, setPointsEarned] = useState<Record<string, number>>({});
 
   // Auction mode local betting state mapping TeamID -> bet amount
   const [teamBets, setTeamBets] = useState<Record<string, string>>({});
@@ -81,6 +84,7 @@ export default function FixIt() {
     setShowHint(false);
     setShowErrorFlag(false);
     setShowAnswer(false);
+    setPointsEarned({});
 
     try {
       const res = await fetch("/api/generate-fix-it", {
@@ -113,6 +117,7 @@ export default function FixIt() {
       setShowHint(false);
       setShowErrorFlag(false);
       setShowAnswer(false);
+      setPointsEarned({});
       
       // Clear all phone buzzers/inputs and push new question sequentially
       if (activeRoomCode) {
@@ -195,6 +200,10 @@ export default function FixIt() {
                 {m}
               </button>
             ))}
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '0.5rem 1rem', borderRadius: '8px' }}>
+              <input type="checkbox" id="penaltyMode" checked={penalizeWrong} onChange={e => setPenalizeWrong(e.target.checked)} />
+              <label htmlFor="penaltyMode" style={{ fontSize: '0.9rem', cursor: 'pointer', userSelect: 'none' }}>Penalty for Wrong Answers</label>
+            </div>
           </div>
 
           <div className={styles.questionMeta}>
@@ -249,6 +258,46 @@ export default function FixIt() {
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: {} })
                         }).catch(() => {});
+                      }
+
+                      // Automated Tiered Scoring System
+                      if (activeMode !== "Auction") {
+                        const answeredStudents = roomStudents.filter((s: any) => s.answered && s.lastAnswer);
+                        const correctAnswers: any[] = [];
+                        const wrongAnswers: any[] = [];
+                        
+                        answeredStudents.forEach((s: any) => {
+                           const isCorrect = currentQ && s.lastAnswer?.toLowerCase().trim() === currentQ.correctedSentence.toLowerCase().trim();
+                           if (isCorrect) correctAnswers.push(s);
+                           else wrongAnswers.push(s);
+                        });
+                        
+                        // Sort correct answers by speed
+                        correctAnswers.sort((a, b) => (a.answerTime || 0) - (b.answerTime || 0));
+                        
+                        const newPointsEarned: Record<string, number> = {};
+                        
+                        correctAnswers.forEach((s, idx) => {
+                           let pts = 100;
+                           if (idx === 0) pts = 500;
+                           else if (idx === 1) pts = 400;
+                           else if (idx === 2) pts = 300;
+                           else if (idx === 3) pts = 200;
+                           
+                           newPointsEarned[s.id] = pts;
+                           const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
+                           if (team) updateTeamScore(team.id, pts);
+                        });
+                        
+                        if (penalizeWrong) {
+                           wrongAnswers.forEach(s => {
+                               newPointsEarned[s.id] = -100;
+                               const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
+                               if (team) updateTeamScore(team.id, -100);
+                           });
+                        }
+                        
+                        setPointsEarned(newPointsEarned);
                       }
                   }} style={{ background: '#2dd4bf', color: '#111' }}>
                     <RefreshCw size={20} /> Reveal Correction 
@@ -323,6 +372,8 @@ export default function FixIt() {
                 {roomStudents.filter((s: any) => s.answered).map((s: any, i: number) => {
                   const isCorrect = currentQ && s.lastAnswer?.toLowerCase().trim() === currentQ.correctedSentence.toLowerCase().trim();
                   const timeSeconds = (s.answerTime && roomData?.questionStartTime) ? ((s.answerTime - roomData.questionStartTime) / 1000).toFixed(1) + 's' : '';
+                  const pts = pointsEarned[s.id];
+
                   return (
                     <div key={i} style={{
                       padding: '0.8rem 1rem',
@@ -332,7 +383,10 @@ export default function FixIt() {
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
                         <span style={{ fontWeight: 800 }}>{s.name} {isCorrect ? '✅' : '❌'}</span>
-                        <span style={{ fontSize: '0.8rem', opacity: 0.7, fontWeight: 700 }}>{timeSeconds}</span>
+                        <span style={{ fontSize: '0.8rem', opacity: 0.7, fontWeight: 700 }}>
+                          {pts !== undefined && <span style={{ color: pts > 0 ? '#22c55e' : '#ef4444', marginRight: '0.5rem', fontWeight: 900 }}>{pts > 0 ? `+${pts}` : pts} pts</span>}
+                          {timeSeconds}
+                        </span>
                       </div>
                       <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>&ldquo;{s.lastAnswer}&rdquo;</div>
                     </div>
