@@ -117,7 +117,8 @@ export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
     );
   }
 
-  const joinUrl = typeof window !== 'undefined' ? `${window.location.origin}/join?code=${activeRoomCode}` : '';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+  const joinUrl = `${siteUrl}/join?code=${activeRoomCode}`;
 
   return (
     <div className={styles.overlay}>
