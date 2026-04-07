@@ -21,6 +21,7 @@ export default function PlayPage() {
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [lastQuestionId, setLastQuestionId] = useState("");
+  const [teammateBlocked, setTeammateBlocked] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem(`studentId_${code}`);
@@ -64,6 +65,7 @@ export default function PlayPage() {
         setHasSubmitted(false);
         setSelectedWord(null);
         setTextInput("");
+        setTeammateBlocked(null);
       }
     }
   }, [room?.currentQuestion]);
@@ -90,18 +92,32 @@ export default function PlayPage() {
 
   const sendAction = useCallback(async (action: string, payload: any) => {
     try {
-      await fetch(`/api/room/action`, {
+      const res = await fetch(`/api/room/action`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code, action, payload })
       });
+      return await res.json();
     } catch (e: any) {
       console.error(e);
+      return null;
     }
   }, [code]);
 
-  const handleBuzz = () => {
+  const handleBuzz = async () => {
     if (hasBuzzed) return;
+    // Check if a teammate already buzzed by reading room state
+    if (room?.buzzes && myTeamInfo) {
+      const myStudent = room.students?.find((s: any) => s.id === studentId);
+      const myTeamId = myStudent?.teamId;
+      if (myTeamId) {
+        const teamBuzz = room.buzzes.find((b: any) => b.teamId === myTeamId);
+        if (teamBuzz) {
+          setTeammateBlocked(teamBuzz.name);
+          return;
+        }
+      }
+    }
     setHasBuzzed(true);
     sendAction("buzz_in", { studentId, name: studentName });
   };
@@ -112,16 +128,43 @@ export default function PlayPage() {
     sendAction("student_vote", { studentId, vote });
   };
 
-  const handleSubmitAnswer = () => {
+  const handleSubmitAnswer = async () => {
     if (!textInput.trim() || hasSubmitted) return;
+    const result = await sendAction("student_answer", { studentId, answer: textInput.trim() });
+    if (result?.error === "teammate_answered") {
+      setTeammateBlocked(result.answeredBy);
+      return;
+    }
     setHasSubmitted(true);
-    sendAction("student_answer", { studentId, answer: textInput.trim() });
   };
 
-  const handleTapWord = (word: string) => {
+  const handleTapWord = async (word: string) => {
     if (selectedWord) return; // already tapped
+    const result = await sendAction("student_answer", { studentId, answer: word });
+    if (result?.error === "teammate_answered") {
+      setTeammateBlocked(result.answeredBy);
+      return;
+    }
     setSelectedWord(word);
-    sendAction("student_answer", { studentId, answer: word });
+  };
+
+  // Reusable teammate blocked banner
+  const renderTeammateBlocked = () => {
+    if (!teammateBlocked) return null;
+    return (
+      <div style={{
+        padding: '1.2rem',
+        borderRadius: '16px',
+        border: '2px solid rgba(251,191,36,0.4)',
+        background: 'rgba(251,191,36,0.1)',
+        textAlign: 'center',
+        width: '90%',
+        maxWidth: '400px'
+      }}>
+        <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fbbf24', margin: '0 0 0.3rem 0' }}>🤝 Teammate Already Answered</p>
+        <p style={{ fontSize: '0.95rem', opacity: 0.7, margin: 0 }}>{teammateBlocked} locked in for your team</p>
+      </div>
+    );
   };
 
   if (error) return <div className={styles.screen}><h1>Disconnected</h1><p>{error}</p></div>;
@@ -211,12 +254,16 @@ export default function PlayPage() {
               return (
                 <button
                   key={letter}
-                  onClick={() => {
-                    if (myPick) return;
+                  onClick={async () => {
+                    if (myPick || teammateBlocked) return;
+                    const result = await sendAction("student_answer", { studentId, answer: letter });
+                    if (result?.error === "teammate_answered") {
+                      setTeammateBlocked(result.answeredBy);
+                      return;
+                    }
                     setSelectedWord(letter);
-                    sendAction("student_answer", { studentId, answer: letter });
                   }}
-                  disabled={anyPicked}
+                  disabled={anyPicked || !!teammateBlocked}
                   style={{
                     padding: '1.2rem 1rem',
                     borderRadius: '14px',
@@ -259,6 +306,7 @@ export default function PlayPage() {
           </div>
         )}
         {myPick && !isRevealed && <p style={{ marginTop: '1rem', color: 'var(--accent)' }}>Answer locked! ✅</p>}
+        {renderTeammateBlocked()}
       </div>
     );
   }
@@ -280,7 +328,9 @@ export default function PlayPage() {
           </div>
         )}
         
-        {!hasBuzzed ? (
+        {teammateBlocked ? (
+          renderTeammateBlocked()
+        ) : !hasBuzzed ? (
           <button 
             className={`${styles.giantBuzzer}`}
             onClick={handleBuzz}
@@ -335,13 +385,14 @@ export default function PlayPage() {
               key={idx} 
               className={`${styles.cardBtn} ${selectedWord === w ? styles.cardSelected : ''}`}
               onClick={() => handleTapWord(w)}
-              disabled={!!selectedWord}
+              disabled={!!selectedWord || !!teammateBlocked}
             >
               {w}
             </button>
           ))}
         </div>
         {selectedWord && <p style={{ marginTop: '1rem', color: 'var(--accent)' }}>Answer locked! ✅</p>}
+        {renderTeammateBlocked()}
       </div>
     );
   }
@@ -369,6 +420,10 @@ export default function PlayPage() {
         
         {!isRevealed ? (
           <>
+            {teammateBlocked ? (
+              renderTeammateBlocked()
+            ) : (
+            <>
             <textarea 
               className={styles.textArea} 
               value={textInput} 
@@ -383,6 +438,8 @@ export default function PlayPage() {
             >
               {hasSubmitted ? "Locked In ✅" : "LOCK IN ANSWER 🔒"}
             </button>
+            </>
+            )}
           </>
         ) : (
           <div style={{ marginTop: '1rem', width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>

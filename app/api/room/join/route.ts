@@ -4,7 +4,7 @@ import { nanoid } from "nanoid";
 
 export async function POST(req: Request) {
   try {
-    const { code, name, id } = await req.json();
+    const { code, name, id, teamId, teamName } = await req.json();
     
     if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
       return NextResponse.json({ error: "Missing Upstash Credentials" }, { status: 500 });
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     // Check if student already actively joined
     const exists = room.students.find((s: any) => s.id === studentId || s.name === name);
     if (!exists) {
-      room.students.push({ id: studentId, name, answered: false, lastAnswer: null });
+      room.students.push({ id: studentId, name, teamId: teamId || null, teamName: teamName || null, answered: false, lastAnswer: null });
       await redis.set(roomCode, room, { ex: 14400 }); // Refresh TTL on modify
     }
 

@@ -327,7 +327,6 @@ export default function GameBoard() {
               <div style={{ width: '100%', padding: '1.5rem', borderRadius: '16px', background: 'rgba(45,212,191,0.1)', border: '2px solid var(--accent)' }}>
                 <div style={{ fontWeight: 800, color: 'var(--accent)', marginBottom: '0.75rem', fontSize: '1.1rem' }}>🔔 Buzz Order:</div>
                 {buzzedStudentAnswers.map((b: any, i: number) => {
-                  const team = currentTeams.find(t => t.name === b.name || t.students.some((s: any) => s.name === b.name));
                   return (
                     <div key={i} style={{ 
                       padding: '0.5rem 0', 
@@ -344,9 +343,8 @@ export default function GameBoard() {
                         fontWeight: 900, fontSize: '0.9rem'
                       }}>{i + 1}</span>
                       <span style={{ fontWeight: i === 0 ? 900 : 400, color: i === 0 ? '#fff' : 'rgba(255,255,255,0.5)' }}>
-                        {b.name} {i === 0 && '🏆'}
+                        {b.teamName && b.teamName !== b.name ? `${b.teamName} — ${b.name}` : b.name} {i === 0 && '🏆'}
                       </span>
-                      {team && <span style={{ fontSize: '0.8rem', opacity: 0.4, background: 'rgba(255,255,255,0.05)', padding: '0.15rem 0.5rem', borderRadius: '6px' }}>Team: {team.name}</span>}
                       {b.answered && b.lastAnswer && (
                         <span style={{ marginLeft: 'auto', background: 'rgba(255,255,255,0.05)', padding: '0.3rem 0.8rem', borderRadius: '8px', fontSize: '1rem' }}>
                           &ldquo;{b.lastAnswer}&rdquo;

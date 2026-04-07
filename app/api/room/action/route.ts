@@ -35,6 +35,16 @@ export async function POST(req: Request) {
     if (action === "student_answer") {
       const student = room.students.find((s: any) => s.id === payload.studentId);
       if (student) {
+        // Check if a teammate already answered (one per team)
+        if (student.teamId) {
+          const teammateAnswered = room.students.find((s: any) => 
+            s.teamId === student.teamId && s.answered && s.id !== student.id
+          );
+          if (teammateAnswered) {
+            await redis.set(roomCode, room, { ex: 14400 });
+            return NextResponse.json({ success: false, error: "teammate_answered", answeredBy: teammateAnswered.name });
+          }
+        }
         student.answered = true;
         student.lastAnswer = payload.answer;
         student.answerTime = Date.now();
@@ -44,9 +54,19 @@ export async function POST(req: Request) {
     // Buzz-in system (records timestamp for ordering)
     if (action === "buzz_in") {
       if (!room.buzzes) room.buzzes = [];
-      const alreadyBuzzed = room.buzzes.find((b: any) => b.studentId === payload.studentId);
-      if (!alreadyBuzzed) {
-        room.buzzes.push({ studentId: payload.studentId, name: payload.name, time: Date.now() });
+      const student = room.students.find((s: any) => s.id === payload.studentId);
+      const teamId = student?.teamId || payload.studentId;
+      
+      // Check if anyone from same team already buzzed
+      const teamAlreadyBuzzed = room.buzzes.find((b: any) => b.teamId === teamId);
+      if (!teamAlreadyBuzzed) {
+        room.buzzes.push({ 
+          studentId: payload.studentId, 
+          name: payload.name, 
+          teamId, 
+          teamName: student?.teamName || payload.name,
+          time: Date.now() 
+        });
       }
     }
 
