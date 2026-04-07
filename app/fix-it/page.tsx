@@ -31,6 +31,7 @@ export default function FixIt() {
   // Live student responses from Redis polling
   const [roomStudents, setRoomStudents] = useState<any[]>([]);
   const [roomBuzzes, setRoomBuzzes] = useState<any[]>([]);
+  const [roomData, setRoomData] = useState<any>(null);
 
   // Push the first question when generated
   useEffect(() => {
@@ -55,6 +56,7 @@ export default function FixIt() {
         const res = await fetch(`/api/room/get?code=${activeRoomCode}`);
         if (res.ok) {
           const data = await res.json();
+          setRoomData(data);
           setRoomStudents(data.students || []);
           setRoomBuzzes(data.buzzes || []);
         }
@@ -239,7 +241,16 @@ export default function FixIt() {
             
             <div style={{ display: 'flex', gap: '1rem' }}>
                {!showAnswer ? (
-                  <button className={styles.genBtn} onClick={() => setShowAnswer(true)} style={{ background: '#2dd4bf', color: '#111' }}>
+                  <button className={styles.genBtn} onClick={() => {
+                      setShowAnswer(true);
+                      if (activeRoomCode) {
+                        fetch("/api/room/action", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: {} })
+                        }).catch(() => {});
+                      }
+                  }} style={{ background: '#2dd4bf', color: '#111' }}>
                     <RefreshCw size={20} /> Reveal Correction 
                   </button>
                ) : (
@@ -311,6 +322,7 @@ export default function FixIt() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '0.75rem' }}>
                 {roomStudents.filter((s: any) => s.answered).map((s: any, i: number) => {
                   const isCorrect = currentQ && s.lastAnswer?.toLowerCase().trim() === currentQ.correctedSentence.toLowerCase().trim();
+                  const timeSeconds = (s.answerTime && roomData?.questionStartTime) ? ((s.answerTime - roomData.questionStartTime) / 1000).toFixed(1) + 's' : '';
                   return (
                     <div key={i} style={{
                       padding: '0.8rem 1rem',
@@ -318,8 +330,11 @@ export default function FixIt() {
                       border: `2px solid ${isCorrect ? '#22c55e' : '#ef4444'}`,
                       background: isCorrect ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
                     }}>
-                      <div style={{ fontWeight: 800, marginBottom: '0.3rem' }}>{s.name} {isCorrect ? '✅' : '❌'}</div>
-                      <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>"{s.lastAnswer}"</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                        <span style={{ fontWeight: 800 }}>{s.name} {isCorrect ? '✅' : '❌'}</span>
+                        <span style={{ fontSize: '0.8rem', opacity: 0.7, fontWeight: 700 }}>{timeSeconds}</span>
+                      </div>
+                      <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>&ldquo;{s.lastAnswer}&rdquo;</div>
                     </div>
                   );
                 })}

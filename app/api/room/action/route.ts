@@ -21,8 +21,14 @@ export async function POST(req: Request) {
 
     // Handle Teacher actions mapping
     if (action === "update_status") room.status = payload.status;
-    if (action === "set_question") room.currentQuestion = payload.question;
+    if (action === "set_question") {
+      room.currentQuestion = payload.question;
+      room.questionStartTime = Date.now();
+      room.answerRevealed = false;
+    }
     if (action === "set_game_mode") room.gameMode = payload.gameMode;
+    if (action === "end_session") room.status = "ended";
+    if (action === "reveal_answer") room.answerRevealed = true;
     if (action === "end_session") room.status = "ended";
     
     // Handle Student actions mapping
@@ -31,6 +37,7 @@ export async function POST(req: Request) {
       if (student) {
         student.answered = true;
         student.lastAnswer = payload.answer;
+        student.answerTime = Date.now();
       }
     }
 

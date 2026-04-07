@@ -173,28 +173,69 @@ export default function PlayPage() {
 
   // === FIX IT: Text input ===
   if (room.gameMode === "fixit") {
+    const isRevealed = room.answerRevealed;
+    const sInfo = room.students?.find((s:any) => s.id === studentId);
+    
+    const myAnswer = sInfo?.lastAnswer || textInput;
+    const correctAnswer = room.currentQuestion?.correctedSentence;
+    const isCorrect = myAnswer && correctAnswer && myAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
+    
+    const timeSeconds = (sInfo?.answerTime && room.questionStartTime) ? ((sInfo.answerTime - room.questionStartTime) / 1000).toFixed(1) + 's' : '';
+
     return (
       <div className={styles.screen}>
         <h2 style={{ marginBottom: '0.5rem' }}>Correct the Sentence</h2>
-        {room.currentQuestion?.brokenSentence && (
+        {room.currentQuestion?.brokenSentence && !isRevealed && (
           <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '12px', marginBottom: '1rem', maxWidth: '90%', textAlign: 'center', fontSize: '1.1rem', border: '1px solid rgba(255,255,255,0.1)' }}>
             &ldquo;{room.currentQuestion.brokenSentence}&rdquo;
           </div>
         )}
-        <textarea 
-          className={styles.textArea} 
-          value={textInput} 
-          onChange={e => setTextInput(e.target.value)}
-          disabled={hasSubmitted}
-          placeholder="Type the corrected sentence..."
-        />
-        <button 
-          className={styles.submitBtn} 
-          onClick={handleSubmitAnswer}
-          disabled={hasSubmitted || !textInput.trim()}
-        >
-          {hasSubmitted ? "Locked In ✅" : "LOCK IN ANSWER 🔒"}
-        </button>
+        
+        {!isRevealed ? (
+          <>
+            <textarea 
+              className={styles.textArea} 
+              value={textInput} 
+              onChange={e => setTextInput(e.target.value)}
+              disabled={hasSubmitted}
+              placeholder="Type the corrected sentence..."
+            />
+            <button 
+              className={styles.submitBtn} 
+              onClick={handleSubmitAnswer}
+              disabled={hasSubmitted || !textInput.trim()}
+            >
+              {hasSubmitted ? "Locked In ✅" : "LOCK IN ANSWER 🔒"}
+            </button>
+          </>
+        ) : (
+          <div style={{ marginTop: '1rem', width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{
+              padding: '1.5rem',
+              borderRadius: '16px',
+              border: `2px solid ${isCorrect ? '#22c55e' : '#ef4444'}`,
+              background: isCorrect ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+              textAlign: 'center'
+            }}>
+              <h3 style={{ fontSize: '1.8rem', margin: '0 0 0.5rem 0' }}>{isCorrect ? '✅ You got it!' : '❌ Incorrect'}</h3>
+              {timeSeconds && <p style={{ opacity: 0.8, fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>Locked in at: {timeSeconds}</p>}
+            </div>
+            
+            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px' }}>
+              <p style={{ opacity: 0.5, fontSize: '0.9rem', margin: '0 0 0.5rem 0' }}>Your Answer:</p>
+              <p style={{ fontSize: '1.1rem', fontWeight: 600, color: isCorrect ? '#22c55e' : '#ef4444', margin: 0 }}>&ldquo;{myAnswer}&rdquo;</p>
+            </div>
+            
+            {!isCorrect && (
+              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px' }}>
+                <p style={{ opacity: 0.5, fontSize: '0.9rem', margin: '0 0 0.5rem 0' }}>Correct Answer:</p>
+                <p style={{ fontSize: '1.1rem', fontWeight: 600, color: '#2dd4bf', margin: 0 }}>&ldquo;{correctAnswer}&rdquo;</p>
+              </div>
+            )}
+            
+            <p style={{ opacity: 0.5, textAlign: 'center', marginTop: '1rem' }}>Waiting for next round...</p>
+          </div>
+        )}
       </div>
     );
   }
