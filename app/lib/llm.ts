@@ -190,17 +190,28 @@ export async function generateJSON<T = unknown>(
   opts: LLMOptions
 ): Promise<T> {
   const text = await generateText(apiKey, opts);
+
+  let parsed: any;
   try {
-    return JSON.parse(text) as T;
+    parsed = JSON.parse(text);
   } catch {
-    // Rescue: trim everything before the first [ or { and after the last ] or }
     const secondPass = text.replace(/^[^[{]*/, "").replace(/[^}\]]*$/, "");
     try {
-      return JSON.parse(secondPass) as T;
+      parsed = JSON.parse(secondPass);
     } catch {
       throw new Error(
-        `LLM returned non-parseable JSON. Check that your model is loaded and responding.\n\nRaw output (first 500 chars):\n${text.substring(0, 500)}`
+        "LLM returned non-parseable JSON. Raw (first 500): " + text.substring(0, 500)
       );
     }
   }
+
+  // Groq json_object mode wraps arrays: {"questions":[...]} -> extract the array
+  if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    const keys = Object.keys(parsed);
+    if (keys.length === 1 && Array.isArray(parsed[keys[0]])) {
+      return parsed[keys[0]] as T;
+    }
+  }
+
+  return parsed as T;
 }
