@@ -24,9 +24,11 @@ Return ONLY valid JSON matching this schema exactly. No markdown.`;
 
     const userPrompt = `Topic: ${topic}\nTarget Class Level: ${level}\n\nGenerate the board JSON now!`;
 
-    const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.8, ollamaModel, provider });
+    const parsed: any = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.8, ollamaModel, provider });
 
-    return NextResponse.json(parsed);
+    // Normalize: generateJSON may auto-unwrap {board:[...]} into [...], or return {board:[...]}
+    const board = Array.isArray(parsed) ? parsed : (parsed.board || parsed);
+    return NextResponse.json({ board });
   } catch (error: any) {
     console.error("Game Gen Error:", error);
     return NextResponse.json({ error: error.message || "An unexpected error occurred." }, { status: 500 });

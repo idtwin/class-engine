@@ -119,6 +119,7 @@ export default function GameBoard() {
         body: JSON.stringify({ 
           apiKey: geminiKey, 
           ollamaModel,
+          provider: llmProvider,
           topic, 
           level: "Mixed Level Class" 
         })
