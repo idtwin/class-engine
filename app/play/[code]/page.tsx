@@ -158,88 +158,96 @@ export default function PlayPage() {
   // Active Phase
   const me = room.students?.find((s: any) => s.id === studentId);
 
-  // === BUZZER GAMES: Jeopardy, Rapid Fire, Picture Reveal ===
-  if (room.gameMode === "jeopardy" || room.gameMode === "rapidfire" || room.gameMode === "reveal") {
-    const hasMCOptions = room.currentQuestion?.options;
+  // === RAPID FIRE: MC Mode ===
+  if (room.gameMode === "rapidfire" && room.currentQuestion?.options) {
     const isRevealed = room.answerRevealed;
+    const sInfo = room.students?.find((s: any) => s.id === studentId);
+    const myPick = sInfo?.lastAnswer || selectedWord;
+    const correctLetter = room.currentQuestion.correctLetter;
 
-    // MC Mode for Rapid Fire
-    if (hasMCOptions) {
-      const sInfo = room.students?.find((s: any) => s.id === studentId);
-      const myPick = sInfo?.lastAnswer || selectedWord;
-      const correctLetter = room.currentQuestion.correctLetter;
+    return (
+      <div className={styles.screen} style={teamBgStyle}>
+        {renderTeamBanner()}
+        <h2 style={{ marginBottom: '0.5rem', marginTop: myTeamInfo ? '3rem' : '0', fontSize: '1.1rem', opacity: 0.7 }}>
+          {room.currentQuestion.type}
+        </h2>
+        <p style={{ fontSize: '1.2rem', fontWeight: 700, textAlign: 'center', maxWidth: '90%', marginBottom: '1.5rem' }}>
+          {room.currentQuestion.text}
+        </p>
 
-      return (
-        <div className={styles.screen} style={teamBgStyle}>
-          {renderTeamBanner()}
-          <h2 style={{ marginBottom: '0.5rem', marginTop: myTeamInfo ? '3rem' : '0', fontSize: '1.1rem', opacity: 0.7 }}>
-            {room.currentQuestion.type}
-          </h2>
-          <p style={{ fontSize: '1.2rem', fontWeight: 700, textAlign: 'center', maxWidth: '90%', marginBottom: '1.5rem' }}>
-            {room.currentQuestion.text}
-          </p>
-
-          {!isRevealed ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', width: '90%', maxWidth: '400px' }}>
-              {(["A", "B", "C", "D"] as const).map(letter => {
-                const picked = myPick === letter;
-                const anyPicked = !!myPick;
-                return (
-                  <button
-                    key={letter}
-                    onClick={() => {
-                      if (myPick) return;
-                      setSelectedWord(letter);
-                      sendAction("student_answer", { studentId, answer: letter });
-                    }}
-                    disabled={anyPicked}
-                    style={{
-                      padding: '1.2rem 1rem',
-                      borderRadius: '14px',
-                      border: `2px solid ${picked ? 'var(--accent)' : 'rgba(255,255,255,0.15)'}`,
-                      background: picked ? 'rgba(45,212,191,0.2)' : 'rgba(255,255,255,0.05)',
-                      color: 'white',
-                      fontSize: '1rem',
-                      fontWeight: 700,
-                      cursor: anyPicked ? 'default' : 'pointer',
-                      opacity: anyPicked && !picked ? 0.3 : 1,
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    <span style={{ fontWeight: 900, marginRight: '0.5rem', opacity: 0.5 }}>{letter}.</span>
-                    {room.currentQuestion.options[letter]}
-                  </button>
-                );
-              })}
+        {!isRevealed ? (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', width: '90%', maxWidth: '400px' }}>
+            {(["A", "B", "C", "D"] as const).map(letter => {
+              const picked = myPick === letter;
+              const anyPicked = !!myPick;
+              return (
+                <button
+                  key={letter}
+                  onClick={() => {
+                    if (myPick) return;
+                    setSelectedWord(letter);
+                    sendAction("student_answer", { studentId, answer: letter });
+                  }}
+                  disabled={anyPicked}
+                  style={{
+                    padding: '1.2rem 1rem',
+                    borderRadius: '14px',
+                    border: `2px solid ${picked ? 'var(--accent)' : 'rgba(255,255,255,0.15)'}`,
+                    background: picked ? 'rgba(45,212,191,0.2)' : 'rgba(255,255,255,0.05)',
+                    color: 'white',
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                    cursor: anyPicked ? 'default' : 'pointer',
+                    opacity: anyPicked && !picked ? 0.3 : 1,
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <span style={{ fontWeight: 900, marginRight: '0.5rem', opacity: 0.5 }}>{letter}.</span>
+                  {room.currentQuestion.options[letter]}
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={{ width: '90%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{
+              padding: '1.5rem',
+              borderRadius: '16px',
+              border: `2px solid ${myPick === correctLetter ? '#22c55e' : '#ef4444'}`,
+              background: myPick === correctLetter ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+              textAlign: 'center'
+            }}>
+              <h3 style={{ fontSize: '1.8rem', margin: '0 0 0.5rem 0' }}>
+                {myPick === correctLetter ? '✅ Correct!' : '❌ Incorrect'}
+              </h3>
+              {myPick && <p style={{ opacity: 0.7, margin: 0 }}>You picked: <strong>{myPick}</strong></p>}
             </div>
-          ) : (
-            <div style={{ width: '90%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{
-                padding: '1.5rem',
-                borderRadius: '16px',
-                border: `2px solid ${myPick === correctLetter ? '#22c55e' : '#ef4444'}`,
-                background: myPick === correctLetter ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-                textAlign: 'center'
-              }}>
-                <h3 style={{ fontSize: '1.8rem', margin: '0 0 0.5rem 0' }}>
-                  {myPick === correctLetter ? '✅ Correct!' : '❌ Incorrect'}
-                </h3>
-                {myPick && <p style={{ opacity: 0.7, margin: 0 }}>You picked: <strong>{myPick}</strong></p>}
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
-                <p style={{ opacity: 0.5, fontSize: '0.9rem', margin: '0 0 0.3rem 0' }}>Correct Answer:</p>
-                <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#22c55e', margin: 0 }}>
-                  {correctLetter}. {room.currentQuestion.options[correctLetter]}
-                </p>
-              </div>
+            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
+              <p style={{ opacity: 0.5, fontSize: '0.9rem', margin: '0 0 0.3rem 0' }}>Correct Answer:</p>
+              <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#22c55e', margin: 0 }}>
+                {correctLetter}. {room.currentQuestion.options[correctLetter]}
+              </p>
             </div>
-          )}
-          {myPick && !isRevealed && <p style={{ marginTop: '1rem', color: 'var(--accent)' }}>Answer locked! ✅</p>}
-        </div>
-      );
-    }
+          </div>
+        )}
+        {myPick && !isRevealed && <p style={{ marginTop: '1rem', color: 'var(--accent)' }}>Answer locked! ✅</p>}
+      </div>
+    );
+  }
 
-    // Standard Buzzer Mode
+  // === RAPID FIRE (MC): Question not loaded yet — show waiting state ===
+  if (room.gameMode === "rapidfire" && !room.currentQuestion) {
+    return (
+      <div className={styles.screen} style={teamBgStyle}>
+        {renderTeamBanner()}
+        <div className={styles.loadingPulse} />
+        <p style={{ opacity: 0.5, marginTop: myTeamInfo ? '3rem' : '0' }}>Waiting for next question...</p>
+      </div>
+    );
+  }
+
+  // === BUZZER GAMES: Jeopardy, Rapid Fire (buzzer mode), Picture Reveal ===
+  if (room.gameMode === "jeopardy" || room.gameMode === "rapidfire" || room.gameMode === "reveal") {
     return (
       <div className={styles.screen} style={teamBgStyle}>
         {renderTeamBanner()}
