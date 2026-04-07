@@ -168,9 +168,9 @@ export async function generateText(
     return callOllama(opts);
   }
   if (provider === "groq") {
-    const groqKey = apiKey?.trim() || process.env.GROQ_API_KEY;
+    const groqKey = process.env.GROQ_API_KEY || apiKey?.trim();
     if (!groqKey || groqKey.length < 10) {
-      throw new Error("Groq API key is required. Set GROQ_API_KEY in .env.local or go to Dashboard → Settings.");
+      throw new Error("Groq API key is required. Set GROQ_API_KEY in .env.local or Vercel environment variables.");
     }
     return callGroq(groqKey, opts);
   }
