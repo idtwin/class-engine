@@ -117,7 +117,8 @@ export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
     );
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+  const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+  const siteUrl = isLocal ? 'https://class-engine.vercel.app' : (typeof window !== 'undefined' ? window.location.origin : '');
   const joinUrl = `${siteUrl}/join?code=${activeRoomCode}`;
 
   return (
