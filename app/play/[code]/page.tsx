@@ -260,14 +260,45 @@ export default function PlayPage() {
             <p style={{ fontSize: '1.3rem', fontWeight: 700 }}>{room.currentQuestion.text}</p>
           </div>
         )}
-        <button 
-          className={`${styles.giantBuzzer} ${hasBuzzed ? styles.buzzerPressed : ''}`}
-          onClick={handleBuzz}
-          disabled={hasBuzzed}
-        >
-          {hasBuzzed ? "BUZZED! 🔔" : "BUZZ IN"}
-        </button>
-        {hasBuzzed && <p style={{ marginTop: '1rem', opacity: 0.5 }}>Waiting for teacher...</p>}
+        
+        {!hasBuzzed ? (
+          <button 
+            className={`${styles.giantBuzzer}`}
+            onClick={handleBuzz}
+          >
+            BUZZ IN
+          </button>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', width: '90%', maxWidth: '400px' }}>
+            <p style={{ color: 'var(--accent)', fontWeight: 800, fontSize: '1.2rem' }}>🔔 BUZZED IN!</p>
+            
+            {room.gameMode === "jeopardy" && !hasSubmitted && (
+              <>
+                <textarea 
+                  className={styles.textArea} 
+                  value={textInput} 
+                  onChange={e => setTextInput(e.target.value)}
+                  placeholder="Type your answer..."
+                  style={{ width: '100%', minHeight: '80px' }}
+                />
+                <button 
+                  className={styles.submitBtn} 
+                  onClick={() => {
+                    if (!textInput.trim()) return;
+                    setHasSubmitted(true);
+                    sendAction("student_answer", { studentId, answer: textInput.trim() });
+                  }}
+                  disabled={!textInput.trim()}
+                >
+                  LOCK IN ANSWER 🔒
+                </button>
+              </>
+            )}
+            
+            {hasSubmitted && <p style={{ color: 'var(--accent)' }}>Answer locked! ✅ Waiting for teacher...</p>}
+            {!hasSubmitted && room.gameMode !== "jeopardy" && <p style={{ opacity: 0.5 }}>Waiting for teacher...</p>}
+          </div>
+        )}
       </div>
     );
   }

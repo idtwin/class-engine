@@ -72,8 +72,10 @@ export default function GameBoard() {
   const [topic, setTopic] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [roomBuzzes, setRoomBuzzes] = useState<any[]>([]);
+  const [roomStudents, setRoomStudents] = useState<any[]>([]);
+  const [roomData, setRoomData] = useState<any>(null);
 
-  // Poll for buzzes when active room
+  // Poll for buzzes and student answers when active room
   useEffect(() => {
     if (!activeRoomCode) return;
     const poll = async () => {
@@ -82,6 +84,8 @@ export default function GameBoard() {
         if (res.ok) {
           const data = await res.json();
           setRoomBuzzes(data.buzzes || []);
+          setRoomStudents(data.students || []);
+          setRoomData(data);
         }
       } catch (e) {}
     };
@@ -269,21 +273,36 @@ export default function GameBoard() {
 
       <div className={styles.scorebar}>
         {currentTeams.length === 0 && <span style={{ opacity: 0.5 }}>Generate teams on Dashboard to use Scorecard</span>}
-        {currentTeams.map(t => (
-          <div key={t.id} className={styles.teamScore}>
-            <span className={styles.teamName}>{t.name}</span>
+        {currentTeams.map((t, i) => {
+          const colors = ["#ef4444", "#3b82f6", "#22c55e", "#eab308", "#a855f7", "#f97316", "#ec4899", "#06b6d4"];
+          const color = colors[i % colors.length];
+          return (
+          <div key={t.id} className={styles.teamScore} style={{ borderTop: `3px solid ${color}` }}>
+            <span className={styles.teamName} style={{ color }}>{t.name}</span>
             <div className={styles.scoreControl}>
               <button onClick={() => updateTeamScore(t.id, -100)}>-</button>
-              <span className={styles.scoreVal}>{t.score}</span>
+              <span className={styles.scoreVal} style={{ color }}>{t.score}</span>
               <button onClick={() => updateTeamScore(t.id, 100)}>+</button>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
-      {activeQuestion && (
+      {activeQuestion && (() => {
+        const sortedBuzzes = [...roomBuzzes].sort((a: any, b: any) => a.time - b.time);
+        const firstBuzzer = sortedBuzzes[0];
+        const firstBuzzerTeam = firstBuzzer ? currentTeams.find(t => t.name === firstBuzzer.name || t.students.some(s => s.name === firstBuzzer.name)) : null;
+        
+        // Find student answers from the buzzed-in students
+        const buzzedStudentAnswers = sortedBuzzes.map(b => {
+          const student = roomStudents.find((s: any) => s.name === b.name);
+          return { ...b, answered: student?.answered, lastAnswer: student?.lastAnswer, answerTime: student?.answerTime };
+        });
+
+        return (
         <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
+          <div className={styles.modal} style={{ maxHeight: '90vh', overflowY: 'auto', padding: '2.5rem 3rem' }}>
             <h2 style={{ margin: 0 }}>{activeQuestion.category} - {activeQuestion.points}</h2>
             
             {activeQuestion.includeImage && activeQuestion.imagePrompt && (
@@ -291,48 +310,102 @@ export default function GameBoard() {
                 src={`https://image.pollinations.ai/prompt/${encodeURIComponent(activeQuestion.imagePrompt)}?width=800&height=400&nologo=true`} 
                 alt={activeQuestion.imagePrompt}
                 className={styles.modalImage}
-                onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')}
               />
-            )}
-
-            {/* Buzz-in Banner */}
-            {activeRoomCode && roomBuzzes.length > 0 && (
-              <div style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: 'rgba(45,212,191,0.15)', border: '2px solid var(--accent)', marginBottom: '1rem' }}>
-                <div style={{ fontWeight: 800, color: 'var(--accent)', marginBottom: '0.5rem' }}>🔔 Buzz Order:</div>
-                {roomBuzzes.sort((a: any, b: any) => a.time - b.time).map((b: any, i: number) => (
-                  <div key={i} style={{ fontSize: '1.2rem', fontWeight: i === 0 ? 900 : 400, color: i === 0 ? '#fff' : 'rgba(255,255,255,0.5)' }}>
-                    {i + 1}. {b.name} {i === 0 && '🏆'}
-                  </div>
-                ))}
-              </div>
             )}
 
             {showAnswer ? (
               <div className={styles.answerBox}>
-                <h3 style={{ color: 'var(--accent)', marginBottom: '0.5rem' }}>Answer / Hint:</h3>
-                <p className={styles.questionText}>{activeQuestion.answer || "No specific answer was provided for this question."}</p>
+                <h3 style={{ color: 'var(--accent)', marginBottom: '0.5rem' }}>Answer:</h3>
+                <p className={styles.questionText} style={{ fontSize: '2.5rem' }}>{activeQuestion.answer || "No answer provided."}</p>
               </div>
             ) : (
-              <p className={styles.questionText}>{activeQuestion.text}</p>
+              <p className={styles.questionText} style={{ fontSize: '2.5rem' }}>{activeQuestion.text}</p>
+            )}
+
+            {/* Buzz-in + Typed Answers Panel */}
+            {activeRoomCode && sortedBuzzes.length > 0 && (
+              <div style={{ width: '100%', padding: '1.5rem', borderRadius: '16px', background: 'rgba(45,212,191,0.1)', border: '2px solid var(--accent)' }}>
+                <div style={{ fontWeight: 800, color: 'var(--accent)', marginBottom: '0.75rem', fontSize: '1.1rem' }}>🔔 Buzz Order:</div>
+                {buzzedStudentAnswers.map((b: any, i: number) => {
+                  const team = currentTeams.find(t => t.name === b.name || t.students.some((s: any) => s.name === b.name));
+                  return (
+                    <div key={i} style={{ 
+                      padding: '0.5rem 0', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '0.75rem',
+                      borderBottom: i < sortedBuzzes.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none'
+                    }}>
+                      <span style={{ 
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        width: '30px', height: '30px', borderRadius: '50%',
+                        background: i === 0 ? 'var(--accent)' : 'rgba(255,255,255,0.1)',
+                        color: i === 0 ? '#111' : 'rgba(255,255,255,0.5)',
+                        fontWeight: 900, fontSize: '0.9rem'
+                      }}>{i + 1}</span>
+                      <span style={{ fontWeight: i === 0 ? 900 : 400, color: i === 0 ? '#fff' : 'rgba(255,255,255,0.5)' }}>
+                        {b.name} {i === 0 && '🏆'}
+                      </span>
+                      {team && <span style={{ fontSize: '0.8rem', opacity: 0.4, background: 'rgba(255,255,255,0.05)', padding: '0.15rem 0.5rem', borderRadius: '6px' }}>Team: {team.name}</span>}
+                      {b.answered && b.lastAnswer && (
+                        <span style={{ marginLeft: 'auto', background: 'rgba(255,255,255,0.05)', padding: '0.3rem 0.8rem', borderRadius: '8px', fontSize: '1rem' }}>
+                          &ldquo;{b.lastAnswer}&rdquo;
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             )}
             
-            <div className={`${styles.timer} ${timeLeft <= 3 ? styles.timerDanger : ''}`}>
-              <Clock size={40} />
+            <div className={`${styles.timer} ${timeLeft <= 3 ? styles.timerDanger : ''}`} style={{ fontSize: '3rem' }}>
+              <Clock size={32} />
               <span>0:{timeLeft.toString().padStart(2, '0')}</span>
             </div>
             
-            <div className={styles.modalActions}>
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
               {!showAnswer && (
-                <button onClick={() => setShowAnswer(true)} className={styles.secondaryBtn} style={{ background: 'var(--panel)', color: 'white', borderColor: 'transparent' }}>
+                <button onClick={() => {
+                  setShowAnswer(true);
+                  if (activeRoomCode) {
+                    fetch("/api/room/action", {
+                      method: "POST", headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: {} })
+                    }).catch(() => {});
+                  }
+                }} style={{ padding: '1rem 2rem', fontSize: '1.3rem', background: '#2dd4bf', color: '#111', border: 'none', borderRadius: '12px', fontWeight: 800, cursor: 'pointer' }}>
                   Reveal Answer
                 </button>
               )}
-              <button onClick={() => closeQuestion(true)}>Done</button>
-              <button onClick={() => closeQuestion(false)} className={styles.secondaryBtn}>Cancel</button>
+              
+              {/* Manual Award: Give points to first buzzer's team */}
+              {firstBuzzerTeam && (
+                <button onClick={() => {
+                  updateTeamScore(firstBuzzerTeam.id, activeQuestion.points);
+                  setShowAnswer(true);
+                  if (activeRoomCode) {
+                    fetch("/api/room/action", {
+                      method: "POST", headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: {} })
+                    }).catch(() => {});
+                  }
+                }} style={{ padding: '1rem 2rem', fontSize: '1.3rem', background: '#22c55e', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 800, cursor: 'pointer' }}>
+                  ✅ Award {activeQuestion.points} to {firstBuzzer.name}
+                </button>
+              )}
+
+              <button onClick={() => closeQuestion(true)} style={{ padding: '1rem 2rem', fontSize: '1.3rem', background: 'var(--panel)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                Done (Close)
+              </button>
+              <button onClick={() => closeQuestion(false)} style={{ padding: '1rem 2rem', fontSize: '1.3rem', background: 'transparent', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', cursor: 'pointer' }}>
+                Cancel
+              </button>
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
