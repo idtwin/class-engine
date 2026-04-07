@@ -7,7 +7,7 @@
  *  "gemini"   → Google Gemini cloud API (requires apiKey)
  */
 
-export type LLMProvider = "lmstudio" | "ollama" | "gemini";
+export type LLMProvider = "lmstudio" | "ollama" | "gemini" | "groq";
 
 export interface LLMOptions {
   systemPrompt: string;
@@ -121,6 +121,39 @@ async function callGemini(apiKey: string, opts: LLMOptions): Promise<string> {
   return stripMarkdown(raw);
 }
 
+// ── Groq ─────────────────────────────────────────────────────────────────────
+async function callGroq(apiKey: string, opts: LLMOptions): Promise<string> {
+  const model = "llama-3.3-70b-versatile";
+
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: opts.systemPrompt },
+        { role: "user",   content: opts.userPrompt }
+      ],
+      temperature: opts.temperature ?? 0.9,
+      max_tokens: 4096,
+      response_format: { type: "json_object" },
+    }),
+    signal: AbortSignal.timeout(60_000),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Groq API error ${res.status}: ${err}`);
+  }
+
+  const data = await res.json();
+  const raw: string = data?.choices?.[0]?.message?.content ?? "";
+  return stripMarkdown(raw);
+}
+
 // ── Public entry point ────────────────────────────────────────────────────────
 export async function generateText(
   apiKey: string | undefined | null,
@@ -133,6 +166,13 @@ export async function generateText(
   }
   if (provider === "ollama") {
     return callOllama(opts);
+  }
+  if (provider === "groq") {
+    const groqKey = apiKey?.trim() || process.env.GROQ_API_KEY;
+    if (!groqKey || groqKey.length < 10) {
+      throw new Error("Groq API key is required. Set GROQ_API_KEY in .env.local or go to Dashboard → Settings.");
+    }
+    return callGroq(groqKey, opts);
   }
   // Gemini
   if (!apiKey || apiKey.trim().length < 10) {

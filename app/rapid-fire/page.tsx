@@ -51,6 +51,10 @@ export default function RapidFire() {
       }, 1000);
     } else if (timeLeft === 0 && timerActive) {
       setTimerActive(false);
+      // Auto-reveal when timer expires in MC mode
+      if (rfMode === "mc" && gameState === "PLAYING") {
+        handleReveal();
+      }
     }
     return () => clearInterval(interval);
   }, [timerActive, timeLeft]);

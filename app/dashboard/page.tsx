@@ -92,6 +92,18 @@ export default function Dashboard() {
               >
                 ✨ Gemini <span style={{ fontWeight: 400, fontSize: '0.8rem', opacity: 0.6, display: 'block' }}>Cloud · Fast · Key needed</span>
               </button>
+              <button
+                onClick={() => setLlmProvider('groq')}
+                style={{
+                  flex: 1, minWidth: '130px', padding: '0.9rem', borderRadius: '10px', border: '2px solid',
+                  borderColor: llmProvider === 'groq' ? '#f97316' : 'rgba(255,255,255,0.15)',
+                  background: llmProvider === 'groq' ? 'rgba(249,115,22,0.15)' : 'rgba(255,255,255,0.04)',
+                  color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '1rem',
+                  transition: 'all 0.2s'
+                }}
+              >
+                ⚡ Groq <span style={{ fontWeight: 400, fontSize: '0.8rem', opacity: 0.6, display: 'block' }}>Cloud · Ultra Fast · Free</span>
+              </button>
             </div>
           </div>
 
@@ -102,6 +114,15 @@ export default function Dashboard() {
               <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', marginBottom: '0.3rem' }}>Make sure LM Studio&apos;s local server is running:</p>
               <code style={{ background: 'rgba(255,255,255,0.08)', padding: '4px 10px', borderRadius: '6px', fontSize: '0.85rem', display: 'block', marginBottom: '0.5rem' }}>Developer tab → Start Server (port 1234)</code>
               <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Load your model in the top dropdown before generating.</p>
+            </div>
+          )}
+
+          {/* ── Groq info (only shown when Groq is selected) ── */}
+          {llmProvider === 'groq' && (
+            <div style={{ background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '10px', padding: '1rem' }}>
+              <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.4rem' }}>Using: Llama 3.3 70B via Groq Cloud</p>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', marginBottom: '0.3rem' }}>Ultra-fast inference powered by Groq LPU hardware.</p>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>API key configured in server environment — no setup needed.</p>
             </div>
           )}
 

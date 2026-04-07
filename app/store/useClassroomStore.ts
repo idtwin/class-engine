@@ -40,8 +40,8 @@ interface ClassroomState {
   submitFeedback: (type: "Too easy" | "Too hard" | "Low energy" | "High engagement") => void;
   geminiKey: string;
   setGeminiKey: (key: string) => void;
-  llmProvider: "gemini" | "ollama" | "lmstudio";
-  setLlmProvider: (p: "gemini" | "ollama" | "lmstudio") => void;
+  llmProvider: "gemini" | "ollama" | "lmstudio" | "groq";
+  setLlmProvider: (p: "gemini" | "ollama" | "lmstudio" | "groq") => void;
   ollamaModel: string;
   setOllamaModel: (m: string) => void;
   activeRoomCode: string | null;
