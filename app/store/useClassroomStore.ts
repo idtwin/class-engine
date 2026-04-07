@@ -48,6 +48,7 @@ interface ClassroomState {
   setActiveRoomCode: (code: string | null) => void;
   generateTeams: (classId: string, numberOfTeams: number) => void;
   updateTeamScore: (teamId: string, delta: number) => void;
+  setTeamScore: (teamId: string, score: number) => void;
   updateTeamName: (teamId: string, name: string) => void;
   resetTeamsState: () => void;
   moveStudentToTeam: (studentId: string, targetTeamId: string) => void;
@@ -188,6 +189,12 @@ export const useClassroomStore = create<ClassroomState>()(
       updateTeamScore: (teamId, delta) => set((state) => ({
         currentTeams: state.currentTeams.map(t => 
           t.id === teamId ? { ...t, score: t.score + delta } : t
+        )
+      })),
+
+      setTeamScore: (teamId, score) => set((state) => ({
+        currentTeams: state.currentTeams.map(t => 
+          t.id === teamId ? { ...t, score } : t
         )
       })),
 
