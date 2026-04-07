@@ -158,6 +158,34 @@ export default function PlayPage() {
   // Active Phase
   const me = room.students?.find((s: any) => s.id === studentId);
 
+  // === UNIVERSAL WAITING STATE: No question loaded yet ===
+  // Skip for passive games (hotseat, story) which don't need a question
+  const isPassiveGame = room.gameMode === "hotseat" || room.gameMode === "story";
+  if (!room.currentQuestion && !isPassiveGame) {
+    const gameModeLabels: Record<string, { emoji: string; label: string }> = {
+      fixit: { emoji: "🔧", label: "Fix It" },
+      oddoneout: { emoji: "🎯", label: "Odd One Out" },
+      rapidfire: { emoji: "⚡", label: "Rapid Fire" },
+      jeopardy: { emoji: "🏆", label: "Jeopardy" },
+      reveal: { emoji: "🖼️", label: "Picture Reveal" },
+      wyr: { emoji: "🤔", label: "Would You Rather" },
+    };
+    const modeInfo = gameModeLabels[room.gameMode] || { emoji: "🎮", label: "Game" };
+
+    return (
+      <div className={styles.screen} style={teamBgStyle}>
+        {renderTeamBanner()}
+        <div style={{ fontSize: '4rem', marginTop: myTeamInfo ? '3rem' : '0' }}>{modeInfo.emoji}</div>
+        <h2 style={{ marginBottom: '0.5rem' }}>{modeInfo.label}</h2>
+        <div className={styles.loadingPulse} />
+        <p style={{ opacity: 0.5, maxWidth: '80%', textAlign: 'center' }}>
+          Waiting for the teacher to load the next question...
+        </p>
+        <p style={{ opacity: 0.3, fontSize: '0.9rem' }}>Stay on this screen!</p>
+      </div>
+    );
+  }
+
   // === RAPID FIRE: MC Mode ===
   if (room.gameMode === "rapidfire" && room.currentQuestion?.options) {
     const isRevealed = room.answerRevealed;
@@ -235,16 +263,7 @@ export default function PlayPage() {
     );
   }
 
-  // === RAPID FIRE (MC): Question not loaded yet — show waiting state ===
-  if (room.gameMode === "rapidfire" && !room.currentQuestion) {
-    return (
-      <div className={styles.screen} style={teamBgStyle}>
-        {renderTeamBanner()}
-        <div className={styles.loadingPulse} />
-        <p style={{ opacity: 0.5, marginTop: myTeamInfo ? '3rem' : '0' }}>Waiting for next question...</p>
-      </div>
-    );
-  }
+
 
   // === BUZZER GAMES: Jeopardy, Rapid Fire (buzzer mode), Picture Reveal ===
   if (room.gameMode === "jeopardy" || room.gameMode === "rapidfire" || room.gameMode === "reveal") {
