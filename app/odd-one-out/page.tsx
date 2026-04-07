@@ -12,7 +12,7 @@ type Question = { level: string, words: string[], answer: string, hint: string }
 
 export default function OddOneOut() {
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, geminiKey, ollamaModel, llmProvider, activeRoomCode } = useClassroomStore();
+  const { currentTeams, updateTeamScore, geminiKey, ollamaModel, llmProvider, activeRoomCode } = useClassroomStore();
   
   const [topic, setTopic] = useState("");
   const [levelFilter, setLevelFilter] = useState("Mixed Level");
@@ -23,9 +23,48 @@ export default function OddOneOut() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [showHint, setShowHint] = useState(false);
+  const [showAnswer, setShowAnswer] = useState(false);
+  const [penalizeWrong, setPenalizeWrong] = useState(false);
+  const [pointsEarned, setPointsEarned] = useState<Record<string, number>>({});
 
-  // Elimination mode state tracks team IDs that are struct out
+  const [roomStudents, setRoomStudents] = useState<any[]>([]);
+  const [roomData, setRoomData] = useState<any>(null);
+
+  // Elimination mode state tracks team IDs that are struck out
   const [eliminatedTeams, setEliminatedTeams] = useState<Set<string>>(new Set());
+
+  // Push the first question when generated
+  useEffect(() => {
+    if (activeRoomCode && questions && currentIndex === 0) {
+       fetch("/api/room/action", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({
+            code: activeRoomCode,
+            action: "set_question",
+            payload: { question: questions[0] }
+         })
+       }).catch((e) => console.error("Sync Error", e));
+    }
+  }, [questions, activeRoomCode]);
+
+  // Poll for student responses
+  useEffect(() => {
+    if (!activeRoomCode) return;
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/room/get?code=${activeRoomCode}`);
+        if (res.ok) {
+          const data = await res.json();
+          setRoomData(data);
+          setRoomStudents(data.students || []);
+        }
+      } catch (e) {}
+    };
+    poll();
+    const id = setInterval(poll, 1500);
+    return () => clearInterval(id);
+  }, [activeRoomCode]);
 
   useEffect(() => setMounted(true), []);
 
@@ -40,6 +79,8 @@ export default function OddOneOut() {
     setCurrentIndex(0);
     setSelectedWord(null);
     setShowHint(false);
+    setShowAnswer(false);
+    setPointsEarned({});
     setEliminatedTeams(new Set());
 
     try {
@@ -65,6 +106,8 @@ export default function OddOneOut() {
       setCurrentIndex(c => c + 1);
       setSelectedWord(null);
       setShowHint(false);
+      setShowAnswer(false);
+      setPointsEarned({});
       // Push new words to Redis + clear answers
       if (activeRoomCode && questions[currentIndex + 1]) {
         fetch("/api/room/action", {
@@ -73,7 +116,7 @@ export default function OddOneOut() {
         }).then(() => {
           fetch("/api/room/action", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ code: activeRoomCode, action: "set_question", payload: { question: { words: questions[currentIndex + 1].words } } })
+            body: JSON.stringify({ code: activeRoomCode, action: "set_question", payload: { question: questions[currentIndex + 1] } })
           });
         }).catch(() => {});
       }
@@ -152,6 +195,10 @@ export default function OddOneOut() {
                 {m}
               </button>
             ))}
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '0.5rem 1rem', borderRadius: '8px' }}>
+              <input type="checkbox" id="penaltyModeOOO" checked={penalizeWrong} onChange={e => setPenalizeWrong(e.target.checked)} />
+              <label htmlFor="penaltyModeOOO" style={{ fontSize: '0.9rem', cursor: 'pointer', userSelect: 'none' }}>Penalty for Wrong Answers</label>
+            </div>
           </div>
 
           <div className={styles.questionMeta}>
@@ -166,39 +213,144 @@ export default function OddOneOut() {
 
           <div className={styles.wordsGrid}>
             {currentQ?.words.map((w, i) => {
-              const isSelected = selectedWord !== null;
+              const isSelected = selectedWord === w || (showAnswer && w === currentQ.answer);
               const isCorrectAnswer = w === currentQ.answer;
-              const isTargetClicked = selectedWord === w;
 
               let cardClass = styles.wordCard;
               if (isSelected) {
                 if (isCorrectAnswer) cardClass += ` ${styles.wordCorrect}`;
-                else if (isTargetClicked) cardClass += ` ${styles.wordWrong}`;
+                else cardClass += ` ${styles.wordWrong}`;
+              } else if (showAnswer && !isCorrectAnswer) {
+                // Dim the non-answers on reveal
+                cardClass += ` opacity-50`;
               }
 
               return (
-                <div key={i} className={cardClass} onClick={() => !isSelected && setSelectedWord(w)}>
+                <div key={i} className={cardClass} style={showAnswer && !isCorrectAnswer ? { opacity: 0.3 } : {}} onClick={() => !showAnswer && setSelectedWord(w)}>
                   {w}
                 </div>
               );
             })}
           </div>
 
-          {showHint && (
+          {(showHint || showAnswer) && (
              <div className={styles.hintBox}>
-                💡 {currentQ?.hint}
+                💡 <strong>Explanation:</strong> {currentQ?.hint}
              </div>
           )}
 
           <div className={styles.controlsRow}>
-            <button className={styles.genBtn} style={{ background: 'transparent', border: '1px solid var(--accent)', color: 'var(--accent)' }} onClick={() => setShowHint(true)} disabled={showHint || selectedWord !== null}>
+            <button className={styles.genBtn} style={{ background: 'transparent', border: '1px solid var(--accent)', color: 'var(--accent)' }} onClick={() => setShowHint(true)} disabled={showHint || showAnswer}>
               <Lightbulb size={20} /> Expose Hint
             </button>
             
-            <button className={styles.genBtn} onClick={nextQuestion} disabled={currentIndex === questions.length - 1} style={{ background: 'white', color: 'black' }}>
-              Next Set <ChevronRight size={20} />
-            </button>
+            {!showAnswer ? (
+               <button className={styles.genBtn} onClick={() => {
+                   setShowAnswer(true);
+                   if (activeRoomCode) {
+                     fetch("/api/room/action", {
+                       method: "POST", headers: { "Content-Type": "application/json" },
+                       body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: {} })
+                     }).catch(() => {});
+                   }
+
+                   // Scoring logic
+                   const answeredStudents = roomStudents.filter((s: any) => s.answered && s.lastAnswer);
+                   const correctAnswers: any[] = [];
+                   const wrongAnswers: any[] = [];
+                   
+                   answeredStudents.forEach((s: any) => {
+                      const isCorrect = currentQ && s.lastAnswer === currentQ.answer;
+                      if (isCorrect) correctAnswers.push(s);
+                      else wrongAnswers.push(s);
+                   });
+                   
+                   // Sort correct answers by speed
+                   correctAnswers.sort((a, b) => (a.answerTime || 0) - (b.answerTime || 0));
+                   
+                   const newPointsEarned: Record<string, number> = {};
+                   
+                   correctAnswers.forEach((s, idx) => {
+                      let pts = 100;
+                      if (idx === 0) pts = 500;
+                      else if (idx === 1) pts = 400;
+                      else if (idx === 2) pts = 300;
+                      else if (idx === 3) pts = 200;
+                      
+                      newPointsEarned[s.id] = pts;
+                      const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
+                      if (team) updateTeamScore(team.id, pts);
+                   });
+                   
+                   if (penalizeWrong) {
+                      wrongAnswers.forEach(s => {
+                          newPointsEarned[s.id] = -100;
+                          const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
+                          if (team) updateTeamScore(team.id, -100);
+                      });
+                   }
+                   
+                   setPointsEarned(newPointsEarned);
+               }} style={{ background: '#2dd4bf', color: '#111' }}>
+                 Reveal Answer
+               </button>
+            ) : (
+               <button className={styles.genBtn} onClick={nextQuestion} disabled={currentIndex === questions.length - 1} style={{ background: 'white', color: 'black' }}>
+                 Next Set <ChevronRight size={20} />
+               </button>
+            )}
           </div>
+
+          {!showAnswer && activeRoomCode && roomStudents.length > 0 && (
+            <div style={{ marginTop: '2rem', width: '100%', borderTop: '2px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem', textAlign: 'center' }}>
+              <h3 style={{ marginBottom: '1rem', color: 'var(--accent)' }}>🔒 Locked In: {roomStudents.filter((s:any) => s.answered).length} / {roomStudents.length}</h3>
+              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                {roomStudents.map((s: any, i: number) => (
+                  <div key={i} style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '8px',
+                    background: s.answered ? 'rgba(45,212,191,0.2)' : 'rgba(255,255,255,0.05)',
+                    border: `1px solid ${s.answered ? 'var(--accent)' : 'rgba(255,255,255,0.1)'}`,
+                    transition: 'all 0.2s ease',
+                    opacity: s.answered ? 1 : 0.5
+                  }}>
+                    {s.name} {s.answered && '✅'}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {showAnswer && activeRoomCode && roomStudents.filter((s: any) => s.answered).length > 0 && (
+            <div style={{ marginTop: '2rem', width: '100%', borderTop: '2px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem' }}>
+              <h3 style={{ textAlign: 'center', marginBottom: '1rem', color: 'var(--accent)' }}>📱 Student Responses</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '0.75rem' }}>
+                {roomStudents.filter((s: any) => s.answered).map((s: any, i: number) => {
+                  const isCorrect = currentQ && s.lastAnswer === currentQ.answer;
+                  const timeSeconds = (s.answerTime && roomData?.questionStartTime) ? ((s.answerTime - roomData.questionStartTime) / 1000).toFixed(1) + 's' : '';
+                  const pts = pointsEarned[s.id];
+
+                  return (
+                    <div key={i} style={{
+                      padding: '0.8rem 1rem',
+                      borderRadius: '10px',
+                      border: `2px solid ${isCorrect ? '#22c55e' : '#ef4444'}`,
+                      background: isCorrect ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                        <span style={{ fontWeight: 800 }}>{s.name} {isCorrect ? '✅' : '❌'}</span>
+                        <span style={{ fontSize: '0.8rem', opacity: 0.7, fontWeight: 700 }}>
+                          {pts !== undefined && <span style={{ color: pts > 0 ? '#22c55e' : '#ef4444', marginRight: '0.5rem', fontWeight: 900 }}>{pts > 0 ? `+${pts}` : pts} pts</span>}
+                          {timeSeconds}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>&ldquo;{s.lastAnswer}&rdquo;</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {activeMode === "Elimination" && currentTeams.length > 0 && (
             <div style={{ marginTop: '3rem', width: '100%', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '2rem' }}>
