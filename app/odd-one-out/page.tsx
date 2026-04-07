@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import styles from "./odd.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
 import Link from "next/link";
-import { ArrowLeft, Sparkles, Lightbulb, ChevronRight, Ban } from "lucide-react";
+import { ArrowLeft, Sparkles, Lightbulb, ChevronRight, Ban, Clock } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
 
 type Mode = "Classic" | "Debate" | "Elimination";
@@ -26,6 +26,8 @@ export default function OddOneOut() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [penalizeWrong, setPenalizeWrong] = useState(false);
   const [pointsEarned, setPointsEarned] = useState<Record<string, number>>({});
+  const [timeLeft, setTimeLeft] = useState(20);
+  const [timerActive, setTimerActive] = useState(false);
 
   const [roomStudents, setRoomStudents] = useState<any[]>([]);
   const [roomData, setRoomData] = useState<any>(null);
@@ -66,6 +68,18 @@ export default function OddOneOut() {
     return () => clearInterval(id);
   }, [activeRoomCode]);
 
+  // Timer countdown + auto-reveal
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (timerActive && timeLeft > 0) {
+      interval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+    } else if (timeLeft === 0 && timerActive) {
+      setTimerActive(false);
+      if (!showAnswer) handleReveal();
+    }
+    return () => clearInterval(interval);
+  }, [timerActive, timeLeft]);
+
   useEffect(() => setMounted(true), []);
 
   if (!mounted) return null;
@@ -92,6 +106,8 @@ export default function OddOneOut() {
       const data = await res.json();
       if (res.ok && data.questions) {
         setQuestions(data.questions);
+        setTimeLeft(20);
+        setTimerActive(true);
       } else {
         alert("Error: " + (data.error || "Unknown Error"));
       }
@@ -101,6 +117,73 @@ export default function OddOneOut() {
     setIsGenerating(false);
   };
 
+  const handleReveal = async () => {
+    setTimerActive(false);
+    setShowAnswer(true);
+
+    if (activeRoomCode) {
+      await fetch("/api/room/action", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: {} })
+      }).catch(() => {});
+
+      // Fetch fresh data for accurate scoring
+      try {
+        const res = await fetch(`/api/room/get?code=${activeRoomCode}`);
+        if (res.ok) {
+          const freshData = await res.json();
+          const freshStudents = freshData.students || [];
+          setRoomStudents(freshStudents);
+          setRoomData(freshData);
+          scoreStudents(freshStudents, freshData);
+        }
+      } catch (e) {
+        console.error("Failed to fetch fresh data for scoring", e);
+        scoreStudents(roomStudents, roomData);
+      }
+    } else {
+      scoreStudents(roomStudents, roomData);
+    }
+  };
+
+  const scoreStudents = (students: any[], data: any) => {
+    const answeredStudents = students.filter((s: any) => s.answered && s.lastAnswer);
+    const correctAnswers: any[] = [];
+    const wrongAnswers: any[] = [];
+    
+    answeredStudents.forEach((s: any) => {
+      const isCorrect = currentQ && s.lastAnswer === currentQ.answer;
+      if (isCorrect) correctAnswers.push(s);
+      else wrongAnswers.push(s);
+    });
+    
+    correctAnswers.sort((a: any, b: any) => (a.answerTime || 0) - (b.answerTime || 0));
+    
+    const newPointsEarned: Record<string, number> = {};
+    
+    correctAnswers.forEach((s: any, idx: number) => {
+      let pts = 100;
+      if (idx === 0) pts = 500;
+      else if (idx === 1) pts = 400;
+      else if (idx === 2) pts = 300;
+      else if (idx === 3) pts = 200;
+      
+      newPointsEarned[s.id] = pts;
+      const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
+      if (team) updateTeamScore(team.id, pts);
+    });
+    
+    if (penalizeWrong) {
+      wrongAnswers.forEach((s: any) => {
+        newPointsEarned[s.id] = -100;
+        const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
+        if (team) updateTeamScore(team.id, -100);
+      });
+    }
+    
+    setPointsEarned(newPointsEarned);
+  };
+
   const nextQuestion = () => {
     if (questions && currentIndex < questions.length - 1) {
       setCurrentIndex(c => c + 1);
@@ -108,6 +191,8 @@ export default function OddOneOut() {
       setShowHint(false);
       setShowAnswer(false);
       setPointsEarned({});
+      setTimeLeft(20);
+      setTimerActive(true);
       // Push new words to Redis + clear answers
       if (activeRoomCode && questions[currentIndex + 1]) {
         fetch("/api/room/action", {
@@ -244,54 +329,21 @@ export default function OddOneOut() {
               <Lightbulb size={20} /> Expose Hint
             </button>
             
-            {!showAnswer ? (
-               <button className={styles.genBtn} onClick={() => {
-                   setShowAnswer(true);
-                   if (activeRoomCode) {
-                     fetch("/api/room/action", {
-                       method: "POST", headers: { "Content-Type": "application/json" },
-                       body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: {} })
-                     }).catch(() => {});
-                   }
+            {/* Timer Display */}
+            {timerActive && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                fontSize: '2rem', fontWeight: 900,
+                color: timeLeft <= 5 ? '#ef4444' : 'var(--accent)',
+                animation: timeLeft <= 5 ? 'pulse 0.5s infinite' : 'none'
+              }}>
+                <Clock size={28} />
+                <span>0:{timeLeft.toString().padStart(2, '0')}</span>
+              </div>
+            )}
 
-                   // Scoring logic
-                   const answeredStudents = roomStudents.filter((s: any) => s.answered && s.lastAnswer);
-                   const correctAnswers: any[] = [];
-                   const wrongAnswers: any[] = [];
-                   
-                   answeredStudents.forEach((s: any) => {
-                      const isCorrect = currentQ && s.lastAnswer === currentQ.answer;
-                      if (isCorrect) correctAnswers.push(s);
-                      else wrongAnswers.push(s);
-                   });
-                   
-                   // Sort correct answers by speed
-                   correctAnswers.sort((a, b) => (a.answerTime || 0) - (b.answerTime || 0));
-                   
-                   const newPointsEarned: Record<string, number> = {};
-                   
-                   correctAnswers.forEach((s, idx) => {
-                      let pts = 100;
-                      if (idx === 0) pts = 500;
-                      else if (idx === 1) pts = 400;
-                      else if (idx === 2) pts = 300;
-                      else if (idx === 3) pts = 200;
-                      
-                      newPointsEarned[s.id] = pts;
-                      const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
-                      if (team) updateTeamScore(team.id, pts);
-                   });
-                   
-                   if (penalizeWrong) {
-                      wrongAnswers.forEach(s => {
-                          newPointsEarned[s.id] = -100;
-                          const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
-                          if (team) updateTeamScore(team.id, -100);
-                      });
-                   }
-                   
-                   setPointsEarned(newPointsEarned);
-               }} style={{ background: '#2dd4bf', color: '#111' }}>
+            {!showAnswer ? (
+               <button className={styles.genBtn} onClick={handleReveal} style={{ background: '#2dd4bf', color: '#111' }}>
                  Reveal Answer
                </button>
             ) : (
