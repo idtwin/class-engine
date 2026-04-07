@@ -27,8 +27,9 @@ Rules:
 
     const userPrompt = `Topic: ${topic}\nLevel: ${level}\nRandom entropy: ${Math.random()}\nGenerate JSON now!`;
 
-    const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.95, ollamaModel, provider });
+    const parsed: any = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.95, ollamaModel, provider });
 
+    // Reveal has multi-key response {imageAnswer, imagePrompt, questions} — won't be auto-unwrapped
     return NextResponse.json(parsed);
   } catch (error: any) {
     console.error("Reveal Gen Error:", error);

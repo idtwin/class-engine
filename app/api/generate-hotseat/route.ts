@@ -26,9 +26,11 @@ Rules:
 
     const userPrompt = `Topic: ${topic}\nLevel: ${level}\nGenerate JSON now!`;
 
-    const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.8, ollamaModel, provider });
+    const parsed: any = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.8, ollamaModel, provider });
 
-    return NextResponse.json(parsed);
+    // Normalize: auto-unwrap may return array directly or {words:[...]}
+    const words = Array.isArray(parsed) ? parsed : (parsed.words || parsed);
+    return NextResponse.json({ words });
   } catch (error: any) {
     console.error("HotSeat Gen Error:", error);
     return NextResponse.json({ error: error.message || "An unexpected error occurred." }, { status: 500 });

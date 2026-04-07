@@ -27,9 +27,10 @@ Rules:
 
     const userPrompt = `Topic: ${topic}\nLevel: ${level}\nGenerate JSON now!`;
 
-    const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.9, ollamaModel, provider });
+    const parsed: any = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.9, ollamaModel, provider });
 
-    return NextResponse.json(parsed);
+    const prompts = Array.isArray(parsed) ? parsed : (parsed.prompts || parsed);
+    return NextResponse.json({ prompts });
   } catch (error: any) {
     console.error("WYR Gen Error:", error);
     return NextResponse.json({ error: error.message || "An error occurred." }, { status: 500 });

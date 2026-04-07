@@ -25,8 +25,9 @@ Rules:
 
     const userPrompt = `Topic: ${topic}\nLevel: ${level}\nGenerate JSON now!`;
 
-    const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.9, ollamaModel, provider });
+    const parsed: any = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.9, ollamaModel, provider });
 
+    // Story has multi-key response {starter, rounds} — won't be auto-unwrapped
     return NextResponse.json(parsed);
   } catch (error: any) {
     console.error("Story Gen Error:", error);
