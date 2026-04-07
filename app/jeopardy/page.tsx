@@ -107,7 +107,7 @@ export default function GameBoard() {
   if (!mounted) return null;
 
   const handleGenerate = async () => {
-    if (!geminiKey) return alert("Please set your Gemini API key in the Dashboard Settings first!");
+    if (llmProvider === 'gemini' && !geminiKey) return alert("Please set your Gemini API key in the Dashboard Settings first!");
     if (!topic) return alert("Please enter a topic!");
     
     setIsGenerating(true);

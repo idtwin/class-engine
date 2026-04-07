@@ -52,7 +52,7 @@ export default function WouldYouRatherMode() {
   if (!mounted) return null;
 
   const handleGenerate = async () => {
-    if (!geminiKey) return alert("Please set your Gemini API key from Dashboard Settings!");
+    if (llmProvider === 'gemini' && !geminiKey) return alert("Please set your Gemini API key from Dashboard Settings!");
     if (!topic) return alert("Please enter a topic!");
     
     setIsGenerating(true);

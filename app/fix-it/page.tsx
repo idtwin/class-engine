@@ -75,7 +75,7 @@ export default function FixIt() {
   if (!mounted) return null;
 
   const handleGenerate = async () => {
-    if (!geminiKey) return alert("Please set your Gemini API key in Dashboard Settings!");
+    if (llmProvider === 'gemini' && !geminiKey) return alert("Please set your Gemini API key in Dashboard Settings!");
     if (!topic) return alert("Please enter a theme/topic!");
     
     setIsGenerating(true);

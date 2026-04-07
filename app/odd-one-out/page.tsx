@@ -10,6 +10,16 @@ import MultiplayerHost from "../components/MultiplayerHost";
 type Mode = "Classic" | "Debate" | "Elimination";
 type Question = { level: string, words: string[], answer: string, hint: string };
 
+// Fisher-Yates shuffle
+function shuffleArray<T>(arr: T[]): T[] {
+  const shuffled = [...arr];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export default function OddOneOut() {
   const [mounted, setMounted] = useState(false);
   const { currentTeams, updateTeamScore, geminiKey, ollamaModel, llmProvider, activeRoomCode } = useClassroomStore();
@@ -35,16 +45,18 @@ export default function OddOneOut() {
   // Elimination mode state tracks team IDs that are struck out
   const [eliminatedTeams, setEliminatedTeams] = useState<Set<string>>(new Set());
 
-  // Push the first question when generated
+  // Push the first question when generated (shuffle words, strip answer for students)
   useEffect(() => {
     if (activeRoomCode && questions && currentIndex === 0) {
+       const q = questions[0];
+       const studentQ = { ...q, words: shuffleArray(q.words), answer: undefined, hint: undefined };
        fetch("/api/room/action", {
          method: "POST",
          headers: { "Content-Type": "application/json" },
          body: JSON.stringify({
             code: activeRoomCode,
             action: "set_question",
-            payload: { question: questions[0] }
+            payload: { question: studentQ }
          })
        }).catch((e) => console.error("Sync Error", e));
     }
@@ -68,6 +80,25 @@ export default function OddOneOut() {
     return () => clearInterval(id);
   }, [activeRoomCode]);
 
+  // Auto-reveal when all teams have answered
+  useEffect(() => {
+    if (!activeRoomCode || !currentQ || showAnswer) return;
+    if (roomStudents.length === 0) return;
+    
+    // Get unique team IDs from connected students
+    const teamIds = new Set(roomStudents.map((s: any) => s.teamId).filter(Boolean));
+    if (teamIds.size === 0) return;
+    
+    // Check if every team has at least one answered student
+    const allTeamsAnswered = [...teamIds].every(teamId => 
+      roomStudents.some((s: any) => s.teamId === teamId && s.answered)
+    );
+    
+    if (allTeamsAnswered) {
+      handleReveal();
+    }
+  }, [roomStudents, showAnswer]);
+
   // Timer countdown + auto-reveal
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -85,7 +116,7 @@ export default function OddOneOut() {
   if (!mounted) return null;
 
   const handleGenerate = async () => {
-    if (!geminiKey) return alert("Please set your Gemini API key in Dashboard Settings!");
+    if (llmProvider === 'gemini' && !geminiKey) return alert("Please set your Gemini API key in Dashboard Settings!");
     if (!topic) return alert("Please enter a topic!");
     
     setIsGenerating(true);
@@ -193,15 +224,17 @@ export default function OddOneOut() {
       setPointsEarned({});
       setTimeLeft(20);
       setTimerActive(true);
-      // Push new words to Redis + clear answers
+      // Push new words to Redis + clear answers (shuffle & strip answer)
       if (activeRoomCode && questions[currentIndex + 1]) {
+        const nextQ = questions[currentIndex + 1];
+        const studentQ = { ...nextQ, words: shuffleArray(nextQ.words), answer: undefined, hint: undefined };
         fetch("/api/room/action", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ code: activeRoomCode, action: "clear_answers", payload: {} })
         }).then(() => {
           fetch("/api/room/action", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ code: activeRoomCode, action: "set_question", payload: { question: questions[currentIndex + 1] } })
+            body: JSON.stringify({ code: activeRoomCode, action: "set_question", payload: { question: studentQ } })
           });
         }).catch(() => {});
       }
