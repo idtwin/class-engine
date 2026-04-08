@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import styles from "./games.module.css";
-import { ArrowLeft, LayoutGrid, Zap, Image as ImageIcon, MessageSquare, BookOpen, Flame, HelpCircle, Wrench } from "lucide-react";
+import { ArrowLeft, LayoutGrid, Zap, Image as ImageIcon, MessageSquare, BookOpen, Flame, HelpCircle, Wrench, Link2 } from "lucide-react";
 
 export default function GamesHub() {
   const games = [
@@ -61,6 +61,13 @@ export default function GamesHub() {
       href: "/story",
       icon: <BookOpen size={28} />,
       color: "#32CD32" 
+    },
+    {
+      title: "Chain Reaction",
+      desc: "Fill in compound word chains or race in a last-letter speed round. Letter hints reveal on wrong answers!",
+      href: "/chain-reaction",
+      icon: <Link2 size={28} />,
+      color: "#00CED1" 
     }
   ];
 

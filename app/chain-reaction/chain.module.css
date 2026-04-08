@@ -1,0 +1,436 @@
+.container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  min-height: 100vh;
+  padding-bottom: 140px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.iconBtn {
+  background: var(--panel);
+  color: var(--foreground);
+  padding: 0.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+}
+
+/* ── Setup ── */
+.setupContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+.setupPanel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.modeSelect {
+  display: flex;
+  gap: 1rem;
+}
+
+.modeBtn {
+  flex: 1;
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 2px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.03);
+  color: white;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  font-size: 1rem;
+}
+
+.modeBtn:hover {
+  border-color: rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.06);
+}
+
+.modeBtnActive {
+  border-color: #00CED1 !important;
+  background: rgba(0,206,209,0.12) !important;
+  box-shadow: 0 0 20px rgba(0,206,209,0.15);
+}
+
+.modeBtnTitle {
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin-bottom: 0.3rem;
+}
+
+.modeBtnDesc {
+  font-size: 0.85rem;
+  opacity: 0.6;
+}
+
+.input {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  background: rgba(0,0,0,0.5);
+  color: white;
+  font-size: 1.15rem;
+}
+
+.input:focus { outline: 2px solid #00CED1; }
+
+.select {
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  background: rgba(0,0,0,0.5);
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.btn {
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  border: none;
+  background: #00CED1;
+  color: #111;
+  font-weight: 800;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,206,209,0.4); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.spin { animation: spin 1.5s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* ── Chain Puzzle Mode ── */
+.chainArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  width: 100%;
+}
+
+.chainMeta {
+  font-size: 1rem;
+  opacity: 0.5;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.chainTrack {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+
+.chainNode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 120px;
+  position: relative;
+}
+
+.nodeCircle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  border: 3px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.03);
+  color: white;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  text-align: center;
+  padding: 0.5rem;
+  line-height: 1.2;
+}
+
+.nodeRevealed {
+  border-color: #00CED1;
+  background: rgba(0,206,209,0.15);
+  color: #00CED1;
+  text-shadow: 0 0 10px rgba(0,206,209,0.4);
+}
+
+.nodeActive {
+  border-color: #FFD700;
+  box-shadow: 0 0 25px rgba(255,215,0,0.3);
+  animation: activeGlow 1.5s ease-in-out infinite;
+}
+
+.nodeFound {
+  animation: nodeReveal 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.chainLink {
+  width: 40px;
+  height: 3px;
+  background: rgba(255,255,255,0.1);
+  position: relative;
+}
+
+.chainLinkRevealed {
+  background: linear-gradient(90deg, #00CED1, #2dd4bf);
+  box-shadow: 0 0 8px rgba(0,206,209,0.3);
+}
+
+.letterBlanks {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: rgba(255,255,255,0.4);
+  font-family: monospace;
+}
+
+.letterRevealed {
+  color: #FFD700;
+}
+
+.pointsBadge {
+  font-size: 0.75rem;
+  opacity: 0.5;
+  font-weight: 600;
+}
+
+.connectionLabel {
+  font-size: 0.7rem;
+  color: rgba(0,206,209,0.7);
+  position: absolute;
+  top: -18px;
+  white-space: nowrap;
+}
+
+/* ── Input Area ── */
+.guessArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 500px;
+}
+
+.turnBadge {
+  padding: 0.6rem 1.5rem;
+  border-radius: 50px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  border: 2px solid;
+}
+
+.guessRow {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.guessInput {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  border-radius: 50px;
+  border: 2px solid rgba(255,255,255,0.15);
+  background: rgba(0,0,0,0.4);
+  color: white;
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+
+.guessInput:focus {
+  outline: none;
+  border-color: #00CED1;
+  box-shadow: 0 0 15px rgba(0,206,209,0.2);
+}
+
+.checkBtn {
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  border: none;
+  background: #00CED1;
+  color: #111;
+  font-weight: 900;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.checkBtn:hover { box-shadow: 0 4px 15px rgba(0,206,209,0.4); }
+
+/* ── Speed Chain ── */
+.speedArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  width: 100%;
+}
+
+.categoryBadge {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #00CED1;
+  text-align: center;
+}
+
+.wordChain {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  max-width: 900px;
+}
+
+.wordBubble {
+  padding: 0.6rem 1.2rem;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 1rem;
+  border: 2px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wordBubbleLatest {
+  border-color: #00CED1;
+  background: rgba(0,206,209,0.15);
+  animation: nodeReveal 0.3s ease-out;
+}
+
+.lastLetter {
+  font-weight: 900;
+  color: #FFD700;
+  font-size: 1.4rem;
+}
+
+.strikeRow {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.strikeCard {
+  padding: 0.8rem 1.5rem;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  text-align: center;
+  min-width: 120px;
+}
+
+.strikes {
+  font-size: 1.2rem;
+  margin-top: 0.3rem;
+  letter-spacing: 0.3em;
+}
+
+/* ── Controls ── */
+.controlRow {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.controlBtn {
+  padding: 0.8rem 1.5rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: transparent;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.controlBtn:hover {
+  border-color: rgba(255,255,255,0.4);
+  color: white;
+}
+
+/* ── Feedback Flash ── */
+.feedbackCorrect {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 4rem;
+  font-weight: 900;
+  color: #22c55e;
+  text-shadow: 0 0 40px rgba(34,197,94,0.5);
+  z-index: 100;
+  animation: feedbackFade 1s ease-out forwards;
+  pointer-events: none;
+}
+
+.feedbackWrong {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 3rem;
+  font-weight: 900;
+  color: #ef4444;
+  text-shadow: 0 0 30px rgba(239,68,68,0.5);
+  z-index: 100;
+  animation: feedbackFade 1.2s ease-out forwards;
+  pointer-events: none;
+}
+
+/* ── Animations ── */
+@keyframes activeGlow {
+  0%, 100% { box-shadow: 0 0 25px rgba(255,215,0,0.3); }
+  50% { box-shadow: 0 0 40px rgba(255,215,0,0.5); }
+}
+
+@keyframes nodeReveal {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes feedbackFade {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+  30% { transform: translate(-50%, -50%) scale(1.1); }
+  100% { opacity: 0; transform: translate(-50%, -60%) scale(1); }
+}
