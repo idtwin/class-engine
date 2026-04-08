@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [newClassName, setNewClassName] = useState("");
   const [newClassCategory, setNewClassCategory] = useState("General");
   const [newFolderName, setNewFolderName] = useState("");
+  const [rosterOpen, setRosterOpen] = useState(false);
 
   const activeClass = classes.find(c => c.id === activeClassId);
 
@@ -341,75 +342,87 @@ export default function Dashboard() {
       </div>
 
       <div className={styles.studentsSection}>
-        <h2>Roster ({activeClass.students.length})</h2>
-        <div className={styles.addStudentBar}>
-          <input 
-            type="text" 
-            value={newStudentName} 
-            onChange={(e) => setNewStudentName(e.target.value)}
-            onPaste={(e) => {
-              const text = e.clipboardData.getData("text");
-              if (text.includes("\n")) {
-                e.preventDefault();
-                const names = text.split(/\r?\n/).map(n => n.trim()).filter(n => n.length > 0);
-                if (names.length > 0) {
-                  bulkAddStudents(activeClass.id, names);
-                }
-                setNewStudentName("");
-              }
-            }}
-            placeholder="Student Name (paste from Excel)..." 
-            className={styles.input}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && newStudentName.trim()) {
-                addStudent(activeClass.id, newStudentName.trim());
-                setNewStudentName("");
-              }
-            }}
-          />
-          <button onClick={() => {
-            if (newStudentName.trim()) {
-              addStudent(activeClass.id, newStudentName.trim());
-              setNewStudentName("");
-            }
-          }}>Add</button>
+        <div 
+          className={styles.rosterHeader}
+          onClick={() => setRosterOpen(prev => !prev)}
+          style={{ cursor: 'pointer', userSelect: 'none' }}
+        >
+          <h2>Roster ({activeClass.students.length})</h2>
+          <span className={styles.collapseIcon} style={{ transform: rosterOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
         </div>
-
-        <div className={styles.studentList}>
-          {activeClass.students.map(student => (
-            <div key={student.id} className={styles.studentCard}>
+        
+        {rosterOpen && (
+          <>
+            <div className={styles.addStudentBar}>
               <input 
-                value={student.name}
-                onChange={e => updateStudent(activeClass.id, student.id, { name: e.target.value })}
-                className={styles.studentNameInput}
+                type="text" 
+                value={newStudentName} 
+                onChange={(e) => setNewStudentName(e.target.value)}
+                onPaste={(e) => {
+                  const text = e.clipboardData.getData("text");
+                  if (text.includes("\n")) {
+                    e.preventDefault();
+                    const names = text.split(/\r?\n/).map(n => n.trim()).filter(n => n.length > 0);
+                    if (names.length > 0) {
+                      bulkAddStudents(activeClass.id, names);
+                    }
+                    setNewStudentName("");
+                  }
+                }}
+                placeholder="Student Name (paste from Excel)..." 
+                className={styles.input}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && newStudentName.trim()) {
+                    addStudent(activeClass.id, newStudentName.trim());
+                    setNewStudentName("");
+                  }
+                }}
               />
-              <div className={styles.tags}>
-                <label>English Fluency
-                  <select value={student.level} onChange={(e) => updateStudent(activeClass.id, student.id, { level: e.target.value as Level })}>
-                    <option value="Low">Low Lvl</option>
-                    <option value="Mid">Mid Lvl</option>
-                    <option value="High">High Lvl</option>
-                  </select>
-                </label>
-                <label>Energy Level
-                  <select value={student.energy} onChange={(e) => updateStudent(activeClass.id, student.id, { energy: e.target.value as Energy })}>
-                    <option value="Passive">Passive</option>
-                    <option value="Normal">Normal</option>
-                    <option value="Active">Active</option>
-                  </select>
-                </label>
-                <label>Confidence & Output
-                  <select value={student.confidence} onChange={(e) => updateStudent(activeClass.id, student.id, { confidence: e.target.value as Level })}>
-                    <option value="Low">Low Conf</option>
-                    <option value="Mid">Mid Conf</option>
-                    <option value="High">High Conf</option>
-                  </select>
-                </label>
-                <button className={styles.removeBtn} onClick={() => removeStudent(activeClass.id, student.id)}>X</button>
-              </div>
+              <button onClick={() => {
+                if (newStudentName.trim()) {
+                  addStudent(activeClass.id, newStudentName.trim());
+                  setNewStudentName("");
+                }
+              }}>Add</button>
             </div>
-          ))}
-        </div>
+
+            <div className={styles.studentList}>
+              {activeClass.students.map(student => (
+                <div key={student.id} className={styles.studentCard}>
+                  <input 
+                    value={student.name}
+                    onChange={e => updateStudent(activeClass.id, student.id, { name: e.target.value })}
+                    className={styles.studentNameInput}
+                  />
+                  <div className={styles.tags}>
+                    <label>English Fluency
+                      <select value={student.level} onChange={(e) => updateStudent(activeClass.id, student.id, { level: e.target.value as Level })}>
+                        <option value="Low">Low Lvl</option>
+                        <option value="Mid">Mid Lvl</option>
+                        <option value="High">High Lvl</option>
+                      </select>
+                    </label>
+                    <label>Energy Level
+                      <select value={student.energy} onChange={(e) => updateStudent(activeClass.id, student.id, { energy: e.target.value as Energy })}>
+                        <option value="Passive">Passive</option>
+                        <option value="Normal">Normal</option>
+                        <option value="Active">Active</option>
+                      </select>
+                    </label>
+                    <label>Confidence & Output
+                      <select value={student.confidence} onChange={(e) => updateStudent(activeClass.id, student.id, { confidence: e.target.value as Level })}>
+                        <option value="Low">Low Conf</option>
+                        <option value="Mid">Mid Conf</option>
+                        <option value="High">High Conf</option>
+                      </select>
+                    </label>
+                    <button className={styles.removeBtn} onClick={() => removeStudent(activeClass.id, student.id)}>X</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {settingsModal}

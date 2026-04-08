@@ -98,6 +98,26 @@
   margin-top: 2rem;
 }
 
+.rosterHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 1.2rem;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  transition: background 0.2s;
+}
+
+.rosterHeader:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.collapseIcon {
+  font-size: 1.2rem;
+  color: rgba(255,255,255,0.5);
+}
+
 .addStudentBar {
   display: flex;
   gap: 1rem;
