@@ -21,7 +21,7 @@ export default function Dashboard() {
   const activeClass = classes.find(c => c.id === activeClassId);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const { geminiKey, setGeminiKey, llmProvider, setLlmProvider, ollamaModel, setOllamaModel } = useClassroomStore();
+  const { geminiKey, setGeminiKey, llmProvider, setLlmProvider, ollamaModel, setOllamaModel, playMode, setPlayMode } = useClassroomStore();
 
   const insights = useMemo(() => {
     if (!activeClass || activeClass.students.length === 0) return { predominantLevel: "Unknown", predominantEnergy: "Unknown", suggestion: "Add students to see insights." };
@@ -52,6 +52,37 @@ export default function Dashboard() {
       <div className={styles.modal}>
         <h2 style={{ color: 'var(--accent)' }}>System Settings</h2>
         <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left' }}>
+
+          {/* ── Play Mode Toggle ── */}
+          <div>
+            <label style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.7)', display: 'block', marginBottom: '0.75rem' }}>Play Mode</label>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => setPlayMode('projector')}
+                style={{
+                  flex: 1, padding: '1rem', borderRadius: '12px', border: '2px solid',
+                  borderColor: playMode === 'projector' ? '#2dd4bf' : 'rgba(255,255,255,0.15)',
+                  background: playMode === 'projector' ? 'rgba(45,212,191,0.15)' : 'rgba(255,255,255,0.04)',
+                  color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '1.1rem',
+                  transition: 'all 0.2s'
+                }}
+              >
+                📺 Projector <span style={{ fontWeight: 400, fontSize: '0.8rem', opacity: 0.6, display: 'block' }}>No phones needed</span>
+              </button>
+              <button
+                onClick={() => setPlayMode('phone')}
+                style={{
+                  flex: 1, padding: '1rem', borderRadius: '12px', border: '2px solid',
+                  borderColor: playMode === 'phone' ? '#4d9fff' : 'rgba(255,255,255,0.15)',
+                  background: playMode === 'phone' ? 'rgba(77,159,255,0.15)' : 'rgba(255,255,255,0.04)',
+                  color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '1.1rem',
+                  transition: 'all 0.2s'
+                }}
+              >
+                📱 Phone <span style={{ fontWeight: 400, fontSize: '0.8rem', opacity: 0.6, display: 'block' }}>Students join via code</span>
+              </button>
+            </div>
+          </div>
 
           {/* ── LLM Provider Toggle ── */}
           <div>

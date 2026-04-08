@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Play, Zap, FastForward, Loader2, Eye, ChevronRight } from "lucide-react";
 import styles from "./rapid-fire.module.css";
 import MultiplayerHost from "../components/MultiplayerHost";
+import GameTimer from "../components/GameTimer";
 
 interface RapidFireQuestion {
   text: string;
@@ -38,6 +39,7 @@ export default function RapidFire() {
 
   const [penalizeWrong, setPenalizeWrong] = useState(false);
   const [pointsEarned, setPointsEarned] = useState<Record<string, number>>({});
+  const [showTimesUp, setShowTimesUp] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -51,10 +53,9 @@ export default function RapidFire() {
       }, 1000);
     } else if (timeLeft === 0 && timerActive) {
       setTimerActive(false);
-      // Auto-reveal when timer expires in MC mode
-      if (rfMode === "mc" && gameState === "PLAYING") {
-        handleReveal();
-      }
+      // Show TIME'S UP animation — do NOT auto-reveal
+      setShowTimesUp(true);
+      setTimeout(() => setShowTimesUp(false), 3000);
     }
     return () => clearInterval(interval);
   }, [timerActive, timeLeft]);
@@ -178,6 +179,7 @@ export default function RapidFire() {
 
   const handleReveal = async () => {
     setTimerActive(false);
+    setShowTimesUp(false);
     setGameState("REVEALED");
 
     if (activeRoomCode) {
@@ -488,11 +490,8 @@ export default function RapidFire() {
             )}
           </div>
 
-          <div className={styles.timerWrapper}>
-            <div className={styles.timerBarContainer}>
-               <div className={styles.timerBar} style={{ width: `${(timeLeft / timerMax) * 100}%` }}></div>
-            </div>
-            <div className={styles.timerNumber}>{timeLeft}s</div>
+          <div style={{ display: 'flex', justifyContent: 'center', margin: '1rem 0' }}>
+            <GameTimer timeLeft={timeLeft} totalTime={timerMax} showTimesUp={showTimesUp} />
           </div>
 
           <div className={styles.teacherControls} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginTop: '2rem' }}>

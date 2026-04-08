@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import styles from "./odd.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
 import Link from "next/link";
-import { ArrowLeft, Sparkles, Lightbulb, ChevronRight, Ban, Clock } from "lucide-react";
+import { ArrowLeft, Sparkles, Lightbulb, ChevronRight, Ban } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
+import GameTimer from "../components/GameTimer";
 
 type Mode = "Classic" | "Debate" | "Elimination";
 type Question = { level: string, words: string[], answer: string, hint: string };
@@ -38,6 +39,7 @@ export default function OddOneOut() {
   const [pointsEarned, setPointsEarned] = useState<Record<string, number>>({});
   const [timeLeft, setTimeLeft] = useState(20);
   const [timerActive, setTimerActive] = useState(false);
+  const [showTimesUp, setShowTimesUp] = useState(false);
 
   const [roomStudents, setRoomStudents] = useState<any[]>([]);
   const [roomData, setRoomData] = useState<any>(null);
@@ -99,14 +101,15 @@ export default function OddOneOut() {
     }
   }, [roomStudents, showAnswer]);
 
-  // Timer countdown + auto-reveal
+  // Timer countdown — show TIME'S UP but do NOT auto-reveal
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (timerActive && timeLeft > 0) {
       interval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
     } else if (timeLeft === 0 && timerActive) {
       setTimerActive(false);
-      if (!showAnswer) handleReveal();
+      setShowTimesUp(true);
+      setTimeout(() => setShowTimesUp(false), 3000);
     }
     return () => clearInterval(interval);
   }, [timerActive, timeLeft]);
@@ -150,6 +153,7 @@ export default function OddOneOut() {
 
   const handleReveal = async () => {
     setTimerActive(false);
+    setShowTimesUp(false);
     setShowAnswer(true);
 
     if (activeRoomCode) {
@@ -364,15 +368,10 @@ export default function OddOneOut() {
             
             {/* Timer Display */}
             {timerActive && (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '0.5rem',
-                fontSize: '2rem', fontWeight: 900,
-                color: timeLeft <= 5 ? '#ef4444' : 'var(--accent)',
-                animation: timeLeft <= 5 ? 'pulse 0.5s infinite' : 'none'
-              }}>
-                <Clock size={28} />
-                <span>0:{timeLeft.toString().padStart(2, '0')}</span>
-              </div>
+              <GameTimer timeLeft={timeLeft} totalTime={20} showTimesUp={showTimesUp} />
+            )}
+            {!timerActive && showTimesUp && (
+              <GameTimer timeLeft={0} totalTime={20} showTimesUp={true} />
             )}
 
             {!showAnswer ? (

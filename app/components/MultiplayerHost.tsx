@@ -7,10 +7,13 @@ import { useClassroomStore } from "../store/useClassroomStore";
 import { X, Users, Link2, MonitorPlay } from "lucide-react";
 
 export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
-  const { currentTeams, classes, activeClassId, activeRoomCode, setActiveRoomCode } = useClassroomStore();
+  const { currentTeams, classes, activeClassId, activeRoomCode, setActiveRoomCode, playMode } = useClassroomStore();
   const [loading, setLoading] = useState(false);
   const [roster, setRoster] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+
+  // In projector mode, hide the entire multiplayer UI
+  if (playMode === 'projector') return null;
 
   const startSession = async () => {
     setLoading(true);

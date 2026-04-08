@@ -46,6 +46,8 @@ interface ClassroomState {
   setOllamaModel: (m: string) => void;
   activeRoomCode: string | null;
   setActiveRoomCode: (code: string | null) => void;
+  playMode: 'projector' | 'phone';
+  setPlayMode: (mode: 'projector' | 'phone') => void;
   generateTeams: (classId: string, numberOfTeams: number) => void;
   updateTeamScore: (teamId: string, delta: number) => void;
   setTeamScore: (teamId: string, score: number) => void;
@@ -262,7 +264,9 @@ export const useClassroomStore = create<ClassroomState>()(
       ollamaModel: "gemma3:4b",
       setOllamaModel: (m) => set({ ollamaModel: m }),
       activeRoomCode: null,
-      setActiveRoomCode: (code) => set({ activeRoomCode: code })
+      setActiveRoomCode: (code) => set({ activeRoomCode: code }),
+      playMode: 'projector',
+      setPlayMode: (mode) => set({ playMode: mode })
     }),
     {
       name: "classroom-engine-storage",
