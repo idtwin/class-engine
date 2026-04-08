@@ -1,17 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useClassroomStore, Level } from "../store/useClassroomStore";
+import { useClassroomStore } from "../store/useClassroomStore";
 import Link from "next/link";
 import { ArrowLeft, Play, Zap, FastForward, Loader2, Eye, ChevronRight } from "lucide-react";
 import styles from "./rapid-fire.module.css";
 import MultiplayerHost from "../components/MultiplayerHost";
 import GameTimer from "../components/GameTimer";
+import GameSettingsDrawer from "../components/GameSettingsDrawer";
 
 interface RapidFireQuestion {
   text: string;
   answer: string;
-  level: Level;
+  level: string;
   type: string;
   options?: { A: string; B: string; C: string; D: string };
   correctLetter?: string;
@@ -30,7 +31,7 @@ export default function RapidFire() {
   const [gameState, setGameState] = useState<GameState>("SETUP");
   const [rfMode, setRfMode] = useState<RFMode>("buzzer");
   const [topic, setTopic] = useState("");
-  const [targetLevel, setTargetLevel] = useState<Level>("Mid");
+  const [targetLevel, setTargetLevel] = useState("Mid");
   const [questions, setQuestions] = useState<RapidFireQuestion[]>([]);
   const [cursor, setCursor] = useState(0);
   
@@ -311,37 +312,34 @@ export default function RapidFire() {
                 placeholder="e.g. Past tense irregular verbs, Food vocabulary..." 
               />
             </div>
-            <div>
-              <label style={{ display: "block", marginBottom: "0.5rem" }}>Class Level</label>
-              <select className={styles.select} value={targetLevel} onChange={(e) => setTargetLevel(e.target.value as Level)}>
-                <option value="Low">Low (Beginner)</option>
-                <option value="Mid">Mid (Intermediate)</option>
-                <option value="High">High (Advanced)</option>
-              </select>
-            </div>
             
-            {rfMode === "mc" && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '0.8rem 1rem', borderRadius: '8px' }}>
-                <input type="checkbox" id="penaltyModeRF" checked={penalizeWrong} onChange={e => setPenalizeWrong(e.target.checked)} />
-                <label htmlFor="penaltyModeRF" style={{ cursor: 'pointer', userSelect: 'none' }}>Penalty for Wrong Answers (-100 pts)</label>
-              </div>
-            )}
-
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem' }}>Timer per Question</label>
-              <select className={styles.select} value={timerDuration} onChange={e => setTimerDuration(Number(e.target.value))}>
-                <option value={10}>10 seconds</option>
-                <option value={15}>15 seconds</option>
-                <option value={20}>20 seconds</option>
-                <option value={30}>30 seconds</option>
-                <option value={45}>45 seconds</option>
-                <option value={60}>60 seconds</option>
-              </select>
+            <div style={{ display: "flex", gap: "1rem" }}>
+              <button className={styles.btn} onClick={generateGame} disabled={!geminiKey} style={{ flex: 1 }}>
+                {geminiKey ? "Generate Questions" : "API Key Missing (View Dashboard Settings)"}
+              </button>
+              <GameSettingsDrawer settings={[
+                { label: "Class Level", type: "select", value: targetLevel, onChange: setTargetLevel, options: [
+                  { value: "Low", label: "Low (Beginner)" },
+                  { value: "Mid", label: "Mid (Intermediate)" },
+                  { value: "High", label: "High (Advanced)" }
+                ]},
+                { label: "Timer per Question", type: "select", value: String(timerDuration), onChange: (v: string) => setTimerDuration(Number(v)), options: [
+                  { value: "10", label: "10 seconds" },
+                  { value: "15", label: "15 seconds" },
+                  { value: "20", label: "20 seconds" },
+                  { value: "30", label: "30 seconds" },
+                  { value: "45", label: "45 seconds" },
+                  { value: "60", label: "60 seconds" }
+                ]},
+                ...(rfMode === "mc" ? [{
+                  label: "Penalty for Wrong Answers",
+                  type: "checkbox" as const,
+                  value: penalizeWrong,
+                  onChange: setPenalizeWrong,
+                  description: "Teams lose 100 points for incorrect guesses"
+                }] : [])
+              ]} />
             </div>
-            
-            <button className={styles.btn} onClick={generateGame} disabled={!geminiKey}>
-              {geminiKey ? "Generate Questions" : "API Key Missing (View Dashboard Settings)"}
-            </button>
           </div>
         </div>
       )}

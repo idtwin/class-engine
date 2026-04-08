@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ArrowLeft, Zap, Sparkles } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
 import GameTimer from "../components/GameTimer";
+import GameSettingsDrawer from "../components/GameSettingsDrawer";
 
 const DEFAULT_GAME_BOARD = [
   {
@@ -198,18 +199,16 @@ export default function GameBoard() {
             <button onClick={handleGenerate} disabled={isGenerating} className={styles.genBtn}>
               <Sparkles size={20} /> {isGenerating ? "Generating..." : "Generate AI Board"}
             </button>
-            <select 
-              value={timerDuration} 
-              onChange={e => setTimerDuration(Number(e.target.value))}
-              style={{ padding: '0.5rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.5)', color: 'white', fontSize: '0.9rem', cursor: 'pointer' }}
-            >
-              <option value={10}>⏱ 10s</option>
-              <option value={15}>⏱ 15s</option>
-              <option value={20}>⏱ 20s</option>
-              <option value={30}>⏱ 30s</option>
-              <option value={45}>⏱ 45s</option>
-              <option value={60}>⏱ 60s</option>
-            </select>
+            <GameSettingsDrawer settings={[
+              { label: "Timer per Question", type: "select", value: String(timerDuration), onChange: (v: string) => setTimerDuration(Number(v)), options: [
+                { value: "10", label: "10 seconds" },
+                { value: "15", label: "15 seconds" },
+                { value: "20", label: "20 seconds" },
+                { value: "30", label: "30 seconds" },
+                { value: "45", label: "45 seconds" },
+                { value: "60", label: "60 seconds" },
+              ]},
+            ]} />
           </div>
         </div>
         

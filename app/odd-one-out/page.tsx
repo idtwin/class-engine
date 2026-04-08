@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ArrowLeft, Sparkles, Lightbulb, ChevronRight, Ban } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
 import GameTimer from "../components/GameTimer";
+import GameSettingsDrawer from "../components/GameSettingsDrawer";
 
 type Mode = "Classic" | "Debate" | "Elimination";
 type Question = { level: string, words: string[], answer: string, hint: string };
@@ -270,17 +271,6 @@ export default function OddOneOut() {
            
            <div className={styles.aiControls} style={{ marginLeft: '1rem' }}>
              <MultiplayerHost gameMode="oddoneout" />
-             <select 
-               value={levelFilter} 
-               onChange={e => setLevelFilter(e.target.value)}
-               className={styles.topicInput}
-               style={{ minWidth: '120px' }}
-             >
-               <option value="Mixed Level">Mixed Level</option>
-               <option value="Low">Low</option>
-               <option value="Mid">Mid</option>
-               <option value="High">High</option>
-             </select>
              <input 
                placeholder="Topic (e.g. Planets)" 
                value={topic}
@@ -291,19 +281,23 @@ export default function OddOneOut() {
              <button onClick={handleGenerate} disabled={isGenerating} className={styles.genBtn}>
                <Sparkles size={20} /> Generate Sets
              </button>
-             <select 
-               value={timerDuration} 
-               onChange={e => setTimerDuration(Number(e.target.value))}
-               className={styles.topicInput}
-               style={{ minWidth: '80px' }}
-             >
-               <option value={10}>⏱ 10s</option>
-               <option value={15}>⏱ 15s</option>
-               <option value={20}>⏱ 20s</option>
-               <option value={30}>⏱ 30s</option>
-               <option value={45}>⏱ 45s</option>
-               <option value={60}>⏱ 60s</option>
-             </select>
+             <GameSettingsDrawer settings={[
+               { label: "Difficulty Level", type: "select", value: levelFilter, onChange: setLevelFilter, options: [
+                 { value: "Mixed Level", label: "Mixed Level" },
+                 { value: "Low", label: "Low (A1)" },
+                 { value: "Mid", label: "Mid (Intermediate)" },
+                 { value: "High", label: "High (Advanced)" },
+               ]},
+               { label: "Timer per Question", type: "select", value: String(timerDuration), onChange: (v: string) => setTimerDuration(Number(v)), options: [
+                 { value: "10", label: "10 seconds" },
+                 { value: "15", label: "15 seconds" },
+                 { value: "20", label: "20 seconds" },
+                 { value: "30", label: "30 seconds" },
+                 { value: "45", label: "45 seconds" },
+                 { value: "60", label: "60 seconds" },
+               ]},
+               { label: "Penalty for Wrong Answers", type: "checkbox", value: penalizeWrong, onChange: setPenalizeWrong, description: "Teams lose points for incorrect guesses" },
+             ]} />
            </div>
         </div>
       </header>
@@ -333,10 +327,7 @@ export default function OddOneOut() {
                 {m}
               </button>
             ))}
-            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '0.5rem 1rem', borderRadius: '8px' }}>
-              <input type="checkbox" id="penaltyModeOOO" checked={penalizeWrong} onChange={e => setPenalizeWrong(e.target.checked)} />
-              <label htmlFor="penaltyModeOOO" style={{ fontSize: '0.9rem', cursor: 'pointer', userSelect: 'none' }}>Penalty for Wrong Answers</label>
-            </div>
+
           </div>
 
           <div className={styles.questionMeta}>

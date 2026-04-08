@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ArrowLeft, Sparkles, Zap } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
 import GameTimer from "../components/GameTimer";
+import GameSettingsDrawer from "../components/GameSettingsDrawer";
 
 export default function HotSeatMode() {
   const [mounted, setMounted] = useState(false);
@@ -134,18 +135,15 @@ export default function HotSeatMode() {
             <button onClick={handleGenerate} disabled={isGenerating || isPlaying} className={styles.genBtn}>
               <Sparkles size={20} /> {isGenerating ? "Generating..." : "Generate AI Words"}
             </button>
-            <select 
-              value={timerDuration} 
-              onChange={e => { setTimerDuration(Number(e.target.value)); if (!isPlaying) setTimeLeft(Number(e.target.value)); }}
-              disabled={isPlaying}
-              style={{ padding: '0.5rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.5)', color: 'white', fontSize: '0.9rem', cursor: 'pointer' }}
-            >
-              <option value={30}>⏱ 30s</option>
-              <option value={45}>⏱ 45s</option>
-              <option value={60}>⏱ 60s</option>
-              <option value={90}>⏱ 90s</option>
-              <option value={120}>⏱ 120s</option>
-            </select>
+            <GameSettingsDrawer settings={[
+              { label: "Round Timer", type: "select", value: String(timerDuration), onChange: (v: string) => { setTimerDuration(Number(v)); if (!isPlaying) setTimeLeft(Number(v)); }, options: [
+                { value: "30", label: "30 seconds" },
+                { value: "45", label: "45 seconds" },
+                { value: "60", label: "60 seconds" },
+                { value: "90", label: "90 seconds" },
+                { value: "120", label: "120 seconds" },
+              ]},
+            ]} />
           </div>
         </div>
         
