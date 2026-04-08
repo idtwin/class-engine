@@ -36,6 +36,7 @@ export default function RapidFire() {
   
   const [timeLeft, setTimeLeft] = useState(15);
   const [timerActive, setTimerActive] = useState(false);
+  const [timerDuration, setTimerDuration] = useState(15);
 
   const [penalizeWrong, setPenalizeWrong] = useState(false);
   const [pointsEarned, setPointsEarned] = useState<Record<string, number>>({});
@@ -140,11 +141,11 @@ export default function RapidFire() {
   };
 
   const startTimer = () => {
-    setTimeLeft(rfMode === "mc" ? 20 : 15);
+    setTimeLeft(timerDuration);
     setTimerActive(true);
   };
 
-  const timerMax = rfMode === "mc" ? 20 : 15;
+  const timerMax = timerDuration;
 
   const nextQuestion = () => {
     if (cursor + 1 >= questions.length) {
@@ -325,6 +326,18 @@ export default function RapidFire() {
                 <label htmlFor="penaltyModeRF" style={{ cursor: 'pointer', userSelect: 'none' }}>Penalty for Wrong Answers (-100 pts)</label>
               </div>
             )}
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem' }}>Timer per Question</label>
+              <select className={styles.select} value={timerDuration} onChange={e => setTimerDuration(Number(e.target.value))}>
+                <option value={10}>10 seconds</option>
+                <option value={15}>15 seconds</option>
+                <option value={20}>20 seconds</option>
+                <option value={30}>30 seconds</option>
+                <option value={45}>45 seconds</option>
+                <option value={60}>60 seconds</option>
+              </select>
+            </div>
             
             <button className={styles.btn} onClick={generateGame} disabled={!geminiKey}>
               {geminiKey ? "Generate Questions" : "API Key Missing (View Dashboard Settings)"}

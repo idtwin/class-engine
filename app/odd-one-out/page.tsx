@@ -40,6 +40,7 @@ export default function OddOneOut() {
   const [timeLeft, setTimeLeft] = useState(20);
   const [timerActive, setTimerActive] = useState(false);
   const [showTimesUp, setShowTimesUp] = useState(false);
+  const [timerDuration, setTimerDuration] = useState(20);
 
   const [roomStudents, setRoomStudents] = useState<any[]>([]);
   const [roomData, setRoomData] = useState<any>(null);
@@ -139,8 +140,10 @@ export default function OddOneOut() {
       });
       const data = await res.json();
       if (res.ok && data.questions) {
-        setQuestions(data.questions);
-        setTimeLeft(20);
+        // Shuffle words on each question so the answer isn't always in the same position
+        const shuffled = data.questions.map((q: Question) => ({ ...q, words: shuffleArray(q.words) }));
+        setQuestions(shuffled);
+        setTimeLeft(timerDuration);
         setTimerActive(true);
       } else {
         alert("Error: " + (data.error || "Unknown Error"));
@@ -226,7 +229,7 @@ export default function OddOneOut() {
       setShowHint(false);
       setShowAnswer(false);
       setPointsEarned({});
-      setTimeLeft(20);
+      setTimeLeft(timerDuration);
       setTimerActive(true);
       // Push new words to Redis + clear answers (shuffle & strip answer)
       if (activeRoomCode && questions[currentIndex + 1]) {
@@ -288,6 +291,19 @@ export default function OddOneOut() {
              <button onClick={handleGenerate} disabled={isGenerating} className={styles.genBtn}>
                <Sparkles size={20} /> Generate Sets
              </button>
+             <select 
+               value={timerDuration} 
+               onChange={e => setTimerDuration(Number(e.target.value))}
+               className={styles.topicInput}
+               style={{ minWidth: '80px' }}
+             >
+               <option value={10}>⏱ 10s</option>
+               <option value={15}>⏱ 15s</option>
+               <option value={20}>⏱ 20s</option>
+               <option value={30}>⏱ 30s</option>
+               <option value={45}>⏱ 45s</option>
+               <option value={60}>⏱ 60s</option>
+             </select>
            </div>
         </div>
       </header>
@@ -368,10 +384,10 @@ export default function OddOneOut() {
             
             {/* Timer Display */}
             {timerActive && (
-              <GameTimer timeLeft={timeLeft} totalTime={20} showTimesUp={showTimesUp} />
+              <GameTimer timeLeft={timeLeft} totalTime={timerDuration} showTimesUp={showTimesUp} />
             )}
             {!timerActive && showTimesUp && (
-              <GameTimer timeLeft={0} totalTime={20} showTimesUp={true} />
+              <GameTimer timeLeft={0} totalTime={timerDuration} showTimesUp={true} />
             )}
 
             {!showAnswer ? (

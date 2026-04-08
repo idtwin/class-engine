@@ -6,6 +6,7 @@ import { useClassroomStore } from "../store/useClassroomStore";
 import Link from "next/link";
 import { ArrowLeft, Sparkles, Zap } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
+import GameTimer from "../components/GameTimer";
 
 export default function HotSeatMode() {
   const [mounted, setMounted] = useState(false);
@@ -19,6 +20,8 @@ export default function HotSeatMode() {
   const [timeLeft, setTimeLeft] = useState(60);
   const [isPlaying, setIsPlaying] = useState(false);
   const [score, setScore] = useState(0);
+  const [timerDuration, setTimerDuration] = useState(60);
+  const [showTimesUp, setShowTimesUp] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
@@ -26,8 +29,10 @@ export default function HotSeatMode() {
     let timer: NodeJS.Timeout;
     if (isPlaying && timeLeft > 0) {
       timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
-    } else if (timeLeft === 0) {
+    } else if (timeLeft === 0 && isPlaying) {
       setIsPlaying(false);
+      setShowTimesUp(true);
+      setTimeout(() => setShowTimesUp(false), 3000);
     }
     return () => clearInterval(timer);
   }, [isPlaying, timeLeft]);
@@ -66,8 +71,9 @@ export default function HotSeatMode() {
         setWords(data.words);
         setCurrentIndex(0);
         setScore(0);
-        setTimeLeft(60);
+        setTimeLeft(timerDuration);
         setIsPlaying(true);
+        setShowTimesUp(false);
       } else {
         alert("Error: " + (data.error || "Unknown Error"));
       }
@@ -128,6 +134,18 @@ export default function HotSeatMode() {
             <button onClick={handleGenerate} disabled={isGenerating || isPlaying} className={styles.genBtn}>
               <Sparkles size={20} /> {isGenerating ? "Generating..." : "Generate AI Words"}
             </button>
+            <select 
+              value={timerDuration} 
+              onChange={e => { setTimerDuration(Number(e.target.value)); if (!isPlaying) setTimeLeft(Number(e.target.value)); }}
+              disabled={isPlaying}
+              style={{ padding: '0.5rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.5)', color: 'white', fontSize: '0.9rem', cursor: 'pointer' }}
+            >
+              <option value={30}>⏱ 30s</option>
+              <option value={45}>⏱ 45s</option>
+              <option value={60}>⏱ 60s</option>
+              <option value={90}>⏱ 90s</option>
+              <option value={120}>⏱ 120s</option>
+            </select>
           </div>
         </div>
         
@@ -182,8 +200,8 @@ export default function HotSeatMode() {
       )}
 
       {words.length > 0 && isPlaying && (
-        <div className={styles.timerBarContainer}>
-          <div className={styles.timerFill} style={{ width: `${(timeLeft / 60) * 100}%`, background: timeLeft <= 10 ? '#ff4444' : 'var(--accent)' }} />
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
+          <GameTimer timeLeft={timeLeft} totalTime={timerDuration} showTimesUp={showTimesUp} />
         </div>
       )}
     </div>

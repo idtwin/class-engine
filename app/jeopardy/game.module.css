@@ -290,7 +290,8 @@
   object-fit: cover;
   border-radius: 16px;
   border: 2px solid var(--panel-border);
-  background: rgba(0,0,0,0.5); /* fallback while loading */
+  background: #111;
+  transition: opacity 0.5s ease;
 }
 
 @keyframes spin {

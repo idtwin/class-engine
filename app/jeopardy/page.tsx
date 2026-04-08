@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import styles from "./game.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
 import Link from "next/link";
-import { ArrowLeft, Clock, Zap, Sparkles } from "lucide-react";
+import { ArrowLeft, Zap, Sparkles } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
+import GameTimer from "../components/GameTimer";
 
 const DEFAULT_GAME_BOARD = [
   {
@@ -67,7 +68,10 @@ export default function GameBoard() {
   const [activeQuestion, setActiveQuestion] = useState<any>(null);
   const [showAnswer, setShowAnswer] = useState(false);
   const [reviewMode, setReviewMode] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(10);
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [timerDuration, setTimerDuration] = useState(30);
+  const [timerActive, setTimerActive] = useState(false);
+  const [showTimesUp, setShowTimesUp] = useState(false);
   
   const [topic, setTopic] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -98,11 +102,15 @@ export default function GameBoard() {
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (activeQuestion && timeLeft > 0) {
+    if (timerActive && timeLeft > 0) {
       timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
+    } else if (timeLeft === 0 && timerActive) {
+      setTimerActive(false);
+      setShowTimesUp(true);
+      setTimeout(() => setShowTimesUp(false), 3000);
     }
     return () => clearInterval(timer);
-  }, [activeQuestion, timeLeft]);
+  }, [timerActive, timeLeft]);
 
   if (!mounted) return null;
 
@@ -143,7 +151,9 @@ export default function GameBoard() {
     if (board[cIndex].questions[qIndex].answered) return;
     setActiveQuestion({ ...board[cIndex].questions[qIndex], cIndex, qIndex, category: board[cIndex].category });
     setShowAnswer(false);
-    setTimeLeft(10);
+    setTimeLeft(timerDuration);
+    setTimerActive(true);
+    setShowTimesUp(false);
     setRoomBuzzes([]);
     // Push question to Redis + clear buzzes
     if (activeRoomCode) {
@@ -166,6 +176,8 @@ export default function GameBoard() {
       setBoard(newBoard);
     }
     setActiveQuestion(null);
+    setTimerActive(false);
+    setShowTimesUp(false);
   };
 
   return (
@@ -186,6 +198,18 @@ export default function GameBoard() {
             <button onClick={handleGenerate} disabled={isGenerating} className={styles.genBtn}>
               <Sparkles size={20} /> {isGenerating ? "Generating..." : "Generate AI Board"}
             </button>
+            <select 
+              value={timerDuration} 
+              onChange={e => setTimerDuration(Number(e.target.value))}
+              style={{ padding: '0.5rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.5)', color: 'white', fontSize: '0.9rem', cursor: 'pointer' }}
+            >
+              <option value={10}>⏱ 10s</option>
+              <option value={15}>⏱ 15s</option>
+              <option value={20}>⏱ 20s</option>
+              <option value={30}>⏱ 30s</option>
+              <option value={45}>⏱ 45s</option>
+              <option value={60}>⏱ 60s</option>
+            </select>
           </div>
         </div>
         
@@ -309,8 +333,12 @@ export default function GameBoard() {
             {activeQuestion.includeImage && activeQuestion.imagePrompt && (
               <img 
                 src={`https://image.pollinations.ai/prompt/${encodeURIComponent(activeQuestion.imagePrompt)}?width=800&height=400&nologo=true`} 
-                alt={activeQuestion.imagePrompt}
+                alt="Question image"
                 className={styles.modalImage}
+                style={{ background: '#111', minHeight: '200px' }}
+                onLoad={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '1'; }}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                ref={(el) => { if (el) el.style.opacity = '0'; }}
               />
             )}
 
@@ -357,9 +385,8 @@ export default function GameBoard() {
               </div>
             )}
             
-            <div className={`${styles.timer} ${timeLeft <= 3 ? styles.timerDanger : ''}`} style={{ fontSize: '3rem' }}>
-              <Clock size={32} />
-              <span>0:{timeLeft.toString().padStart(2, '0')}</span>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <GameTimer timeLeft={timeLeft} totalTime={timerDuration} showTimesUp={showTimesUp} />
             </div>
             
             {/* Action Buttons */}
