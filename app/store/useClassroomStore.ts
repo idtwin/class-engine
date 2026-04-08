@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { v4 as uuidv4 } from "uuid";
+import { playSFX } from "../lib/audio";
 
 export type Level = "Low" | "Mid" | "High";
 export type Energy = "Passive" | "Normal" | "Active";
@@ -66,6 +67,8 @@ interface ClassroomState {
   updateStudent: (classId: string, studentId: string, updates: Partial<Student>) => void;
   updateClass: (classId: string, name: string) => void;
   bulkAddStudents: (classId: string, names: string[]) => void;
+  soundEnabled: boolean;
+  setSoundEnabled: (enabled: boolean) => void;
 }
 
 export const useClassroomStore = create<ClassroomState>()(
@@ -188,11 +191,15 @@ export const useClassroomStore = create<ClassroomState>()(
         return { currentTeams: teams };
       }),
 
-      updateTeamScore: (teamId, delta) => set((state) => ({
-        currentTeams: state.currentTeams.map(t => 
-          t.id === teamId ? { ...t, score: t.score + delta } : t
-        )
-      })),
+      updateTeamScore: (teamId, delta) => set((state) => {
+        if (delta > 0) playSFX("correct");
+        if (delta < 0) playSFX("wrong");
+        return {
+          currentTeams: state.currentTeams.map(t => 
+            t.id === teamId ? { ...t, score: t.score + delta } : t
+          )
+        };
+      }),
 
       setTeamScore: (teamId, score) => set((state) => ({
         currentTeams: state.currentTeams.map(t => 
@@ -234,6 +241,7 @@ export const useClassroomStore = create<ClassroomState>()(
       currentTwist: "",
       
       triggerTwist: () => set(() => {
+        playSFX("twist");
         const twists = [
           "Answer using 5 words only!",
           "Only one teammate can speak!",
@@ -266,7 +274,9 @@ export const useClassroomStore = create<ClassroomState>()(
       activeRoomCode: null,
       setActiveRoomCode: (code) => set({ activeRoomCode: code }),
       playMode: 'projector',
-      setPlayMode: (mode) => set({ playMode: mode })
+      setPlayMode: (mode) => set({ playMode: mode }),
+      soundEnabled: true,
+      setSoundEnabled: (enabled) => set({ soundEnabled: enabled })
     }),
     {
       name: "classroom-engine-storage",

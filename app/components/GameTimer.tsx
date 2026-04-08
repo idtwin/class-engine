@@ -1,6 +1,7 @@
 "use client";
-
+import { useEffect, useRef } from "react";
 import styles from "./GameTimer.module.css";
+import { playSFX } from "../lib/audio";
 
 interface GameTimerProps {
   timeLeft: number;
@@ -19,6 +20,21 @@ export default function GameTimer({ timeLeft, totalTime, showTimesUp }: GameTime
     if (timeLeft <= 10) return "#ffaa00";
     return "#2dd4bf";
   };
+
+  const lastPlayedRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    // Play tick in final 5 seconds (but not at 0)
+    if (timeLeft <= 5 && timeLeft > 0 && timeLeft !== lastPlayedRef.current) {
+      playSFX("tick");
+      lastPlayedRef.current = timeLeft;
+    }
+    // Play times-up exactly when hitting zero
+    if (timeLeft === 0 && lastPlayedRef.current !== 0) {
+      playSFX("times-up");
+      lastPlayedRef.current = 0;
+    }
+  }, [timeLeft]);
 
   if (showTimesUp) {
     return (

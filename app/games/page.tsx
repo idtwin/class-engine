@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import styles from "./games.module.css";
-import { ArrowLeft, LayoutGrid, Zap, Image as ImageIcon, MessageSquare, BookOpen, Flame, HelpCircle, Wrench, Link2 } from "lucide-react";
+import { ArrowLeft, LayoutGrid, Zap, Image as ImageIcon, MessageSquare, BookOpen, Flame, HelpCircle, Wrench, Link2, Volume2, VolumeX } from "lucide-react";
+import { useClassroomStore } from "../store/useClassroomStore";
 
 export default function GamesHub() {
   const games = [
@@ -71,6 +72,8 @@ export default function GamesHub() {
     }
   ];
 
+  const { soundEnabled, setSoundEnabled } = useClassroomStore();
+
   return (
     <div className={styles.container}>
       <header className={styles.header}>
@@ -78,6 +81,15 @@ export default function GamesHub() {
           <Link href="/dashboard"><button className={styles.iconBtn}><ArrowLeft /></button></Link>
           <h1>Classroom Arcade</h1>
         </div>
+        
+        <button 
+          onClick={() => setSoundEnabled(!soundEnabled)} 
+          className={styles.iconBtn}
+          title={soundEnabled ? "Mute Sounds" : "Unmute Sounds"}
+          style={{ background: soundEnabled ? "rgba(45, 212, 191, 0.1)" : "rgba(239, 68, 68, 0.1)" }}
+        >
+          {soundEnabled ? <Volume2 size={22} color="#2dd4bf" /> : <VolumeX size={22} color="#ef4444" />}
+        </button>
       </header>
       
       <div className={styles.grid}>
