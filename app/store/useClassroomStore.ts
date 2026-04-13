@@ -28,6 +28,15 @@ export interface Team {
   score: number;
 }
 
+export interface SavedBoard {
+  id: string;
+  title: string;
+  gameType: string;
+  topic: string;
+  content: any;
+  timestamp: number;
+}
+
 interface ClassroomState {
   folders: string[];
   classes: ClassData[];
@@ -54,6 +63,8 @@ interface ClassroomState {
   setTeamScore: (teamId: string, score: number) => void;
   updateTeamName: (teamId: string, name: string) => void;
   resetTeamsState: () => void;
+  activeAwardAmount: number;
+  setActiveAwardAmount: (amt: number) => void;
   moveStudentToTeam: (studentId: string, targetTeamId: string) => void;
   addClass: (name: string, category?: string) => void;
   removeClass: (classId: string) => void;
@@ -69,11 +80,21 @@ interface ClassroomState {
   bulkAddStudents: (classId: string, names: string[]) => void;
   soundEnabled: boolean;
   setSoundEnabled: (enabled: boolean) => void;
+  savedBoards: SavedBoard[];
+  saveBoard: (board: Omit<SavedBoard, 'id' | 'timestamp'>) => void;
+  deleteBoard: (id: string) => void;
+  commandLogs: string[];
+  addLog: (message: string) => void;
 }
 
 export const useClassroomStore = create<ClassroomState>()(
   persist(
     (set) => ({
+      commandLogs: ["[SYSTEM] Midnight Command Core Online"],
+      addLog: (message) => set((state) => {
+        const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: "numeric", minute: "numeric", second: "numeric" });
+        return { commandLogs: [`[${timestamp}] ${message}`, ...state.commandLogs].slice(0, 50) };
+      }),
       folders: ["General"],
       classes: [
         {
@@ -188,16 +209,32 @@ export const useClassroomStore = create<ClassroomState>()(
           teams[index % numberOfTeams].students.push(student);
         });
 
-        return { currentTeams: teams };
+        const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: "numeric", minute: "numeric", second: "numeric" });
+        const logMsg = `[${timestamp}] NEURAL SPHERE: GENERATED ${numberOfTeams} TEAMS`;
+
+        return { currentTeams: teams, commandLogs: [logMsg, ...state.commandLogs].slice(0, 50) };
       }),
 
       updateTeamScore: (teamId, delta) => set((state) => {
         if (delta > 0) playSFX("correct");
         if (delta < 0) playSFX("wrong");
+        
+        let teamName = "UNKNOWN TEAM";
+        const newTeams = state.currentTeams.map(t => {
+          if (t.id === teamId) {
+            teamName = t.name;
+            return { ...t, score: t.score + delta };
+          }
+          return t;
+        });
+
+        const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: "numeric", minute: "numeric", second: "numeric" });
+        const action = delta > 0 ? `SCORED +${delta}` : `PENALTY ${delta}`;
+        const logMsg = `[${timestamp}] ${teamName} ${action}`;
+
         return {
-          currentTeams: state.currentTeams.map(t => 
-            t.id === teamId ? { ...t, score: t.score + delta } : t
-          )
+          currentTeams: newTeams,
+          commandLogs: [logMsg, ...state.commandLogs].slice(0, 50)
         };
       }),
 
@@ -220,6 +257,8 @@ export const useClassroomStore = create<ClassroomState>()(
           score: 0
         }))
       })),
+      activeAwardAmount: 100,
+      setActiveAwardAmount: (amt) => set({ activeAwardAmount: amt }),
 
       moveStudentToTeam: (studentId, targetTeamId) => set((state) => {
         let studentToMove: Student | undefined;
@@ -240,7 +279,7 @@ export const useClassroomStore = create<ClassroomState>()(
       twistVisible: false,
       currentTwist: "",
       
-      triggerTwist: () => set(() => {
+      triggerTwist: () => set((state) => {
         playSFX("twist");
         const twists = [
           "Answer using 5 words only!",
@@ -250,7 +289,10 @@ export const useClassroomStore = create<ClassroomState>()(
           "Must answer as a question!",
           "Opposing team picks who answers!",
         ];
-        return { twistVisible: true, currentTwist: twists[Math.floor(Math.random() * twists.length)] };
+        const selectedTwist = twists[Math.floor(Math.random() * twists.length)];
+        const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: "numeric", minute: "numeric", second: "numeric" });
+        const logMsg = `[${timestamp}] TWIST DEPLOYED: "${selectedTwist}"`;
+        return { twistVisible: true, currentTwist: selectedTwist, commandLogs: [logMsg, ...state.commandLogs].slice(0, 50) };
       }),
       
       closeTwist: () => set({ twistVisible: false }),
@@ -265,7 +307,7 @@ export const useClassroomStore = create<ClassroomState>()(
         return { teacherFeedback: { difficulty, energyBoost } };
       }),
       
-      geminiKey: "",
+      geminiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
       setGeminiKey: (key) => set({ geminiKey: key }),
       llmProvider: "lmstudio",
       setLlmProvider: (p) => set({ llmProvider: p }),
@@ -276,7 +318,22 @@ export const useClassroomStore = create<ClassroomState>()(
       playMode: 'projector',
       setPlayMode: (mode) => set({ playMode: mode }),
       soundEnabled: true,
-      setSoundEnabled: (enabled) => set({ soundEnabled: enabled })
+      setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
+      
+      savedBoards: [],
+      saveBoard: (board) => set((state) => ({
+        savedBoards: [
+          ...state.savedBoards,
+          {
+            ...board,
+            id: uuidv4(),
+            timestamp: Date.now()
+          }
+        ]
+      })),
+      deleteBoard: (id) => set((state) => ({
+        savedBoards: state.savedBoards.filter(b => b.id !== id)
+      }))
     }),
     {
       name: "classroom-engine-storage",

@@ -5,6 +5,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Dices, RotateCcw } from "lucide-react";
 import styles from "./wheel.module.css";
+import ScoreboardOverlay from "../components/ScoreboardOverlay";
+import GameTimer from "../components/GameTimer";
 
 export default function WheelPage() {
   const [mounted, setMounted] = useState(false);
@@ -138,13 +140,18 @@ export default function WheelPage() {
     <div className={styles.container}>
       <header className={styles.header}>
         <Link href="/dashboard" className={styles.homeBtn}>
-          <ArrowLeft size={20} /> Back to Dashboard
+          <ArrowLeft size={18} /> BACK TO SYSTEM
         </Link>
-        <h2>Spin the Wheel ({availableStudents.length}/{activeClass.students.length})</h2>
-        <div style={{ width: 100 }}></div> {/* spacer */}
+        <h2 className="glow-text">PROBABILITY WHEEL ({availableStudents.length}/{activeClass.students.length})</h2>
+        <div style={{ width: 100 }}></div>
       </header>
-      
-      <div className={styles.main}>
+
+      <div className={styles.main} style={{ paddingTop: '100px', paddingBottom: '120px' }}>
+        <GameTimer 
+          timerActive={isSpinning} 
+          variant="bar" 
+          onTimeUp={() => {}} 
+        />
         {numStudents === 0 ? (
           <div style={{ textAlign: 'center' }}>
             <h2>All students have been selected!</h2>
@@ -187,6 +194,8 @@ export default function WheelPage() {
           </div>
         </div>
       )}
+
+      <ScoreboardOverlay />
     </div>
   );
 }

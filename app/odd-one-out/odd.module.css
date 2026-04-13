@@ -1,68 +1,81 @@
+/* Midnight Stitch Grid Core */
+
 .container {
-  min-height: 100vh;
-  padding: 2rem;
-  padding-bottom: 140px;
-  background-color: var(--bg);
+  position: fixed;
+  top: var(--header-height);
+  left: 0;
+  right: 0;
+  bottom: var(--scoreboard-height);
   display: flex;
   flex-direction: column;
+  width: 100%;
+  padding: 0;
+  overflow: hidden; /* No more scrolling */
 }
 
+.leftDecor {
+  position: absolute;
+  top: 2rem;
+  left: 2rem;
+  font-family: monospace;
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.3);
+  line-height: 1.6;
+  letter-spacing: 0.1em;
+}
+
+/* Fluid AI Input Controls (Top Right Header Replacement) */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--panel);
-  padding: 1.5rem 2rem;
-  border-radius: 16px;
-  margin-bottom: 2rem;
-}
-
-.iconBtn {
   background: transparent;
-  color: var(--accent);
-  border: 1px solid rgba(255,255,255,0.1);
-  padding: 0.5rem;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-}
-
-.iconBtn:hover {
-  background: rgba(255,255,255,0.1);
+  padding: 0.75rem 2rem;
+  flex-shrink: 0;
+  width: 100%;
 }
 
 .aiControls {
   display: flex;
   gap: 1rem;
+  align-items: center;
 }
 
 .topicInput {
-  background: rgba(0,0,0,0.5);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(188, 19, 254, 0.05); /* Purple accent for Odd One Out */
+  border: 1px solid rgba(188, 19, 254, 0.3);
+  border-radius: 4px;
   padding: 0.8rem 1.5rem;
-  border-radius: 8px;
   color: white;
-  min-width: 250px;
+  font-family: monospace;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.topicInput:focus {
+  border-color: #BC13FE;
+  box-shadow: 0 0 15px rgba(188, 19, 254, 0.4);
 }
 
 .genBtn {
-  background: var(--accent);
-  color: var(--bg);
+  background: #BC13FE;
+  color: #000;
   border: none;
-  border-radius: 8px;
   padding: 0.8rem 1.5rem;
+  border-radius: 4px;
+  font-family: monospace;
   font-weight: 800;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
+  box-shadow: 0 0 20px rgba(188, 19, 254, 0.3);
 }
 
-.genBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.genBtn:hover {
+  filter: brightness(1.2);
+  box-shadow: 0 0 30px rgba(188, 19, 254, 0.5);
 }
 
 .loadingState, .emptyState {
@@ -71,198 +84,289 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: rgba(255,255,255,0.5);
+  color: #BC13FE;
+  font-family: 'Space Grotesk', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 1.2rem;
+  font-weight: 800;
 }
 
 .spinIcon {
   animation: spin 2s linear infinite;
-  margin-bottom: 1rem;
-  color: var(--accent);
+  margin-bottom: 2rem;
 }
 
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
-/* Game Logic Elements */
-.modeTabs {
-  display: flex;
-  gap: 0;
-  background: rgba(0,0,0,0.3);
-  padding: 0.5rem;
-  border-radius: 12px;
-  margin-bottom: 2rem;
-  justify-content: center;
-  width: 100%;
-}
-
-.tabBtn {
+.canvasLeft {
   flex: 1;
-  background: transparent;
-  color: rgba(255,255,255,0.5);
-  border: none;
-  padding: 1rem 2rem;
-  font-size: 1.2rem;
-  font-weight: bold;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.tabBtn.active {
-  background: var(--accent);
-  color: #111;
-  box-shadow: 0 4px 15px rgba(45, 212, 191, 0.2);
-}
-
-.gameBoard {
+  overflow: hidden;
+  padding: 1.5rem 3rem;
+  margin-top: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  flex: 1;
-  max-width: 1000px;
-  margin: 0 auto;
   width: 100%;
-  padding-bottom: 220px;
 }
 
-.questionMeta {
-  color: rgba(255,255,255,0.5);
+.gameSplit {
+  display: flex;
+  gap: 3rem;
+  width: 100%;
+  height: 100%;
+  flex: 1;
+}
+
+.leftCol {
+  flex: 1.6;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.rightCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+  padding-bottom: 2rem;
+  overflow-y: auto;
+}
+
+.questionTimerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 3rem;
+  margin-bottom: 1.5rem;
+}
+
+.timerBig {
+  width: 140px !important;
+  height: 140px !important;
+}
+
+.timerBig div[class*="timerNumber"] {
+  font-size: 3.5rem !important;
+}
+
+.magentaLine {
+  width: 80px;
+  height: 4px;
+  background: #BC13FE;
   margin-bottom: 1rem;
-  font-size: 1.2rem;
-  text-transform: uppercase;
-  letter-spacing: 2px;
+  box-shadow: 0 0 10px #BC13FE;
 }
 
-.questionPrompt {
-  font-size: 2.2rem;
-  font-weight: bold;
-  margin-bottom: 3rem;
-  text-align: center;
+.seqLabel {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #BC13FE;
+  letter-spacing: 0.15em;
+  margin-bottom: 1rem;
+  font-weight: 700;
+  text-shadow: 0 0 10px rgba(188, 19, 254, 0.4);
+}
+
+.mainSentence {
+  flex: 1;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(1.5rem, 3vw, 2.8rem);
+  font-weight: 900;
   color: white;
+  line-height: 1.1;
+  text-transform: uppercase;
+  margin-bottom: 0;
+  text-align: left;
+  text-shadow: 0 0 25px rgba(188, 19, 254, 0.5), 0 0 50px rgba(188, 19, 254, 0.2);
+  letter-spacing: -0.02em;
 }
 
+/* Words layout inside CanvasLeft */
 .wordsGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  gap: 1.25rem;
   width: 100%;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .wordCard {
-  background: var(--panel);
-  border: 2px solid rgba(255,255,255,0.1);
-  padding: 3rem 2rem;
-  border-radius: 16px;
-  font-size: 2.5rem;
-  font-weight: bold;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(188, 19, 254, 0.2);
+  padding: 1.2rem 1.8rem;
+  font-size: clamp(1rem, 2vw, 1.8rem);
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 800;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  text-align: center;
+  text-align: left;
   color: white;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  position: relative;
+  box-shadow: 0 0 15px rgba(188, 19, 254, 0.05);
+}
+
+/* Tech square reticles */
+.wordCard::before {
+  content: '';
+  position: absolute;
+  top: -2px; left: -2px;
+  width: 6px; height: 6px;
+  background: rgba(188, 19, 254, 0.5);
 }
 
 .wordCard:hover {
-  border-color: rgba(255,255,255,0.3);
-  transform: translateY(-4px);
-  background: rgba(255,255,255,0.05);
+  border-color: #BC13FE;
+  box-shadow: inset 0 0 20px rgba(188, 19, 254, 0.1), 0 0 30px rgba(188, 19, 254, 0.2);
+  transform: translateX(10px);
 }
 
 .wordCorrect {
-  background: #2dd4bf !important;
-  color: #111 !important;
-  border-color: #2dd4bf !important;
+  background: #BC13FE !important;
+  color: #000 !important;
+  border-color: white !important;
   transform: scale(1.02);
+  box-shadow: 0 0 50px rgba(188, 19, 254, 0.8) !important;
+}
+
+.wordCorrect::after {
+  content: '[OUTLIER DETECTED]';
+  position: absolute;
+  top: -15px;
+  right: 10px;
+  font-family: monospace;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: white;
+  background: #BC13FE;
+  padding: 0 0.5rem;
 }
 
 .wordWrong {
-  background: #ef4444 !important;
-  color: white !important;
-  border-color: #ef4444 !important;
-  opacity: 0.6;
-}
-
-.controlsRow {
-  display: flex;
-  width: 100%;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(0,0,0,0.3);
-  padding: 1.5rem;
-  border-radius: 16px;
-  margin-top: 1.5rem;
-}
-
-.hintBox {
-  background: rgba(45, 212, 191, 0.1);
-  padding: 1.5rem;
-  border-radius: 12px;
-  width: 100%;
-  font-size: 1.4rem;
-  font-style: italic;
-  text-align: center;
-  color: var(--accent);
-  border: 2px dashed var(--accent);
-  margin-bottom: 1rem;
-  animation: fadeIn 0.4s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.teamScoreList {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  width: 100%;
-  margin-top: 3rem;
-  padding-top: 2rem;
-  border-top: 1px solid rgba(255,255,255,0.1);
-}
-
-.teamCard {
-  background: var(--panel);
-  padding: 1.5rem;
-  border-radius: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: all 0.3s;
-  border: 1px solid rgba(255,255,255,0.05);
-}
-
-.teamCardEliminated {
-  opacity: 0.3;
-  filter: grayscale(1);
-  border-color: #ef4444;
-}
-
-.teamCardEliminated span {
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255,0,0,0.3) !important;
+  opacity: 0.4;
   text-decoration: line-through;
-  color: #ef4444;
 }
 
-.scoreControl {
+.techControls {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
 }
 
-.scoreBtn {
-  background: rgba(255,255,255,0.1);
+.btnSolidMagenta {
+  background: #BC13FE;
+  color: #000;
   border: none;
-  color: white;
-  border-radius: 4px;
-  width: 28px;
-  height: 28px;
+  font-family: monospace;
+  font-weight: 800;
+  font-size: 1.1rem;
+  letter-spacing: 0.1em;
+  padding: 1.2rem 2.5rem;
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 0.75rem;
+  position: relative;
+  transition: all 0.2s;
+  box-shadow: 0 0 20px rgba(188, 19, 254, 0.3);
 }
 
-.scoreBtn:hover {
-  background: rgba(255,255,255,0.2);
+.btnSolidMagenta::after {
+  content: ''; position: absolute; top: -2px; left: -2px; width: 6px; height: 6px; background: white;
+}
+.btnSolidMagenta::before {
+  content: ''; position: absolute; bottom: -2px; right: -2px; width: 6px; height: 6px; background: white;
+}
+.btnSolidMagenta:hover:not(:disabled) {
+  filter: brightness(1.2); box-shadow: 0 0 30px rgba(188, 19, 254, 0.5);
+}
+.btnSolidMagenta:disabled { background: rgba(188,19,254,0.2); color: rgba(255,255,255,0.2); cursor: not-allowed; }
+
+.btnOutlineMagenta {
+  background: transparent;
+  color: #BC13FE;
+  border: 1px solid #BC13FE;
+  font-family: monospace;
+  font-weight: 800;
+  font-size: 1.1rem;
+  letter-spacing: 0.1em;
+  padding: 1.2rem 2.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  position: relative;
+  transition: all 0.2s;
+}
+.btnOutlineMagenta::before {
+  content: ''; position: absolute; bottom: -2px; left: -2px; width: 6px; height: 6px; background: #BC13FE;
+}
+.btnOutlineMagenta:hover:not(:disabled) { background: rgba(188, 19, 254, 0.1); }
+.btnOutlineMagenta:disabled { border-color: rgba(188,19,254,0.2); color: rgba(188,19,254,0.3); }
+
+.systemLog {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  width: 100%;
+  max-width: 900px;
+  padding: 2rem;
+  position: relative;
+}
+
+.logHeader {
+  position: absolute;
+  top: -10px;
+  right: 10px;
+  font-family: monospace;
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.3);
+  background: var(--background);
+  padding: 0 0.5rem;
+}
+
+.logBody {
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.8;
+}
+
+.logBody span { font-weight: 700; }
+
+.modeTabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+
+.tabBtn {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 1rem;
+  font-family: monospace;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.tabBtn:hover {
+  border-color: rgba(188, 19, 254, 0.5);
+  color: white;
+}
+
+.tabBtn.active {
+  background: rgba(188, 19, 254, 0.1);
+  color: #BC13FE;
+  border-color: #BC13FE;
+  box-shadow: inset 0 0 10px rgba(188, 19, 254, 0.2);
 }

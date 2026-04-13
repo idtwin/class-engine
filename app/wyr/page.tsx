@@ -6,6 +6,7 @@ import { useClassroomStore } from "../store/useClassroomStore";
 import Link from "next/link";
 import { ArrowLeft, Sparkles, Zap } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
+import ScoreboardOverlay from "../components/ScoreboardOverlay";
 
 export default function WouldYouRatherMode() {
   const [mounted, setMounted] = useState(false);
@@ -107,12 +108,13 @@ export default function WouldYouRatherMode() {
 
       {isGenerating ? (
         <div className={styles.loadingState}>
-          <Sparkles size={80} className={styles.spinIcon} />
-          <h2>Generating weird dilemmas...</h2>
+          <Sparkles size={100} className={styles.spinIcon} style={{ color: 'var(--accent)' }} />
+          <h2 className="glow-text">WEAVING DILEMMAS...</h2>
         </div>
       ) : prompts.length === 0 ? (
         <div className={styles.emptyState}>
-          <p>Type a topic above to generate a massive VS debate board!</p>
+          <p className="label-caps">System Idle</p>
+          <p style={{ opacity: 0.5 }}>Enter a topic to generate AI debate scenarios.</p>
         </div>
       ) : (
         <div className={styles.splitScreen}>
@@ -126,88 +128,8 @@ export default function WouldYouRatherMode() {
             <p className={styles.promptText}>{currentPrompt.optionB}</p>
           </div>
 
-          {/* Live Vote Breakdown */}
-          {activeRoomCode && (() => {
-            const votedStudents = roomStudents.filter((s: any) => s.answered);
-            const votersA = votedStudents.filter((s: any) => s.lastAnswer === 'A');
-            const votersB = votedStudents.filter((s: any) => s.lastAnswer === 'B');
-            const total = votersA.length + votersB.length;
-            const pctA = total > 0 ? Math.round((votersA.length / total) * 100) : 0;
-            const pctB = total > 0 ? Math.round((votersB.length / total) * 100) : 0;
-            const waiting = roomStudents.filter((s: any) => !s.answered).length;
 
-            return (
-              <div style={{
-                position: 'absolute', bottom: '80px', left: '50%', transform: 'translateX(-50%)',
-                background: 'rgba(0,0,0,0.9)', borderRadius: '20px', padding: '1.2rem 2rem',
-                zIndex: 10, minWidth: '500px', maxWidth: '90vw', backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255,255,255,0.15)'
-              }}>
-                {/* Header: percentages + count */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: total > 0 ? '0.8rem' : 0 }}>
-                  <span style={{ color: '#ff4d4d', fontWeight: 900, fontSize: '1.8rem' }}>{pctA}%</span>
-                  <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem' }}>
-                    {total} vote{total !== 1 ? 's' : ''}{waiting > 0 ? ` • ${waiting} waiting` : ''}
-                  </span>
-                  <span style={{ color: '#4d9fff', fontWeight: 900, fontSize: '1.8rem' }}>{pctB}%</span>
-                </div>
-
-                {/* Vote bar */}
-                {total > 0 && (
-                  <div style={{ display: 'flex', height: '8px', borderRadius: '4px', overflow: 'hidden', marginBottom: '0.8rem' }}>
-                    <div style={{ width: `${pctA}%`, background: '#ff4d4d', transition: 'width 0.3s' }} />
-                    <div style={{ width: `${pctB}%`, background: '#4d9fff', transition: 'width 0.3s' }} />
-                  </div>
-                )}
-
-                {/* Names grid */}
-                {total > 0 && (
-                  <div style={{ display: 'flex', gap: '2rem' }}>
-                    {/* Option A voters */}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '0.75rem', color: '#ff4d4d', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.4rem' }}>
-                        Option A ({votersA.length})
-                      </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
-                        {votersA.map((s: any, i: number) => (
-                          <span key={i} style={{
-                            background: 'rgba(255,77,77,0.2)', border: '1px solid rgba(255,77,77,0.4)',
-                            padding: '0.2rem 0.6rem', borderRadius: '6px', fontSize: '0.85rem',
-                            color: '#ff9999', fontWeight: 600
-                          }}>
-                            {s.name}
-                          </span>
-                        ))}
-                        {votersA.length === 0 && <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem' }}>No votes yet</span>}
-                      </div>
-                    </div>
-
-                    {/* Divider */}
-                    <div style={{ width: '1px', background: 'rgba(255,255,255,0.15)' }} />
-
-                    {/* Option B voters */}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '0.75rem', color: '#4d9fff', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.4rem' }}>
-                        Option B ({votersB.length})
-                      </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
-                        {votersB.map((s: any, i: number) => (
-                          <span key={i} style={{
-                            background: 'rgba(77,159,255,0.2)', border: '1px solid rgba(77,159,255,0.4)',
-                            padding: '0.2rem 0.6rem', borderRadius: '6px', fontSize: '0.85rem',
-                            color: '#99c8ff', fontWeight: 600
-                          }}>
-                            {s.name}
-                          </span>
-                        ))}
-                        {votersB.length === 0 && <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem' }}>No votes yet</span>}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })()}
+          {/* Next Scenario Control */}
 
           {currentIndex < prompts.length - 1 ? (
              <button className={styles.nextBtn} onClick={() => {

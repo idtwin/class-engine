@@ -1,103 +1,469 @@
+/* =====================================================
+   CLASS ENGINE — ARCADE COMMAND DESIGN SYSTEM
+   Theme: Kinetic Command Center
+   ===================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap');
+
 :root {
-  --background: #000000;
+  /* --- Core Surfaces --- */
+  --background: #070B19;
+  --surface: #0F172A;
+  --surface-2: #1E293B;
+  --surface-3: #334155;
+  --surface-hover: #263859;
+
+  /* --- Accent Colors --- */
+  --accent-cyan: #00E5FF;
+  --accent-green: #00FF41;
+  --accent: #38BDF8;
+  --accent-hover: #BAE6FD;
+  --accent-secondary: #818CF8;
+  --accent-tertiary: #F472B6;
+
+  /* --- Team Colors --- */
+  --team-1: #00FF41;
+  --team-2: #00E5FF;
+  --team-3: #FFB800;
+  --team-4: #FF2D78;
+  --team-5: #BC13FE;
+  --team-6: #FF6B35;
+  --team-7: #00E5FF;
+  --team-8: #A8FF3E;
+
+  /* --- Typography --- */
   --foreground: #ffffff;
-  --accent: #00ffcc;
-  --accent-hover: #00e6b8;
-  --danger: #ff4d4d;
-  --danger-hover: #e63939;
-  --success: #00e676;
-  --panel: rgba(255, 255, 255, 0.05);
-  --panel-border: rgba(255, 255, 255, 0.1);
+  --text-muted: rgba(255, 255, 255, 0.6);
+  --text-label: rgba(255, 255, 255, 0.4);
+
+  /* --- UI Chrome --- */
+  --border: rgba(255, 255, 255, 0.05);
+  --border-accent: var(--accent);
+  --panel: rgba(14, 14, 14, 0.8);
+  --panel-border: rgba(255, 255, 255, 0.05);
+  --grid-color: rgba(255, 255, 255, 0.03);
+
+  /* --- HUD Dimensions --- */
+  --header-height: 56px;
+  --scoreboard-height: 110px;
+  --game-area-height: calc(100vh - var(--header-height) - var(--scoreboard-height));
 }
 
-html,
-body {
+/* ── Base Reset ── */
+html, body {
   max-width: 100vw;
   overflow-x: hidden;
+  overflow-y: hidden; /* No page-level scroll — games must contain themselves */
   background-color: var(--background);
+  background-image: linear-gradient(
+      var(--grid-color) 1px, 
+      transparent 1px
+    );
+  background-size: 100% 4px;
+  background-attachment: fixed;
   color: var(--foreground);
-  font-family: var(--font-geist-sans), sans-serif;
+  font-family: 'Manrope', sans-serif;
   margin: 0;
   padding: 0;
-  min-height: 100vh;
+  height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
 * {
   box-sizing: border-box;
 }
 
+/* ── Typography ── */
 h1, h2, h3, h4, h5, h6 {
   margin: 0;
-  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 h1 {
-  font-size: clamp(2.5rem, 5vw, 4rem);
-  letter-spacing: -0.05em;
-  line-height: 1.1;
-  text-shadow: 0 0 40px rgba(255, 255, 255, 0.15);
+  font-size: clamp(2rem, 5vw, 4rem);
 }
 
 h2 {
   font-size: clamp(1.5rem, 3vw, 2.5rem);
-  letter-spacing: -0.03em;
 }
 
-p, span, div {
-  font-size: 1.125rem;
-  line-height: 1.5;
+h3 {
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
 }
 
+p, span, div, input, textarea {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* ── Base Button ── */
 button {
-  font-family: inherit;
-  font-size: 1.25rem;
-  font-weight: 600;
-  padding: 1rem 2rem;
-  border-radius: 12px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.875rem 1.75rem;
+  border-radius: 6px;
   border: none;
   cursor: pointer;
-  background: var(--accent);
-  color: #000;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 14px 0 rgba(0, 255, 204, 0.2);
+  background: var(--accent-bright);
+  color: #000000;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.02em;
 }
 
 button:hover {
   background: var(--accent-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 255, 204, 0.35);
+  transform: translateY(-1px);
 }
 
 button:active {
-  transform: translateY(1px);
+  transform: scale(0.98);
 }
 
 button:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
   transform: none;
-  box-shadow: none;
 }
 
-.panel {
-  background: var(--panel);
-  border: 1px solid var(--panel-border);
-  backdrop-filter: blur(16px);
-  border-radius: 24px;
-  padding: 2rem;
+/* ── Secondary Button ── */
+.btn-secondary {
+  background: var(--surface-3);
+  color: var(--foreground);
+  border: 1px solid var(--border);
 }
 
-/* Scrollbar styling for dark mode */
+.btn-secondary:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+  box-shadow: -4px 0 0 var(--accent);
+}
+
+/* ── Card / Panel ── */
+.card {
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: all 0.15s ease;
+}
+
+.card:hover {
+  border-color: var(--accent);
+  box-shadow: -4px 0 0 var(--accent);
+}
+
+/* ── Header Bar (HUD) ── */
+.header-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-height);
+  background: var(--surface);
+  border-bottom: 1px solid var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  z-index: 100;
+}
+
+.header-brand {
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.header-nav {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.header-nav a {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 0.15s ease;
+}
+
+.header-nav a:hover {
+  color: var(--accent);
+}
+
+/* ── Timer Ring ── */
+.timer-ring {
+  width: var(--timer-size);
+  height: var(--timer-size);
+  position: relative;
+}
+
+.timer-ring svg {
+  transform: rotate(-90deg);
+}
+
+.timer-ring .track {
+  fill: none;
+  stroke: var(--surface-3);
+  stroke-width: 4;
+}
+
+.timer-ring .progress {
+  fill: none;
+  stroke: var(--accent-bright);
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.timer-ring .time-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--foreground);
+}
+
+.timer-ring .time-label {
+  position: absolute;
+  bottom: -1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ── Scoreboard ── */
+.scoreboard {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--scoreboard-height);
+  background: var(--surface-2);
+  display: flex;
+  border-top: 1px solid var(--border);
+  z-index: 100;
+}
+
+.scoreboard-team {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.scoreboard-team:last-child {
+  border-right: none;
+}
+
+.scoreboard-team::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+
+.scoreboard-team.team-1::before { background: var(--team-1); }
+.scoreboard-team.team-2::before { background: var(--team-2); }
+.scoreboard-team.team-3::before { background: var(--team-3); }
+.scoreboard-team.team-4::before { background: var(--team-4); }
+
+.scoreboard-icon {
+  font-size: 1rem;
+  opacity: 0.6;
+}
+
+.scoreboard-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.scoreboard-score {
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* ── Input Fields ── */
+input, textarea {
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.875rem 1rem;
+  color: var(--foreground);
+  font-size: 1rem;
+  transition: all 0.15s ease;
+}
+
+input:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: -4px 0 0 var(--accent);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-label);
+}
+
+/* ── Select Dropdowns ── */
+select {
+  background: var(--surface-3);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.875rem 1rem;
+  cursor: pointer;
+  appearance: none; /* Reset for custom styles if needed */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: -4px 0 0 var(--accent);
+}
+
+/* Force dark background for options to prevent system default white-on-white */
+select option {
+  background-color: #0f172a; /* Solid surface color */
+  color: #ffffff;
+}
+
+/* ── Label Caps ── */
+.label-caps {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-label);
+}
+
+/* ── Neon Glow Text ── */
+.neon {
+  color: var(--accent);
+  text-shadow: 0 0 20px var(--accent-glow);
+}
+
+/* ── Scrollbar ── */
 ::-webkit-scrollbar {
-  width: 10px;
+  width: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(156, 255, 147, 0.3);
+}
+
+/* ── Utility Classes ── */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* ── Game Page Container — fills exact space between TopNav and Scoreboard ── */
+.game-page {
+  position: fixed;
+  top: var(--header-height);
+  left: 0;
+  right: 0;
+  bottom: var(--scoreboard-height);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.gap-1 { gap: 0.5rem; }
+.gap-2 { gap: 1rem; }
+.gap-3 { gap: 1.5rem; }
+.gap-4 { gap: 2rem; }
+
+.text-center { text-align: center; }
+.text-muted { color: var(--text-muted); }
+.text-accent { color: var(--accent); }
+
+/* ── Game-Specific ── */
+.game-title {
+  font-size: clamp(1.5rem, 4vw, 3rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.grid-5x5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
+  
+  .grid-5x5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }

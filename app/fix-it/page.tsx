@@ -4,8 +4,12 @@ import { useState, useEffect } from "react";
 import styles from "./fix.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
 import Link from "next/link";
-import { ArrowLeft, Sparkles, Lightbulb, ChevronRight, Eye, RefreshCw } from "lucide-react";
+import { ArrowLeft, Sparkles, Lightbulb, ChevronRight, Eye, RefreshCw, Zap } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
+import GameTimer from "../components/GameTimer";
+import ScoreboardOverlay from "../components/ScoreboardOverlay";
+import { stopAllSFX } from "../lib/audio";
+import CommandShell from "../components/CommandShell";
 
 type Mode = "Race" | "Auction" | "Spot & Swap";
 type Question = { level: string, errorType: string, brokenSentence: string, correctedSentence: string, hint: string };
@@ -70,7 +74,10 @@ export default function FixIt() {
     return () => clearInterval(id);
   }, [activeRoomCode]);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    return () => stopAllSFX();
+  }, []);
 
   if (!mounted) return null;
 
@@ -144,259 +151,211 @@ export default function FixIt() {
 
   return (
     <div className={styles.container}>
-      <header className={styles.header}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem", flex: 1, justifyContent: "space-between" }}>
-           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-             <Link href="/games"><button className={styles.iconBtn}><ArrowLeft /></button></Link>
-             <h1>Fix It</h1>
-           </div>
-           
-           <div className={styles.aiControls} style={{ marginLeft: '1rem' }}>
-             <MultiplayerHost gameMode="fixit" />
-             <select 
-               value={levelFilter} 
-               onChange={e => setLevelFilter(e.target.value)}
-               className={styles.topicInput}
-               style={{ minWidth: '120px' }}
-             >
-               <option value="Mixed Level">Mixed Level</option>
-               <option value="Low">Low</option>
-               <option value="Mid">Mid</option>
-               <option value="High">High</option>
-             </select>
-             <input 
-               placeholder="Theme (e.g. Travel)" 
-               value={topic}
-               onChange={e => setTopic(e.target.value)}
-               className={styles.topicInput}
-               onKeyDown={e => e.key === "Enter" && !isGenerating && handleGenerate()}
-             />
-             <button onClick={handleGenerate} disabled={isGenerating} className={styles.genBtn}>
-               <Sparkles size={20} /> Generate Grammar Map
-             </button>
-           </div>
-        </div>
-      </header>
+      <div className={styles.leftDecor}>
+        LAT: 40.7128° N<br/>
+        LNG: 74.0060° W<br/>
+        STREAM: ENCRYPTED
+      </div>
+
+      {/* Hidden Control Panel for Teacher (Kept for functionality) */}
+      {!questions && (
+        <header className={styles.header}>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+             <h1 style={{ margin: 0, color: 'var(--accent-cyan)' }}>Fix It Generator</h1>
+          </div>
+          
+          <div className={styles.aiControls}>
+            <MultiplayerHost gameMode="fixit" />
+            <select 
+              value={levelFilter} 
+              onChange={e => setLevelFilter(e.target.value)}
+              className={styles.topicInput}
+            >
+              <option value="Mixed Level">Mixed Level</option>
+              <option value="Low">Low</option>
+              <option value="Mid">Mid</option>
+              <option value="High">High</option>
+            </select>
+            <input 
+              placeholder="Theme (e.g. Travel)" 
+              value={topic}
+              onChange={e => setTopic(e.target.value)}
+              className={styles.topicInput}
+              onKeyDown={e => e.key === "Enter" && !isGenerating && handleGenerate()}
+            />
+            <button onClick={handleGenerate} disabled={isGenerating} className={styles.genBtn}>
+              <Sparkles size={18} /> GENERATE
+            </button>
+          </div>
+        </header>
+      )}
 
       {isGenerating ? (
         <div className={styles.loadingState}>
-          <Sparkles size={100} className={styles.spinIcon} />
-          <h2>Analyzing language errors...</h2>
+          <Sparkles size={100} className={styles.spinIcon} style={{ color: 'var(--accent)' }} />
+          <h2 className="glow-text">NEURAL ERROR ANALYSIS...</h2>
         </div>
       ) : !questions ? (
         <div className={styles.emptyState}>
-          <p>Type a theme above to generate 10 lightning-fast grammar corrections!</p>
+          <p className="label-caps">System Idle</p>
+          <p style={{ opacity: 0.5 }}>Enter a language module topic to generate grammar corrections.</p>
         </div>
       ) : (
-        <div className={styles.gameBoard}>
-          
-          <div className={styles.modeTabs}>
-            {(["Race", "Auction", "Spot & Swap"] as Mode[]).map(m => (
-              <button 
-                key={m} 
-                className={`${styles.tabBtn} ${activeMode === m ? styles.active : ''}`}
-                onClick={() => setActiveMode(m)}
-              >
-                {m}
-              </button>
-            ))}
-            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '0.5rem 1rem', borderRadius: '8px' }}>
-              <input type="checkbox" id="penaltyMode" checked={penalizeWrong} onChange={e => setPenalizeWrong(e.target.checked)} />
-              <label htmlFor="penaltyMode" style={{ fontSize: '0.9rem', cursor: 'pointer', userSelect: 'none' }}>Penalty for Wrong Answers</label>
-            </div>
-          </div>
+        <div className={styles.canvasLeft}>
+           <div className={styles.gameSplit}>
+             {/* Left Column: Primary Sentence Area */}
+             <div className={styles.leftCol}>
+               <div className={styles.cyanLine} />
+               <div className={styles.seqLabel}>CORRECTION_REQUIRED // SEQUENCE_{String(currentIndex+1).padStart(2,'0')}</div>
+               
+               <h1 className={styles.mainSentence}>
+                  {!showAnswer ? currentQ?.brokenSentence : currentQ?.correctedSentence}
+               </h1>
 
-          <div className={styles.questionMeta}>
-             Set {currentIndex + 1} of {questions.length} • {currentQ?.level} Level
-             
-             {/* The hidden spot logic overlay flag */}
-             {(activeMode === "Spot & Swap" || showAnswer || showErrorFlag) && (
-               <span className={styles.errorTypeBadge} style={{ filter: (showErrorFlag || showAnswer) ? 'none' : 'blur(4px)' }}>
-                 {(showErrorFlag || showAnswer) ? currentQ?.errorType : "Hidden System Constraint"}
-               </span>
-             )}
-          </div>
-          
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '2rem', textAlign: 'center' }}>
-             {activeMode === "Race" && "Race Mode: Be the first to yell out the perfectly corrected sentence!"}
-             {activeMode === "Auction" && "Auction Mode: Secretly bet 1-5 points on your answer!"}
-             {activeMode === "Spot & Swap" && "Spot & Swap: Physically name the exact error type BEFORE giving the fix!"}
-          </h2>
+               <div className={styles.techControls}>
+                 <button 
+                    className={styles.btnSolidCyan} 
+                    onClick={() => setShowHint(true)} 
+                    disabled={showHint || showAnswer}
+                 >
+                    <Zap size={20} /> DEPLOY HINT
+                 </button>
+                 
+                 {!showAnswer ? (
+                   <button 
+                      className={styles.btnOutlineCyan} 
+                      onClick={() => {
+                          setShowAnswer(true);
+                          if (activeRoomCode) {
+                            fetch("/api/room/action", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: {} })
+                            }).catch(() => {});
+                          }
 
-          <div className={`${styles.questionCard} ${showAnswer ? styles.questionCardSuccess : ''}`}>
-             {!showAnswer ? currentQ?.brokenSentence : (
-               <span className={styles.answerText}>{currentQ?.correctedSentence}</span>
-             )}
-          </div>
-
-          {showHint && !showAnswer && (
-             <div className={styles.hintBox}>
-                💡 {currentQ?.hint}
+                          // Automated Tiered Scoring System
+                          const answeredStudents = roomStudents.filter((s: any) => s.answered && s.lastAnswer);
+                          const correctAnswers: any[] = [];
+                          const wrongAnswers: any[] = [];
+                          
+                          answeredStudents.forEach((s: any) => {
+                             const isCorrect = currentQ && s.lastAnswer?.toLowerCase().trim() === currentQ.correctedSentence.toLowerCase().trim();
+                             if (isCorrect) correctAnswers.push(s);
+                             else wrongAnswers.push(s);
+                          });
+                          
+                          correctAnswers.sort((a, b) => (a.answerTime || 0) - (b.answerTime || 0));
+                          const newPointsEarned: Record<string, number> = {};
+                          
+                          correctAnswers.forEach((s, idx) => {
+                             let pts = 100;
+                             if (idx === 0) pts = 500;
+                             else if (idx === 1) pts = 400;
+                             else if (idx === 2) pts = 300;
+                             else if (idx === 3) pts = 200;
+                             
+                             newPointsEarned[s.id] = pts;
+                             const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
+                             if (team) updateTeamScore(team.id, pts);
+                          });
+                          
+                          if (penalizeWrong) {
+                             wrongAnswers.forEach(s => {
+                                 newPointsEarned[s.id] = -100;
+                                 const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
+                                 if (team) updateTeamScore(team.id, -100);
+                             });
+                          }
+                          setPointsEarned(newPointsEarned);
+                      }}
+                   >
+                      <Eye size={20} /> REVEAL CORRECTION
+                   </button>
+                 ) : (
+                   <button 
+                      className={styles.btnOutlineCyan} 
+                      onClick={nextQuestion} 
+                      disabled={currentIndex === questions.length - 1} 
+                      style={{ borderColor: 'var(--accent-green)', color: 'var(--accent-green)' }}
+                   >
+                      NEXT SEQUENCE <ChevronRight size={20} />
+                   </button>
+                 )}
+               </div>
              </div>
-          )}
 
-          <div className={styles.controlsRow}>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button className={styles.genBtn} style={{ background: 'transparent', border: '1px solid var(--accent)', color: 'var(--accent)' }} onClick={() => setShowHint(true)} disabled={showHint || showAnswer}>
-                <Lightbulb size={20} /> Deploy Hint
-              </button>
-              
-              {activeMode === "Spot & Swap" && !showErrorFlag && !showAnswer && (
-                <button className={styles.genBtn} style={{ background: 'transparent', border: '1px solid #ef4444', color: '#ef4444' }} onClick={() => setShowErrorFlag(true)}>
-                  <Eye size={20} /> Expose Error Target
-                </button>
-              )}
-            </div>
-            
-            <div style={{ display: 'flex', gap: '1rem' }}>
-               {!showAnswer ? (
-                  <button className={styles.genBtn} onClick={() => {
-                      setShowAnswer(true);
-                      if (activeRoomCode) {
-                        fetch("/api/room/action", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: {} })
-                        }).catch(() => {});
-                      }
+             {/* Right Column: System Logs & Network Status */}
+             <div className={styles.rightCol}>
+               <div className={styles.systemLog}>
+                  <div className={styles.logHeader}>SYSTEM_LOG_v4.2</div>
+                  <div className={styles.logBody}>
+                    <span style={{ color: 'var(--accent-green)' }}>[INIT]</span> Target sequence localized.<br/>
+                    {">"} Error classification: "{currentQ?.errorType}" anomaly detected...<br/>
+                    {showHint && <><span style={{color: 'white'}}>{">"} SYSTEM_HINT: {currentQ?.hint}</span><br/></>}
+                    
+                    {roomStudents.filter((s:any) => s.answered).map((s:any, idx:number) => (
+                       <div key={idx} style={{ color: 'var(--accent-cyan)' }}>
+                         {">"} [SIGNAL LOCKED] {s.name} has transmitted correction.
+                       </div>
+                    ))}
 
-                      // Automated Tiered Scoring System
-                      if (activeMode !== "Auction") {
-                        const answeredStudents = roomStudents.filter((s: any) => s.answered && s.lastAnswer);
-                        const correctAnswers: any[] = [];
-                        const wrongAnswers: any[] = [];
-                        
-                        answeredStudents.forEach((s: any) => {
-                           const isCorrect = currentQ && s.lastAnswer?.toLowerCase().trim() === currentQ.correctedSentence.toLowerCase().trim();
-                           if (isCorrect) correctAnswers.push(s);
-                           else wrongAnswers.push(s);
-                        });
-                        
-                        // Sort correct answers by speed
-                        correctAnswers.sort((a, b) => (a.answerTime || 0) - (b.answerTime || 0));
-                        
-                        const newPointsEarned: Record<string, number> = {};
-                        
-                        correctAnswers.forEach((s, idx) => {
-                           let pts = 100;
-                           if (idx === 0) pts = 500;
-                           else if (idx === 1) pts = 400;
-                           else if (idx === 2) pts = 300;
-                           else if (idx === 3) pts = 200;
-                           
-                           newPointsEarned[s.id] = pts;
-                           const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
-                           if (team) updateTeamScore(team.id, pts);
-                        });
-                        
-                        if (penalizeWrong) {
-                           wrongAnswers.forEach(s => {
-                               newPointsEarned[s.id] = -100;
-                               const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
-                               if (team) updateTeamScore(team.id, -100);
-                           });
-                        }
-                        
-                        setPointsEarned(newPointsEarned);
-                      }
-                  }} style={{ background: '#2dd4bf', color: '#111' }}>
-                    <RefreshCw size={20} /> Reveal Correction 
-                  </button>
-               ) : (
-                  <button className={styles.genBtn} onClick={nextQuestion} disabled={currentIndex === questions.length - 1} style={{ background: 'white', color: 'black' }}>
-                    Next Sentence <ChevronRight size={20} />
-                  </button>
+                    {showAnswer && <><span style={{color: 'var(--accent-green)'}}>{">"} [RESOLVED] Syntax matrix stabilized.</span><br/></>}
+
+                    {showAnswer && Object.entries(pointsEarned).map(([studentId, pts]) => {
+                       const studentName = roomStudents.find((s:any) => s.id === studentId)?.name || 'Unknown Node';
+                       return (
+                         <div key={studentId} style={{ color: pts > 0 ? 'var(--accent-green)' : '#ef4444' }}>
+                            {">"} [SCORE] {studentName} {pts > 0 ? `+${pts}` : pts} pts.
+                         </div>
+                       );
+                    })}
+                    <br/>
+                    <span style={{ opacity: 0.5 }}>{">"} AWAITING_NEXT_SEQUENCE_</span>
+                  </div>
+               </div>
+
+               {/* Pre-reveal Status Cards */}
+               {!showAnswer && activeRoomCode && roomStudents.length > 0 && (
+                 <div style={{ width: '100%', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
+                   <h3 style={{ marginBottom: '1rem', color: 'var(--accent-cyan)', fontFamily: 'monospace', fontSize: '0.7rem' }}>// NETWORK_STATUS: {roomStudents.filter((s:any) => s.answered).length} LOCKED</h3>
+                   <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                     {roomStudents.map((s: any, i: number) => (
+                       <div key={i} style={{
+                         padding: '0.3rem 0.6rem',
+                         borderRadius: '4px',
+                         fontSize: '0.75rem',
+                         background: s.answered ? 'rgba(45,212,191,0.1)' : 'rgba(255,255,255,0.02)',
+                         border: `1px solid ${s.answered ? 'var(--accent-cyan)' : 'rgba(255,255,255,0.05)'}`,
+                         opacity: s.answered ? 1 : 0.4,
+                         color: s.answered ? 'var(--accent-cyan)' : 'white'
+                       }}>
+                         {s.name}
+                       </div>
+                     ))}
+                   </div>
+                 </div>
                )}
-            </div>
-          </div>
 
-          {activeMode === "Auction" && currentTeams.length > 0 && (
-            <div className={styles.teamScoreList}>
-              {currentTeams.map(t => (
-                <div key={t.id} className={styles.teamCard}>
-                  <div className={styles.teamHeaderRow}>
-                    <span style={{ fontSize: '1.2rem', fontWeight: 800 }}>{t.name}</span>
-                    <span style={{ color: 'var(--accent)', fontWeight: 800 }}>{t.score} pts</span>
-                  </div>
-                  <div className={styles.bettingControls}>
-                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', fontWeight: 800 }}>BET:</span>
-                    <input 
-                      type="number" 
-                      min="1" max="5" 
-                      className={styles.betInput}
-                      value={teamBets[t.id] || "1"}
-                      onChange={e => setTeamBets(prev => ({ ...prev, [t.id]: e.target.value }))}
-                    />
-                    <div className={styles.scoreControl}>
-                      <button 
-                        className={`${styles.scoreBtn} ${styles.scoreBtnLose}`} 
-                        onClick={() => updateTeamScore(t.id, -parseInt(teamBets[t.id] || "1", 10))}
-                      >-</button>
-                      <button 
-                        className={`${styles.scoreBtn} ${styles.scoreBtnWin}`} 
-                        onClick={() => updateTeamScore(t.id, parseInt(teamBets[t.id] || "1", 10))}
-                      >+</button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Pre-reveal visually show who has locked in */}
-          {!showAnswer && activeRoomCode && roomStudents.length > 0 && (
-            <div style={{ marginTop: '2rem', width: '100%', borderTop: '2px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem', textAlign: 'center' }}>
-              <h3 style={{ marginBottom: '1rem', color: 'var(--accent)' }}>🔒 Locked In: {roomStudents.filter((s:any) => s.answered).length} / {roomStudents.length}</h3>
-              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                {roomStudents.map((s: any, i: number) => (
-                  <div key={i} style={{
-                    padding: '0.5rem 1rem',
-                    borderRadius: '8px',
-                    background: s.answered ? 'rgba(45,212,191,0.2)' : 'rgba(255,255,255,0.05)',
-                    border: `1px solid ${s.answered ? 'var(--accent)' : 'rgba(255,255,255,0.1)'}`,
-                    transition: 'all 0.2s ease',
-                    opacity: s.answered ? 1 : 0.5
-                  }}>
-                    {s.name} {s.answered && '✅'}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Live Student Responses Panel */}
-          {showAnswer && activeRoomCode && roomStudents.filter((s: any) => s.answered).length > 0 && (
-            <div style={{ marginTop: '2rem', width: '100%', borderTop: '2px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem' }}>
-              <h3 style={{ textAlign: 'center', marginBottom: '1rem', color: 'var(--accent)' }}>📱 Student Responses</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '0.75rem' }}>
-                {roomStudents.filter((s: any) => s.answered).map((s: any, i: number) => {
-                  const isCorrect = currentQ && s.lastAnswer?.toLowerCase().trim() === currentQ.correctedSentence.toLowerCase().trim();
-                  const timeSeconds = (s.answerTime && roomData?.questionStartTime) ? ((s.answerTime - roomData.questionStartTime) / 1000).toFixed(1) + 's' : '';
-                  const pts = pointsEarned[s.id];
-
-                  return (
-                    <div key={i} style={{
-                      padding: '0.8rem 1rem',
-                      borderRadius: '10px',
-                      border: `2px solid ${isCorrect ? '#22c55e' : '#ef4444'}`,
-                      background: isCorrect ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
-                        <span style={{ fontWeight: 800 }}>{s.name} {isCorrect ? '✅' : '❌'}</span>
-                        <span style={{ fontSize: '0.8rem', opacity: 0.7, fontWeight: 700 }}>
-                          {pts !== undefined && <span style={{ color: pts > 0 ? '#22c55e' : '#ef4444', marginRight: '0.5rem', fontWeight: 900 }}>{pts > 0 ? `+${pts}` : pts} pts</span>}
-                          {timeSeconds}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>&ldquo;{s.lastAnswer}&rdquo;</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-
+               {/* Post-reveal UI for student analytics */}
+               {showAnswer && activeRoomCode && roomStudents.filter((s: any) => s.answered).length > 0 && (
+                 <div style={{ width: '100%', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
+                   <h3 style={{ marginBottom: '1rem', color: 'var(--accent-green)', fontFamily: 'monospace', fontSize: '0.7rem' }}>// NETWORK_RESPONSES</h3>
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                     {roomStudents.filter((s: any) => s.answered).map((s: any, i: number) => {
+                       const isCorrect = currentQ && s.lastAnswer?.toLowerCase().trim() === currentQ.correctedSentence.toLowerCase().trim();
+                       return (
+                         <div key={i} style={{ padding: '0.6rem 0.8rem', background: 'rgba(0,0,0,0.3)', border: `1px solid ${isCorrect ? 'var(--accent-green)' : 'rgba(255,0,0,0.3)'}`, borderRadius: '4px' }}>
+                           <div style={{ fontWeight: 800, color: isCorrect ? 'white' : 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>{s.name}</div>
+                           <div style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', wordBreak: 'break-word' }}>{s.lastAnswer}</div>
+                         </div>
+                       );
+                     })}
+                   </div>
+                 </div>
+               )}
+             </div>
+           </div>
         </div>
       )}
     </div>

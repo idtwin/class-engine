@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react";
 import styles from "./game.module.css";
-import { useClassroomStore } from "../store/useClassroomStore";
+import GameTimer from "../components/GameTimer";
+import GameSettingsDrawer from "../components/GameSettingsDrawer";
+import BoardLibrary from "../components/BoardLibrary";
+import { useClassroomStore, SavedBoard } from "../store/useClassroomStore";
 import Link from "next/link";
 import { ArrowLeft, Zap, Sparkles } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
-import GameTimer from "../components/GameTimer";
-import GameSettingsDrawer from "../components/GameSettingsDrawer";
+import { stopAllSFX } from "../lib/audio";
 
 const DEFAULT_GAME_BOARD = [
   {
@@ -62,20 +64,26 @@ const DEFAULT_GAME_BOARD = [
   }
 ];
 
-export default function GameBoard() {
+export default function JeopardyPage() {
+  const { currentTeams, updateTeamScore, geminiKey, ollamaModel, llmProvider, triggerTwist, activeRoomCode, saveBoard, setActiveAwardAmount } = useClassroomStore();
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, triggerTwist, geminiKey, ollamaModel, llmProvider, activeRoomCode } = useClassroomStore();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [topic, setTopic] = useState("");
   const [board, setBoard] = useState<any[]>(DEFAULT_GAME_BOARD);
+  const [reviewMode, setReviewMode] = useState(false);
+  
+  const handleLoadBoard = (saved: SavedBoard) => {
+    setBoard(saved.content);
+    setTopic(saved.topic);
+    setReviewMode(true);
+  };
   const [activeQuestion, setActiveQuestion] = useState<any>(null);
   const [showAnswer, setShowAnswer] = useState(false);
-  const [reviewMode, setReviewMode] = useState(false);
   const [timeLeft, setTimeLeft] = useState(30);
   const [timerDuration, setTimerDuration] = useState(30);
   const [timerActive, setTimerActive] = useState(false);
   const [showTimesUp, setShowTimesUp] = useState(false);
   
-  const [topic, setTopic] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
   const [roomBuzzes, setRoomBuzzes] = useState<any[]>([]);
   const [roomStudents, setRoomStudents] = useState<any[]>([]);
   const [roomData, setRoomData] = useState<any>(null);
@@ -99,7 +107,10 @@ export default function GameBoard() {
     return () => clearInterval(id);
   }, [activeRoomCode]);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    return () => stopAllSFX();
+  }, []);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -156,6 +167,7 @@ export default function GameBoard() {
     setTimerActive(true);
     setShowTimesUp(false);
     setRoomBuzzes([]);
+    setActiveAwardAmount(board[cIndex].questions[qIndex].points);
     // Push question to Redis + clear buzzes
     if (activeRoomCode) {
       fetch("/api/room/action", {
@@ -185,20 +197,26 @@ export default function GameBoard() {
     <div className={styles.container}>
       <header className={styles.header}>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <Link href="/games"><button className={styles.iconBtn}><ArrowLeft /></button></Link>
-          <h1>Jeopardy</h1>
+          <Link href="/games" style={{ textDecoration: 'none' }}>
+            <button className={styles.iconBtn}>
+              <ArrowLeft color="#fbbf24" size={24} />
+            </button>
+          </Link>
+          <h1 style={{ margin: 0, color: '#fbbf24', letterSpacing: '0.1em', fontFamily: 'monospace' }}>JEOPARDY_MATRIX</h1>
           <MultiplayerHost gameMode="jeopardy" />
           
-          <div className={styles.aiControls}>
+          <div className={styles.aiControls} style={{ marginLeft: '1rem' }}>
             <input 
-              placeholder="Topic (e.g. Animals & Colors)" 
+              placeholder="Lexicon Topic (e.g. Science)" 
               value={topic}
               onChange={e => setTopic(e.target.value)}
               className={styles.topicInput}
+              onKeyDown={e => e.key === "Enter" && !isGenerating && handleGenerate()}
             />
             <button onClick={handleGenerate} disabled={isGenerating} className={styles.genBtn}>
-              <Sparkles size={20} /> {isGenerating ? "Generating..." : "Generate AI Board"}
+              <Sparkles size={18} /> {isGenerating ? "SYNTHESIZING..." : "GENERATE MATRIX"}
             </button>
+            <BoardLibrary currentGameType="jeopardy" onLoadBoard={handleLoadBoard} />
             <GameSettingsDrawer settings={[
               { label: "Timer per Question", type: "select", value: String(timerDuration), onChange: (v: string) => setTimerDuration(Number(v)), options: [
                 { value: "10", label: "10 seconds" },
@@ -218,16 +236,30 @@ export default function GameBoard() {
       {isGenerating ? (
         <div className={styles.loadingState}>
           <Sparkles size={80} className={styles.spinIcon} />
-          <h2>AI is crafting your game...</h2>
-          <p>Generating intelligent questions & creative image prompts</p>
+          <h2 style={{ fontFamily: 'monospace', letterSpacing: '0.1em' }}>INITIALIZING DATA CORE...</h2>
         </div>
       ) : reviewMode ? (
         <div className={styles.reviewContainer}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h2 style={{ color: 'var(--accent)', margin: 0 }}>Review & Edit Questions</h2>
-            <button onClick={() => setReviewMode(false)} className={styles.genBtn} style={{ padding: '0.8rem 2rem', fontSize: '1.1rem', borderRadius: '8px' }}>
-              Approve & Start Game
-            </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(251, 191, 36, 0.2)', paddingBottom: '1rem' }}>
+            <h2 style={{ color: '#fbbf24', margin: 0, fontFamily: 'monospace', letterSpacing: '0.1em' }}>REVIEW MATRIX DATA</h2>
+            <div style={{ display: "flex", gap: "1rem" }}>
+              <button 
+                onClick={() => {
+                  const title = prompt("Enter a name for this board:", topic);
+                  if (title) {
+                    saveBoard({ title, topic, gameType: 'jeopardy', content: board });
+                    alert("Board saved to your library!");
+                  }
+                }}
+                className={styles.genBtn} 
+                style={{ padding: '0.8rem 1.5rem', background: 'rgba(255,255,255,0.05)', color: 'white' }}
+              >
+                💾 Save Board
+              </button>
+              <button onClick={() => setReviewMode(false)} className={styles.genBtn} style={{ padding: '0.8rem 2rem', fontSize: '1.1rem', borderRadius: '8px' }}>
+                Approve & Start Game
+              </button>
+            </div>
           </div>
           <div className={styles.reviewScroll}>
             {board.map((col, cIndex) => (
@@ -295,23 +327,8 @@ export default function GameBoard() {
         </div>
       )}
 
-      <div className={styles.scorebar}>
-        {currentTeams.length === 0 && <span style={{ opacity: 0.5 }}>Generate teams on Dashboard to use Scorecard</span>}
-        {currentTeams.map((t, i) => {
-          const colors = ["#ef4444", "#3b82f6", "#22c55e", "#eab308", "#a855f7", "#f97316", "#ec4899", "#06b6d4"];
-          const color = colors[i % colors.length];
-          return (
-          <div key={t.id} className={styles.teamScore} style={{ borderTop: `3px solid ${color}` }}>
-            <span className={styles.teamName} style={{ color }}>{t.name}</span>
-            <div className={styles.scoreControl}>
-              <button onClick={() => updateTeamScore(t.id, -100)}>-</button>
-              <span className={styles.scoreVal} style={{ color }}>{t.score}</span>
-              <button onClick={() => updateTeamScore(t.id, 100)}>+</button>
-            </div>
-          </div>
-          );
-        })}
-      </div>
+
+
 
       {activeQuestion && (() => {
         const sortedBuzzes = [...roomBuzzes].sort((a: any, b: any) => a.time - b.time);
@@ -343,11 +360,11 @@ export default function GameBoard() {
 
             {showAnswer ? (
               <div className={styles.answerBox}>
-                <h3 style={{ color: 'var(--accent)', marginBottom: '0.5rem' }}>Answer:</h3>
-                <p className={styles.questionText} style={{ fontSize: '2.5rem' }}>{activeQuestion.answer || "No answer provided."}</p>
+                <h3 style={{ color: '#fbbf24', marginBottom: '0.5rem', fontFamily: 'monospace' }}>DECRYPTED_ANSWER:</h3>
+                <p className={styles.questionText}>{activeQuestion.answer || "No answer provided."}</p>
               </div>
             ) : (
-              <p className={styles.questionText} style={{ fontSize: '2.5rem' }}>{activeQuestion.text}</p>
+              <p className={styles.questionText}>{activeQuestion.text}</p>
             )}
 
             {/* Buzz-in + Typed Answers Panel */}
@@ -385,11 +402,11 @@ export default function GameBoard() {
             )}
             
             <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <GameTimer timeLeft={timeLeft} totalTime={timerDuration} showTimesUp={showTimesUp} />
+              <GameTimer variant="circle" timeLeft={timeLeft} totalTime={timerDuration} showTimesUp={showTimesUp} />
             </div>
             
             {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <div className={styles.modalActions}>
               {!showAnswer && (
                 <button onClick={() => {
                   setShowAnswer(true);
@@ -399,8 +416,8 @@ export default function GameBoard() {
                       body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: {} })
                     }).catch(() => {});
                   }
-                }} style={{ padding: '1rem 2rem', fontSize: '1.3rem', background: '#2dd4bf', color: '#111', border: 'none', borderRadius: '12px', fontWeight: 800, cursor: 'pointer' }}>
-                  Reveal Answer
+                }}>
+                  DECRYPT ANSWER
                 </button>
               )}
               
@@ -415,17 +432,19 @@ export default function GameBoard() {
                       body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: {} })
                     }).catch(() => {});
                   }
-                }} style={{ padding: '1rem 2rem', fontSize: '1.3rem', background: '#22c55e', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 800, cursor: 'pointer' }}>
-                  ✅ Award {activeQuestion.points} to {firstBuzzer.name}
+                }}>
+                  AWARD [{activeQuestion.points}] {firstBuzzer.name}
                 </button>
               )}
 
-              <button onClick={() => closeQuestion(true)} style={{ padding: '1rem 2rem', fontSize: '1.3rem', background: 'var(--panel)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', fontWeight: 700, cursor: 'pointer' }}>
-                Done (Close)
+              <button className={styles.secondaryBtn} onClick={() => closeQuestion(true)}>
+                ARCHIVE MODULE
               </button>
-              <button onClick={() => closeQuestion(false)} style={{ padding: '1rem 2rem', fontSize: '1.3rem', background: 'transparent', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', cursor: 'pointer' }}>
-                Cancel
-              </button>
+              {!showAnswer && (
+                <button className={styles.secondaryBtn} onClick={() => closeQuestion(false)}>
+                  CANCEL OVERRIDE
+                </button>
+              )}
             </div>
           </div>
         </div>

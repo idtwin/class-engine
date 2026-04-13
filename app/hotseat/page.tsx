@@ -120,20 +120,24 @@ export default function HotSeatMode() {
     <div className={styles.container}>
       <header className={styles.header}>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <Link href="/games"><button className={styles.iconBtn}><ArrowLeft /></button></Link>
-          <h1>The Hot Seat</h1>
+          <Link href="/games" style={{ textDecoration: 'none' }}>
+            <button className={styles.iconBtn}>
+              <ArrowLeft color="#ff4500" size={24} />
+            </button>
+          </Link>
+          <h1 style={{ margin: 0, color: '#ff4500', letterSpacing: '0.1em', fontFamily: 'monospace' }}>HOT_SEAT_PROTOCOL</h1>
           
-          <div className={styles.aiControls}>
+          <div className={styles.aiControls} style={{ marginLeft: '1rem' }}>
             <MultiplayerHost gameMode="hotseat" />
             <input 
-              placeholder="Topic (e.g. Winter Holidays)" 
+              placeholder="Lexicon Topic (e.g. Winter Holidays)" 
               value={topic}
               onChange={e => setTopic(e.target.value)}
               className={styles.topicInput}
               disabled={isPlaying}
             />
             <button onClick={handleGenerate} disabled={isGenerating || isPlaying} className={styles.genBtn}>
-              <Sparkles size={20} /> {isGenerating ? "Generating..." : "Generate AI Words"}
+              <Sparkles size={18} /> {isGenerating ? "SYNTHESIZING..." : "GENERATE TABOO DECK"}
             </button>
             <GameSettingsDrawer settings={[
               { label: "Round Timer", type: "select", value: String(timerDuration), onChange: (v: string) => { setTimerDuration(Number(v)); if (!isPlaying) setTimeLeft(Number(v)); }, options: [
@@ -146,60 +150,74 @@ export default function HotSeatMode() {
             ]} />
           </div>
         </div>
-        
-        <button className={styles.iconBtn} onClick={triggerTwist} style={{ width: 'auto', padding: '0.8rem 1.5rem', borderRadius: '12px' }}>
-          <Zap size={20} style={{ marginRight: '0.5rem' }}/> Trigger Twist
-        </button>
       </header>
 
       {isGenerating ? (
         <div className={styles.loadingState}>
           <Sparkles size={80} className={styles.spinIcon} />
-          <h2>AI is crafting your Taboo deck...</h2>
+          <h2 style={{ letterSpacing: '0.1em' }}>SYNTHESIZING TABOO DECK...</h2>
         </div>
       ) : words.length === 0 ? (
         <div className={styles.emptyState}>
-          <p>Type a topic above to instantly generate 10 taboo words!</p>
+          <p>AWAITING LEXICON TOPIC INPUT TO GENERATE DECK_</p>
         </div>
       ) : (
-        <div className={styles.gameArea}>
-          <div className={styles.scoreOverlay}>
-            ⭐ {score}
+        <div style={{ display: 'flex', width: '100%', height: '100%', position: 'relative' }}>
+          
+          {/* Main Cinematic Left Canvas */}
+          <div className={styles.canvasLeft}>
+            <div className={styles.seqLabel}>
+               TABOO_CARD_0{currentIndex + 1} // CAUTION: FORBIDDEN LEXICON ALIVE
+            </div>
+
+            {timeLeft === 0 ? (
+              <div style={{ animation: 'slideIn 0.3s ease' }}>
+                <div className={styles.targetWord}>TIME'S UP!</div>
+                <p style={{ fontSize: '2rem', fontFamily: 'monospace', color: '#ff4500' }}>Final Score: {score} Stars</p>
+                {renderAwardButtons()}
+              </div>
+            ) : currentIndex >= words.length ? (
+              <div style={{ animation: 'slideIn 0.3s ease' }}>
+                <div className={styles.targetWord} style={{ color: 'var(--success)' }}>DECK CLEAR!</div>
+                <p style={{ fontSize: '2rem', fontFamily: 'monospace', color: '#ff4500' }}>Final Score: {score} Stars</p>
+                {renderAwardButtons()}
+              </div>
+            ) : (
+              <div key={currentIndex} style={{ animation: 'slideIn 0.3s ease' }}>
+                <div className={styles.targetWord}>{currentWord?.word}</div>
+                <div className={styles.forbiddenContainer}>
+                  {currentWord?.forbidden.map((f: string, i: number) => (
+                    <span key={i} className={styles.forbiddenWord}>{f}</span>
+                  ))}
+                </div>
+                
+                <div className={styles.controls}>
+                  <button onClick={() => handleScore(true)} className={styles.scoreBtn}>ACCESS GRANTED [SPACE]</button>
+                  <button onClick={() => handleScore(false)} className={styles.skipBtn}>SKIP PROTOCOL</button>
+                </div>
+              </div>
+            )}
           </div>
 
-          {timeLeft === 0 ? (
-            <div className={styles.wordCard}>
-              <div className={styles.targetWord} style={{ color: 'var(--accent)' }}>TIME'S UP!</div>
-              <p style={{ fontSize: '2rem' }}>Final Score: {score} Stars</p>
-              {renderAwardButtons()}
+          {/* System Log on Right */}
+          <div className={styles.systemLog}>
+            <div className={styles.logHeader}>SYSTEM_LOG // STATUS</div>
+            <div className={styles.scoreOverlay}>
+              {score} XP
             </div>
-          ) : currentIndex >= words.length ? (
-            <div className={styles.wordCard}>
-              <div className={styles.targetWord} style={{ color: 'var(--success)' }}>DECK CLEAR!</div>
-              <p style={{ fontSize: '2rem' }}>Final Score: {score} Stars</p>
-              {renderAwardButtons()}
-            </div>
-          ) : (
-            <div className={styles.wordCard} key={currentIndex}>
-              <div className={styles.targetWord}>{currentWord?.word}</div>
-              <div className={styles.forbiddenList}>
-                {currentWord?.forbidden.map((f: string, i: number) => (
-                  <span key={i} className={styles.forbiddenWord}>{f}</span>
-                ))}
+            {currentTeams.length === 0 && <span style={{ opacity: 0.5 }}>No Teams Synchronized.</span>}
+            {currentTeams.map(t => (
+              <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.8rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <span>{t.name}</span>
+                <span style={{ color: '#ff4500', fontWeight: 800 }}>{t.score}</span>
               </div>
-              
-              <div className={styles.controls}>
-                <button onClick={() => handleScore(true)} className={styles.scoreBtn}>Got It (Space)</button>
-                <button onClick={() => handleScore(false)} className={styles.skipBtn}>Skip Word</button>
+            ))}
+            {words.length > 0 && isPlaying && (
+              <div style={{ marginTop: '2rem' }}>
+                <GameTimer variant="circle" label="HACK TIME" timeLeft={timeLeft} totalTime={timerDuration} showTimesUp={showTimesUp} />
               </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {words.length > 0 && isPlaying && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
-          <GameTimer timeLeft={timeLeft} totalTime={timerDuration} showTimesUp={showTimesUp} />
+            )}
+          </div>
         </div>
       )}
     </div>

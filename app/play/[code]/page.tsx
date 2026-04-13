@@ -183,9 +183,9 @@ export default function PlayPage() {
   const renderTeamBanner = () => {
     if (!myTeamInfo) return null;
     return (
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '0.75rem', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(10px)', display: 'flex', justifyContent: 'space-between', borderBottom: `2px solid ${myTeamInfo.color}66` }}>
-        <span style={{ fontWeight: 800, color: myTeamInfo.color }}>{myTeamInfo.name}</span>
-        <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>🧑‍🤝‍🧑 {myTeamInfo.activeCount} Online</span>
+      <div className={styles.banner} style={{ borderBottomColor: `${myTeamInfo.color}66` }}>
+        <span style={{ color: myTeamInfo.color }}>{myTeamInfo.name}</span>
+        <span style={{ opacity: 0.8 }}>PLAYER 1</span>
       </div>
     );
   };
@@ -247,8 +247,9 @@ export default function PlayPage() {
         </p>
 
         {!isRevealed ? (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', width: '90%', maxWidth: '400px' }}>
-            {(["A", "B", "C", "D"] as const).map(letter => {
+          <div className={styles.grid2x2}>
+            {(["A", "B", "C", "D"] as const).map((letter, idx) => {
+              const colors = [styles.btnBlue, styles.btnRed, styles.btnGreen, styles.btnYellow];
               const picked = myPick === letter;
               const anyPicked = !!myPick;
               return (
@@ -264,21 +265,10 @@ export default function PlayPage() {
                     setSelectedWord(letter);
                   }}
                   disabled={anyPicked || !!teammateBlocked}
-                  style={{
-                    padding: '1.2rem 1rem',
-                    borderRadius: '14px',
-                    border: `2px solid ${picked ? 'var(--accent)' : 'rgba(255,255,255,0.15)'}`,
-                    background: picked ? 'rgba(45,212,191,0.2)' : 'rgba(255,255,255,0.05)',
-                    color: 'white',
-                    fontSize: '1rem',
-                    fontWeight: 700,
-                    cursor: anyPicked ? 'default' : 'pointer',
-                    opacity: anyPicked && !picked ? 0.3 : 1,
-                    transition: 'all 0.2s'
-                  }}
+                  className={`${styles.optionBtn} ${colors[idx]} ${picked ? styles.btnSelected : ''} ${anyPicked && !picked ? styles.btnDisabled : ''}`}
                 >
-                  <span style={{ fontWeight: 900, marginRight: '0.5rem', opacity: 0.5 }}>{letter}.</span>
-                  {room.currentQuestion.options[letter]}
+                  <div style={{ fontSize: '2.5rem', opacity: 0.9 }}>{letter}</div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{room.currentQuestion.options[letter]}</div>
                 </button>
               );
             })}
@@ -332,10 +322,10 @@ export default function PlayPage() {
           renderTeammateBlocked()
         ) : !hasBuzzed ? (
           <button 
-            className={`${styles.giantBuzzer}`}
+            className={`${styles.giantBuzzer} ${hasBuzzed ? styles.buzzerPressed : ''}`}
             onClick={handleBuzz}
           >
-            BUZZ IN
+            PUSH
           </button>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', width: '90%', maxWidth: '400px' }}>
@@ -380,16 +370,19 @@ export default function PlayPage() {
         {renderTeamBanner()}
         <h2 style={{ marginBottom: '1.5rem', marginTop: myTeamInfo ? '3rem' : '0' }}>Tap the Outlier</h2>
         <div className={styles.grid2x2}>
-          {words.map((w: string, idx: number) => (
-            <button 
-              key={idx} 
-              className={`${styles.cardBtn} ${selectedWord === w ? styles.cardSelected : ''}`}
-              onClick={() => handleTapWord(w)}
-              disabled={!!selectedWord || !!teammateBlocked}
-            >
-              {w}
-            </button>
-          ))}
+          {words.map((w: string, idx: number) => {
+            const colors = [styles.btnRed, styles.btnBlue, styles.btnYellow, styles.btnGreen];
+            return (
+              <button 
+                key={idx} 
+                className={`${styles.optionBtn} ${colors[idx % 4]} ${selectedWord === w ? styles.btnSelected : ''} ${selectedWord && selectedWord !== w ? styles.btnDisabled : ''}`}
+                onClick={() => handleTapWord(w)}
+                disabled={!!selectedWord || !!teammateBlocked}
+              >
+                {w}
+              </button>
+            );
+          })}
         </div>
         {selectedWord && <p style={{ marginTop: '1rem', color: 'var(--accent)' }}>Answer locked! ✅</p>}
         {renderTeammateBlocked()}
@@ -475,6 +468,13 @@ export default function PlayPage() {
 
   // === WOULD YOU RATHER: A/B Vote ===
   if (room.gameMode === "wyr") {
+    const votedStudents = room.students?.filter((s: any) => s.answered) || [];
+    const votersA = votedStudents.filter((s: any) => s.lastAnswer === 'A');
+    const votersB = votedStudents.filter((s: any) => s.lastAnswer === 'B');
+    const total = votersA.length + votersB.length;
+    const pctA = total > 0 ? Math.round((votersA.length / total) * 100) : 0;
+    const pctB = total > 0 ? Math.round((votersB.length / total) * 100) : 0;
+
     return (
       <div className={styles.screen} style={teamBgStyle}>
         {renderTeamBanner()}
@@ -498,9 +498,31 @@ export default function PlayPage() {
             >
               {room.currentQuestion.optionB}
             </button>
+
+            {/* Percentage Bar: visible after voting or if already voted */}
+            <div style={{ 
+              marginTop: '1.5rem', 
+              padding: '1.5rem', 
+              background: 'rgba(255,255,255,0.05)', 
+              borderRadius: '20px',
+              border: '1px solid rgba(255,255,255,0.1)',
+              animation: 'fadeIn 0.5s ease'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
+                <span style={{ color: '#ff4d4d', fontWeight: 900, fontSize: '1.5rem' }}>{pctA}%</span>
+                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                  {total} Vote{total !== 1 ? 's' : ''}
+                </span>
+                <span style={{ color: '#4d9fff', fontWeight: 900, fontSize: '1.5rem' }}>{pctB}%</span>
+              </div>
+              <div style={{ display: 'flex', height: '12px', borderRadius: '6px', overflow: 'hidden', background: 'rgba(255,255,255,0.1)' }}>
+                <div style={{ width: `${pctA}%`, background: '#ff4d4d', transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }} />
+                <div style={{ width: `${pctB}%`, background: '#4d9fff', transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }} />
+              </div>
+              {hasVoted && <p style={{ marginTop: '1rem', color: 'var(--accent)', fontWeight: 800, fontSize: '0.9rem' }}>VOTE RECORDED ✅</p>}
+            </div>
           </div>
         )}
-        {hasVoted && <p style={{ marginTop: '1rem', color: 'var(--accent)' }}>Vote cast! ✅</p>}
         {!room.currentQuestion && <p style={{ opacity: 0.5 }}>Waiting for next scenario...</p>}
       </div>
     );

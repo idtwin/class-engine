@@ -2,104 +2,138 @@
 
 import Link from "next/link";
 import styles from "./games.module.css";
-import { ArrowLeft, LayoutGrid, Zap, Image as ImageIcon, MessageSquare, BookOpen, Flame, HelpCircle, Wrench, Link2, Volume2, VolumeX } from "lucide-react";
-import { useClassroomStore } from "../store/useClassroomStore";
+import { ArrowLeft, LayoutGrid, Zap, Image as ImageIcon, MessageSquare, BookOpen, Flame, HelpCircle, Wrench, Link2, Volume2, VolumeX, ChevronRight } from "lucide-react";
+import { useClassroomStore, SavedBoard } from "../store/useClassroomStore";
+import BoardLibrary from "../components/BoardLibrary";
+
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function GamesHub() {
+  const [mounted, setMounted] = useState(false);
+  const [isLaunching, setIsLaunching] = useState(false);
+  const { soundEnabled, setSoundEnabled } = useClassroomStore();
+  const router = useRouter();
+
+  useEffect(() => setMounted(true), []);
+
   const games = [
     {
       title: "Fix It",
-      desc: "The ultimate grammatical heavy-lifter. Find the single error in the broken sentence before the other teams. Features Race, Auction, and Spot & Swap modes.",
+      desc: "Find the single error in the broken sentence before the other teams. Features Race, Auction, and Spot & Swap modes.",
       href: "/fix-it",
-      icon: <Wrench size={28} />,
+      icon: <Wrench size={24} />,
       color: "#F59E0B" 
     },
     {
       title: "Odd One Out",
-      desc: "An AI-powered word classification game with Classic, Debate, and Elimination modes. Find the outlier!",
+      desc: "AI-powered word classification. Classic, Debate, and Elimination modes. Find the outlier!",
       href: "/odd-one-out",
-      icon: <HelpCircle size={28} />,
-      color: "#9370DB" 
+      icon: <HelpCircle size={24} />,
+      color: "#BC13FE" 
     },
     {
       title: "Rapid Fire",
-      desc: "Fast-paced buzzer game. The AI pre-generates 15-20 questions and auto-routes them to matching student levels when a team buzzes in.",
+      desc: "Fast-paced buzzer game. AI pre-generates 15-20 questions routed by student level.",
       href: "/rapid-fire",
-      icon: <Flame size={28} />,
-      color: "#ff4d4d" 
+      icon: <Flame size={24} />,
+      color: "#FF2D78" 
     },
     {
       title: "Jeopardy",
-      desc: "The classic 5x5 board. AI dynamically generates categories, questions, and highly contextual visual aids based on your topic.",
+      desc: "The classic 5x5 board. AI dynamically generates categories and high-context visual aids.",
       href: "/jeopardy",
-      icon: <LayoutGrid size={28} />,
-      color: "#FFD700" 
+      icon: <LayoutGrid size={24} />,
+      color: "#FFB800" 
     },
     {
       title: "The Hot Seat",
-      desc: "Fast-paced Taboo. One student faces the class, the team has 60 seconds to describe the massive word on the projector.",
+      desc: "Fast-paced Taboo. Describe the hidden word to the student facing away from the projector.",
       href: "/hotseat",
-      icon: <Zap size={28} />,
-      color: "#FF4500" 
+      icon: <Zap size={24} />,
+      color: "#00FF41" 
     },
     {
       title: "Picture Reveal",
-      desc: "Answer rapid-fire questions to slowly reveal a hidden AI-generated image tile by tile from a 4x4 grid.",
+      desc: "Answer rapid-fire questions to reveal a hidden AI-generated image tile by tile.",
       href: "/reveal",
-      icon: <ImageIcon size={28} />,
-      color: "#1E90FF" 
+      icon: <ImageIcon size={24} />,
+      color: "#00E5FF" 
     },
     {
       title: "Would You Rather",
-      desc: "A massive split-screen debate generator forcing students to choose and argue completely bizarre scenarios.",
+      desc: "AI split-screen debate generator forcing students to argue bizarre scenarios.",
       href: "/wyr",
-      icon: <MessageSquare size={28} />,
+      icon: <MessageSquare size={24} />,
       color: "#FF1493" 
     },
     {
       title: "Story Chain",
-      desc: "Improv speaking rules! The AI forces a wild story starter and 3 random nouns. Chain the story block before the timer ends!",
+      desc: "Improv rules! Chain the story blocks using AI-forced keywords before the timer ends.",
       href: "/story",
-      icon: <BookOpen size={28} />,
-      color: "#32CD32" 
+      icon: <BookOpen size={24} />,
+      color: "#A8FF3E" 
     },
     {
       title: "Chain Reaction",
-      desc: "Fill in compound word chains or race in a last-letter speed round. Letter hints reveal on wrong answers!",
+      desc: "Compound word chains or last-letter races. Letter hints reveal on wrong answers.",
       href: "/chain-reaction",
-      icon: <Link2 size={28} />,
+      icon: <Link2 size={24} />,
       color: "#00CED1" 
     }
   ];
 
-  const { soundEnabled, setSoundEnabled } = useClassroomStore();
+  const handleLaunch = (href: string) => {
+    setIsLaunching(true);
+    setTimeout(() => {
+      router.push(href);
+    }, 400);
+  };
+
+  if (!mounted) return null;
+
+  const handleLoadBoard = (board: SavedBoard) => {
+    const href = board.gameType === 'jeopardy' ? '/jeopardy' : (board.gameType === 'oddoneout' ? '/odd-one-out' : `/${board.gameType}`);
+    handleLaunch(href);
+  };
 
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <Link href="/dashboard"><button className={styles.iconBtn}><ArrowLeft /></button></Link>
-          <h1>Classroom Arcade</h1>
+    <div className={`${styles.container} ${isLaunching ? styles.launching : ''}`}>
+      {/* Light Burst Overlay */}
+      {isLaunching && <div className={styles.lightBurst} />}
+
+
+      <div className={styles.header}>
+        <div>
+          <div className={styles.launchLabel}>SYSTEM_READY // SELECT_MODULE</div>
+          <h2 className="neon" style={{ fontSize: '1.75rem', marginTop: '0.25rem' }}>ARCADE_COMMAND</h2>
         </div>
-        
-        <button 
-          onClick={() => setSoundEnabled(!soundEnabled)} 
-          className={styles.iconBtn}
-          title={soundEnabled ? "Mute Sounds" : "Unmute Sounds"}
-          style={{ background: soundEnabled ? "rgba(45, 212, 191, 0.1)" : "rgba(239, 68, 68, 0.1)" }}
-        >
-          {soundEnabled ? <Volume2 size={22} color="#2dd4bf" /> : <VolumeX size={22} color="#ef4444" />}
-        </button>
-      </header>
-      
+        <BoardLibrary onLoadBoard={handleLoadBoard} />
+      </div>
+
       <div className={styles.grid}>
-        {games.map(game => (
-          <Link key={game.href} href={game.href} className={styles.gameCard}>
-            <div className={styles.gameTitle} style={{ color: game.color }}>
-              {game.icon} {game.title}
+        {games.map((game, idx) => (
+          <div 
+            key={game.href} 
+            onClick={() => handleLaunch(game.href)} 
+            className={`${styles.gameCard} ${styles.fadeIn}`}
+            style={{ 
+              animationDelay: `${idx * 0.05}s`,
+              // @ts-ignore
+              '--card-color': game.color 
+            } as any}
+          >
+            <div className={styles.gameTitle}>
+               <div className={styles.iconCircle} style={{ color: game.color }}>
+                 {game.icon}
+               </div>
+               {game.title}
             </div>
             <p className={styles.gameDesc}>{game.desc}</p>
-          </Link>
+            <div className={styles.cardFooter}>
+               Initialize Module <ChevronRight size={14} />
+            </div>
+          </div>
         ))}
       </div>
     </div>

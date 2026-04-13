@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import TwistOverlay from "./components/TwistOverlay";
 import ScoreboardOverlay from "./components/ScoreboardOverlay";
+import TopNav from "./components/TopNav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,6 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
+        <TopNav />
         {children}
         <TwistOverlay />
         <ScoreboardOverlay />

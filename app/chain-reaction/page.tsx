@@ -8,6 +8,8 @@ import styles from "./chain.module.css";
 import MultiplayerHost from "../components/MultiplayerHost";
 import GameTimer from "../components/GameTimer";
 import ScoreboardOverlay from "../components/ScoreboardOverlay";
+import { stopAllSFX } from "../lib/audio";
+import GameSettingsDrawer from "../components/GameSettingsDrawer";
 
 type GameMode = "puzzle" | "speed";
 type GameState = "SETUP" | "LOADING" | "PLAYING" | "FINISHED";
@@ -39,8 +41,10 @@ export default function ChainReaction() {
   const [gameMode, setGameMode] = useState<GameMode>("puzzle");
   const [gameState, setGameState] = useState<GameState>("SETUP");
   const [topic, setTopic] = useState("");
-  const [difficulty, setDifficulty] = useState("Mid");
+  const [difficulty, setDifficulty] = useState("Intermediate");
   const [timerDuration, setTimerDuration] = useState(15);
+  const [roundCount, setRoundCount] = useState(5);
+  const [circlesPerChain, setCirclesPerChain] = useState<string>("random");
 
   // Chain Puzzle state
   const [chains, setChains] = useState<Chain[]>([]);
@@ -65,7 +69,10 @@ export default function ChainReaction() {
 
   const guessRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    return () => stopAllSFX(); // Silence game on exit
+  }, []);
 
   // Timer
   useEffect(() => {
@@ -104,9 +111,18 @@ export default function ChainReaction() {
     );
   }
 
-  const colors = ["#ef4444", "#3b82f6", "#22c55e", "#eab308", "#a855f7", "#f97316", "#ec4899", "#06b6d4"];
+const TEAM_COLORS = [
+  "#00FF41", // Green  - Alpha
+  "#00E5FF", // Cyan   - Bravo
+  "#FFB800", // Amber  - Charlie
+  "#FF2D78", // Pink   - Delta
+  "#BC13FE", // Purple - Epsilon
+  "#FF9100", // Orange - Zeta
+  "#2DD4BF", // Teal   - Eta
+  "#F87171", // Red    - Theta
+];
   const currentTeam = currentTeams[currentTeamIdx % currentTeams.length];
-  const currentColor = colors[currentTeamIdx % colors.length];
+  const currentColor = TEAM_COLORS[currentTeamIdx % TEAM_COLORS.length];
 
   // ── Generate ──
   const handleGenerate = async () => {
@@ -117,7 +133,17 @@ export default function ChainReaction() {
       const res = await fetch("/api/generate-chain-reaction", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: geminiKey, ollamaModel, provider: llmProvider, llmProvider, topic, level: difficulty, mode: gameMode })
+        body: JSON.stringify({ 
+          apiKey: geminiKey, 
+          ollamaModel, 
+          provider: llmProvider, 
+          llmProvider, 
+          topic, 
+          level: difficulty, 
+          mode: gameMode,
+          count: roundCount,
+          circleCount: circlesPerChain
+        })
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -290,6 +316,14 @@ export default function ChainReaction() {
       return;
     }
 
+    // [TOPIC ENFORCEMENT]: Must be in the AI-generated valid word list
+    const isValid = currentCategory.validWords.some(vw => vw.toLowerCase() === g);
+    if (!isValid) {
+      showFeedback("wrong", `"${g.toUpperCase()}" is not in ${currentCategory.name}!`);
+      setGuess("");
+      return;
+    }
+
     // Valid word — add to chain
     setChainWords(prev => [...prev, { word: g, teamId: currentTeam.id, teamColor: currentColor }]);
     updateTeamScore(currentTeam.id, 100);
@@ -350,66 +384,135 @@ export default function ChainReaction() {
     else handleSpeedGuess();
   };
 
+  // Drawer Settings
+  const settings = [
+    {
+      label: "Topic / Subject",
+      type: "select" as const, // Changed to select for simplicity in the drawer, or I can add a text input if I modify the drawer, but I'll stick to select/text pattern
+      value: topic,
+      onChange: setTopic,
+      options: [
+        { value: "", label: "-- Select Topic --" },
+        { value: "Animals", label: "Animals" },
+        { value: "Food & Drinks", label: "Food & Drinks" },
+        { value: "Nature & Environment", label: "Nature" },
+        { value: "Science & Technology", label: "Science/Tech" },
+        { value: "Daily Life", label: "Daily Life" },
+        { value: "Sports & Hobbies", label: "Sports" },
+        { value: "Custom", label: "Custom (Type below)" }
+      ],
+      description: "Base theme for word generation"
+    },
+    {
+      label: "Game Mode",
+      type: "select" as const,
+      value: gameMode,
+      onChange: setGameMode,
+      options: [
+        { value: "puzzle", label: "🧩 Compound Puzzle" },
+        { value: "speed", label: "⚡ Speed Chain" }
+      ],
+      description: "Puzzle: Word math. Speed: Last-letter race."
+    },
+    {
+      label: "Difficulty Level",
+      type: "select" as const,
+      value: difficulty,
+      onChange: setDifficulty,
+      options: [
+        { value: "Beginner", label: "A1-A2 Beginner" },
+        { value: "Intermediate", label: "B1-B2 Intermediate" },
+        { value: "Advanced", label: "Fluent Speakers" }
+      ]
+    },
+    {
+      label: "Circles per Chain",
+      type: "select" as const,
+      value: circlesPerChain,
+      onChange: setCirclesPerChain,
+      options: [
+        { value: "4", label: "4 Circles" },
+        { value: "5", label: "5 Circles" },
+        { value: "6", label: "6 Circles" },
+        { value: "7", label: "7 Circles" },
+        { value: "random", label: "Varying (4-7)" }
+      ],
+      description: "How many words in each puzzle chain"
+    },
+    {
+      label: "Rounds per Game",
+      type: "select" as const,
+      value: roundCount,
+      onChange: setRoundCount,
+      options: [
+        { value: 4, label: "4 Rounds" },
+        { value: 5, label: "5 Rounds" },
+        { value: 6, label: "6 Rounds" },
+        { value: 7, label: "7 Rounds" }
+      ]
+    },
+    {
+      label: "Turn Timer",
+      type: "select" as const,
+      value: timerDuration,
+      onChange: setTimerDuration,
+      options: [
+        { value: 8, label: "8 Seconds" },
+        { value: 10, label: "10 Seconds" },
+        { value: 15, label: "15 Seconds" },
+        { value: 20, label: "20 Seconds" },
+        { value: 30, label: "30 Seconds" }
+      ]
+    }
+  ];
+
   // ── Render ──
   return (
     <div className={styles.container}>
       <header className={styles.header}>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <Link href="/games" className={styles.iconBtn}><ArrowLeft size={20} /></Link>
-          <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <Link2 size={28} /> Chain Reaction
-          </h1>
+          <Link href="/games" className={styles.iconBtn}>
+            <ArrowLeft size={20} color="#ff8c00" />
+          </Link>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <h1 style={{ margin: 0, color: '#ff8c00', fontSize: '1.2rem', letterSpacing: '0.1em', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Link2 size={20} /> CHAIN_REACTION_v2.1
+            </h1>
+            <span style={{ fontSize: '0.6rem', opacity: 0.5, fontFamily: 'monospace' }}>SECURE_CONNECTION: ENCRYPTED // LINK_STATUS: ACTIVE</span>
+          </div>
         </div>
-        <MultiplayerHost gameMode="chainreaction" />
+
+        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+          <MultiplayerHost gameMode="chainreaction" />
+          <GameSettingsDrawer settings={settings} title="REACTION SETTINGS" />
+        </div>
       </header>
+
 
       {/* ── SETUP ── */}
       {gameState === "SETUP" && (
         <div className={styles.setupContainer}>
-          <div className={styles.setupPanel}>
-            <div className={styles.modeSelect}>
-              <button 
-                className={`${styles.modeBtn} ${gameMode === "puzzle" ? styles.modeBtnActive : ""}`}
-                onClick={() => setGameMode("puzzle")}
-              >
-                <div className={styles.modeBtnTitle}>🧩 Chain Puzzle</div>
-                <div className={styles.modeBtnDesc}>Fill in compound word chains</div>
-              </button>
-              <button 
-                className={`${styles.modeBtn} ${gameMode === "speed" ? styles.modeBtnActive : ""}`}
-                onClick={() => setGameMode("speed")}
-              >
-                <div className={styles.modeBtnTitle}>⚡ Speed Chain</div>
-                <div className={styles.modeBtnDesc}>Last-letter word race</div>
-              </button>
+          <div className={styles.setupPanel} style={{ maxWidth: '500px' }}>
+            <div style={{ marginBottom: '2rem' }}>
+              <h2 style={{ color: '#ff8c00', fontSize: '2rem', marginBottom: '0.5rem' }}>READY TO INITIALIZE?</h2>
+              <p style={{ opacity: 0.7 }}>Configure your chain settings in the sidebar, then type a topic below to start.</p>
             </div>
 
             <input
               className={styles.input}
               value={topic}
               onChange={e => setTopic(e.target.value)}
-              placeholder="Topic (e.g. Animals, Food, Sports...)"
+              placeholder="Enter Topic (e.g. Science, Travel, Space...)"
               onKeyDown={e => e.key === "Enter" && handleGenerate()}
+              autoFocus
             />
 
-            <div style={{ display: "flex", gap: "1rem" }}>
-              <select className={styles.select} value={difficulty} onChange={e => setDifficulty(e.target.value)} style={{ flex: 1 }}>
-                <option value="Low">Low (A1 / Elementary)</option>
-                <option value="Mid">Mid (Intermediate)</option>
-                <option value="High">High (Advanced)</option>
-              </select>
-              <select className={styles.select} value={timerDuration} onChange={e => setTimerDuration(Number(e.target.value))} style={{ flex: 1 }}>
-                <option value={8}>⏱ 8s per turn</option>
-                <option value={10}>⏱ 10s per turn</option>
-                <option value={15}>⏱ 15s per turn</option>
-                <option value={20}>⏱ 20s per turn</option>
-                <option value={30}>⏱ 30s per turn</option>
-              </select>
-            </div>
-
-            <button className={styles.btn} onClick={handleGenerate}>
-              <Sparkles size={20} style={{ marginRight: "0.5rem" }} /> Generate Game
+            <button className={styles.btn} onClick={handleGenerate} disabled={!topic} style={{ marginTop: '1rem', background: topic ? '#ff8c00' : 'rgba(255,140,0,0.2)' }}>
+              <Sparkles size={20} style={{ marginRight: "0.5rem" }} /> {gameMode === 'puzzle' ? 'FORGE CHAINS' : 'IGNITE SPEED CHAIN'}
             </button>
+            <p style={{ marginTop: '1rem', fontSize: '0.8rem', opacity: 0.4 }}>
+              Difficulty: {difficulty} | Rounds: {roundCount} | Length: {circlesPerChain}
+            </p>
           </div>
         </div>
       )}
@@ -427,6 +530,10 @@ export default function ChainReaction() {
         <div className={styles.chainArea}>
           <div className={styles.chainMeta}>
             Chain {chainIndex + 1} of {chains.length} • {currentChain.difficulty || difficulty} Level
+          </div>
+
+          <div className={styles.timerGiant}>
+            <GameTimer variant="circle" label="" timeLeft={timeLeft} totalTime={timerDuration} showTimesUp={false} />
           </div>
 
           {/* Chain nodes */}
@@ -472,9 +579,6 @@ export default function ChainReaction() {
             })}
           </div>
 
-          {/* Timer */}
-          <GameTimer timeLeft={timeLeft} totalTime={timerDuration} showTimesUp={showTimesUp} />
-
           {/* Turn + Input */}
           <div className={styles.guessArea}>
             <div className={styles.turnBadge} style={{ borderColor: currentColor, color: currentColor }}>
@@ -502,9 +606,6 @@ export default function ChainReaction() {
             <button className={styles.controlBtn} onClick={() => handlePuzzleWrong()}>
               Pass Turn
             </button>
-            <button className={styles.controlBtn} style={{ borderColor: "var(--danger)", color: "var(--danger)" }} onClick={triggerTwist}>
-              <Zap size={16} style={{ marginRight: "0.3rem" }} /> Twist
-            </button>
           </div>
         </div>
       )}
@@ -517,6 +618,10 @@ export default function ChainReaction() {
             <span style={{ fontSize: "0.8rem", opacity: 0.5, marginLeft: "0.75rem" }}>
               Round {catIndex + 1} of {categories.length}
             </span>
+          </div>
+
+          <div className={styles.timerGiant}>
+            <GameTimer variant="circle" label="" timeLeft={timeLeft} totalTime={timerDuration} showTimesUp={false} />
           </div>
 
           {/* Word chain */}
@@ -541,14 +646,11 @@ export default function ChainReaction() {
             Next word must start with: <span style={{ fontSize: "2.5rem" }}>{requiredLetter}</span>
           </div>
 
-          {/* Timer */}
-          <GameTimer timeLeft={timeLeft} totalTime={timerDuration} showTimesUp={showTimesUp} />
-
           {/* Strikes */}
           <div className={styles.strikeRow}>
             {currentTeams.map((t, i) => (
-              <div key={t.id} className={styles.strikeCard} style={{ borderColor: t.id === currentTeam.id ? colors[i % colors.length] : "var(--panel-border)" }}>
-                <div style={{ fontWeight: 700, color: colors[i % colors.length] }}>{t.name}</div>
+              <div key={t.id} className={styles.strikeCard} style={{ borderColor: t.id === currentTeam.id ? TEAM_COLORS[i % TEAM_COLORS.length] : "var(--panel-border)" }}>
+                <div style={{ fontWeight: 700, color: TEAM_COLORS[i % TEAM_COLORS.length] }}>{t.name}</div>
                 <div className={styles.strikes}>
                   {Array(3).fill(0).map((_, j) => (
                     <span key={j} style={{ color: j < (strikes[t.id] || 0) ? "#ef4444" : "rgba(255,255,255,0.15)" }}>✕</span>
@@ -584,9 +686,6 @@ export default function ChainReaction() {
           <div className={styles.controlRow}>
             <button className={styles.controlBtn} onClick={skipCategory}>
               <SkipForward size={16} style={{ marginRight: "0.3rem" }} /> Next Category
-            </button>
-            <button className={styles.controlBtn} style={{ borderColor: "var(--danger)", color: "var(--danger)" }} onClick={triggerTwist}>
-              <Zap size={16} style={{ marginRight: "0.3rem" }} /> Twist
             </button>
           </div>
         </div>
@@ -625,6 +724,8 @@ export default function ChainReaction() {
         </div>
       )}
 
+      {/* ── Overlays ── */}
+      {showTimesUp && <GameTimer showTimesUp={true} />}
       <ScoreboardOverlay />
     </div>
   );

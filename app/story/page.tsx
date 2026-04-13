@@ -6,6 +6,8 @@ import { useClassroomStore } from "../store/useClassroomStore";
 import Link from "next/link";
 import { ArrowLeft, Sparkles, Zap } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
+import ScoreboardOverlay from "../components/ScoreboardOverlay";
+import GameTimer from "../components/GameTimer";
 
 export default function StoryChainMode() {
   const [mounted, setMounted] = useState(false);
@@ -125,6 +127,12 @@ export default function StoryChainMode() {
         </div>
       ) : (
         <div className={styles.gameArea}>
+          <GameTimer 
+            timerActive={isPlaying} 
+            variant="bar" 
+            onTimeUp={() => setIsPlaying(false)}
+            key={currentRound} // Reset timer visual on each round
+          />
           
           <div className={styles.starterText}>
             "{starter}"
@@ -140,13 +148,9 @@ export default function StoryChainMode() {
                 ))}
               </div>
 
-              <div className={`${styles.timerRing} ${timeLeft <= 5 ? styles.timerDanger : ''}`}>
-                {timeLeft}
-              </div>
-
               <div className={styles.nextWrap}>
                 <button className={styles.nextBtn} onClick={handleNextRound}>
-                  Next Student (Space)
+                  NEXT TURN (SPACE)
                 </button>
               </div>
             </>

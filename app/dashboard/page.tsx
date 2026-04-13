@@ -204,114 +204,179 @@ export default function Dashboard() {
 
 
   if (!activeClass) {
+    const FOLDER_COLORS = [
+      "0, 255, 65",   // Green
+      "0, 229, 255",  // Cyan
+      "255, 184, 0",  // Yellow
+      "255, 45, 120", // Pink
+      "188, 19, 254", // Purple
+      "255, 107, 53"  // Orange
+    ];
+
     return (
       <div className={styles.container}>
-        <h1>Classroom Engine</h1>
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-          <Link href="/" style={{ textDecoration: 'none' }}>
-            <button className={styles.switchBtn} style={{ background: 'var(--panel)', padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <ArrowLeft size={20} /> Home
+        <div className={styles.neuralGrid} />
+        <div className={styles.inner}>
+          <span className="label-caps" style={{ color: 'var(--accent)', letterSpacing: '0.2em' }}>Project S.E.R.U</span>
+          <h1 style={{ marginTop: '0.5rem', textTransform: 'uppercase', fontWeight: 900 }}>Management Console</h1>
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+            <Link href="/" style={{ textDecoration: 'none' }}>
+              <button className={styles.switchBtn} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <ArrowLeft size={18} /> BACK TO SYSTEM
+              </button>
+            </Link>
+            <button onClick={() => setSettingsOpen(true)} className={styles.switchBtn} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', border: '1px solid var(--accent-glow)' }}>
+              <Settings size={18} /> CORE SETTINGS
             </button>
-          </Link>
-          <button onClick={() => setSettingsOpen(true)} className={styles.switchBtn} style={{ background: 'var(--panel)', padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Settings size={20} /> Settings
-          </button>
-        </div>
-        
-        <div className={styles.classList}>
-          {folders.map(cat => {
-            const folderClasses = classes.filter(c => (c.category || "General") === cat);
-            return (
-              <div key={cat} style={{ marginBottom: '2rem', padding: '1.5rem', border: '1px solid var(--border)', borderRadius: '12px', background: 'rgba(0,0,0,0.2)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <h2 style={{ color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '1px' }}>{cat}</h2>
-                  {folderClasses.length === 0 && (
-                     <button onClick={() => { if(confirm(`Delete empty folder ${cat}?`)) removeFolder(cat) }} className={styles.removeBtn} style={{ fontSize: '1rem', background: 'transparent', border: '1px solid var(--danger)', color: 'var(--danger)', padding: '0.5rem 1rem', width: 'auto', height: 'auto', borderRadius: '8px' }}>Delete Empty Folder</button>
-                  )}
-                </div>
-                
-                {folderClasses.length === 0 ? (
-                  <div style={{ padding: '2rem', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>
-                    This folder is empty. Create a class below!
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {folderClasses.map(c => (
-                      <div key={c.id} style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <button onClick={() => setActiveClass(c.id)} className={styles.classBtn} style={{ flex: 1 }}>
-                          {c.name}
-                        </button>
-                        <select 
-                          value={c.category || "General"}
-                          onChange={(e) => updateClassCategory(c.id, e.target.value)}
-                          style={{ padding: '0 1rem', background: 'var(--panel)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', height: '80px', width: '200px', cursor: 'pointer', fontSize: '1.1rem' }}
-                        >
-                          {folders.map(f => <option key={f} value={f}>Move to {f}</option>)}
-                        </select>
-                        <button 
-                          onClick={() => { if(confirm("Are you sure you want to delete this class?")) removeClass(c.id) }} 
-                          className={styles.removeBtn}
-                          style={{ height: '80px', width: '80px', fontSize: '1.5rem', background: 'var(--panel)' }}
-                        >
-                          X
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        
-        <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <h2 style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>Create New</h2>
-          
-          <div className={styles.addStudentBar}>
-             <input 
-               type="text" 
-               value={newFolderName}
-               onChange={e => setNewFolderName(e.target.value)}
-               placeholder="New Folder Name..."
-               className={styles.input}
-             />
-             <button onClick={() => {
-               if (newFolderName.trim()) {
-                 addFolder(newFolderName.trim());
-                 setNewFolderName("");
-                 setNewClassCategory(newFolderName.trim());
-               }
-             }} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}><FolderPlus size={20} /> Create Folder</button>
           </div>
           
-          <div className={styles.addStudentBar} style={{ marginTop: '1rem' }}>
-            <select 
-              value={newClassCategory} 
-              onChange={(e) => setNewClassCategory(e.target.value)}
-              className={styles.input}
-              style={{ flex: 0.5, cursor: 'pointer', borderRight: '1px solid rgba(255,255,255,0.1)' }}
-            >
-              {folders.map(f => <option key={f} value={f}>{f}</option>)}
-            </select>
-            <input 
-              type="text" 
-              value={newClassName} 
-              onChange={(e) => setNewClassName(e.target.value)}
-              placeholder="Create New Class..." 
-              className={styles.input}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && newClassName.trim()) {
-                  addClass(newClassName.trim(), newClassCategory);
-                  setNewClassName("");
-                }
-              }}
-            />
-            <button onClick={() => {
-              if (newClassName.trim()) {
-                addClass(newClassName.trim(), newClassCategory);
-                setNewClassName("");
-              }
-            }}>Create Class</button>
+          <div className={styles.classList} style={{ marginTop: '2rem' }}>
+            {folders.map((cat, idx) => {
+              const folderClasses = classes.filter(c => (c.category || "General") === cat);
+              const folderColor = FOLDER_COLORS[idx % FOLDER_COLORS.length];
+              
+              return (
+                <div key={cat} style={{ 
+                  marginBottom: '2.5rem', 
+                  padding: '2.5rem', 
+                  border: `1px solid rgba(${folderColor}, 0.1)`, 
+                  borderRadius: '16px', 
+                  background: `linear-gradient(135deg, rgba(${folderColor}, 0.03) 0%, transparent 100%)`,
+                  backdropFilter: 'blur(10px)',
+                  position: 'relative'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: `rgb(${folderColor})`, boxShadow: `0 0 10px rgb(${folderColor})` }} />
+                      <h2 style={{ color: `rgb(${folderColor})`, textTransform: 'uppercase', letterSpacing: '2px', fontSize: '1.5rem', margin: 0 }}>{cat}</h2>
+                    </div>
+                    {folderClasses.length === 0 && (
+                       <button onClick={() => { if(confirm(`Delete empty folder ${cat}?`)) removeFolder(cat) }} className={styles.removeBtn} style={{ fontSize: '0.8rem', background: 'transparent', border: '1px solid var(--danger)', color: 'var(--danger)', padding: '0.5rem 1rem', width: 'auto', height: 'auto', borderRadius: '8px' }}>DELETE FOLDER</button>
+                    )}
+                  </div>
+                  
+                  {folderClasses.length === 0 ? (
+                    <div style={{ padding: '3rem', textAlign: 'center', background: 'rgba(255,255,255,0.01)', borderRadius: '12px', color: 'rgba(255,255,255,0.3)', border: '1px dashed rgba(255,255,255,0.05)' }}>
+                      Folder is empty. Initialize a new node below.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                      {folderClasses.map(c => (
+                        <div key={c.id} style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
+                          <button 
+                            onClick={() => setActiveClass(c.id)} 
+                            className={styles.classBtn} 
+                            style={{ 
+                              flex: 1, 
+                              // @ts-ignore
+                              "--folder-color-rgb": folderColor 
+                            }}
+                          >
+                            {c.name}
+                          </button>
+                          <select 
+                            value={c.category || "General"}
+                            onChange={(e) => updateClassCategory(c.id, e.target.value)}
+                            style={{ 
+                              padding: '0 1.5rem', 
+                              background: 'rgba(255,255,255,0.03)', 
+                              color: 'white', 
+                              border: '1px solid rgba(255,255,255,0.1)', 
+                              borderRadius: '10px', 
+                              height: '80px', 
+                              width: '240px', 
+                              cursor: 'pointer', 
+                              fontSize: '1rem',
+                              fontWeight: 700,
+                              fontFamily: 'Space Grotesk'
+                            }}
+                          >
+                            {folders.map(f => <option key={f} value={f}>MOVE TO {f.toUpperCase()}</option>)}
+                          </select>
+                          <button 
+                            onClick={() => { if(confirm("Are you sure you want to delete this class?")) removeClass(c.id) }} 
+                            className={styles.removeBtn}
+                            style={{ height: '80px', width: '80px', fontSize: '1.5rem', background: 'rgba(255,45,120,0.05)' }}
+                          >
+                            X
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{ 
+            marginTop: '3rem', 
+            padding: '2.5rem', 
+            background: 'rgba(255,255,255,0.02)', 
+            border: '1px solid rgba(255,255,255,0.1)', 
+            borderRadius: '20px'
+          }}>
+            <h2 style={{ marginBottom: '1.5rem', letterSpacing: '2px', fontWeight: 900, textAlign: 'center' }}>SYSTEM INITIALIZATION</h2>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div className={styles.addStudentBar}>
+                 <input 
+                   type="text" 
+                   value={newFolderName}
+                   onChange={e => setNewFolderName(e.target.value)}
+                   placeholder="NEW FOLDER NAME..."
+                   className={styles.input}
+                 />
+                 <button 
+                   onClick={() => {
+                     if (newFolderName.trim()) {
+                       addFolder(newFolderName.trim());
+                       setNewFolderName("");
+                       setNewClassCategory(newFolderName.trim());
+                     }
+                   }} 
+                   className={styles.switchBtn}
+                   style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}
+                 >
+                   <FolderPlus size={20} /> CREATE FOLDER
+                 </button>
+              </div>
+              
+              <div className={styles.addStudentBar}>
+                <select 
+                  value={newClassCategory} 
+                  onChange={(e) => setNewClassCategory(e.target.value)}
+                  className={styles.input}
+                  style={{ flex: 0.4, cursor: 'pointer', borderRight: '1px solid rgba(255,255,255,0.1)' }}
+                >
+                  {folders.map(f => <option key={f} value={f}>{f.toUpperCase()}</option>)}
+                </select>
+                <input 
+                  type="text" 
+                  value={newClassName} 
+                  onChange={(e) => setNewClassName(e.target.value)}
+                  placeholder="IDENTIFIER: NEW CLASS..." 
+                  className={styles.input}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && newClassName.trim()) {
+                      addClass(newClassName.trim(), newClassCategory);
+                      setNewClassName("");
+                    }
+                  }}
+                />
+                <button 
+                  onClick={() => {
+                    if (newClassName.trim()) {
+                      addClass(newClassName.trim(), newClassCategory);
+                      setNewClassName("");
+                    }
+                  }}
+                  className={styles.primaryBtn}
+                >
+                  DEPLOY NODE
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -322,138 +387,143 @@ export default function Dashboard() {
 
   return (
     <div className={styles.container}>
-      <header className={styles.header}>
-        <div style={{ display: 'flex', gap: '1rem', flex: 1 }}>
-          <input 
-            value={activeClass.name} 
-            onChange={e => updateClass(activeClass.id, e.target.value)} 
-            className={styles.classNameInput} 
-          />
-          <select 
-            value={activeClass.category || "General"} 
-            onChange={e => updateClassCategory(activeClass.id, e.target.value)} 
-            className={styles.classNameInput} 
-            style={{ flex: 0.5, fontSize: "clamp(1rem, 1.5vw, 1.5rem)", color: "rgba(255,255,255,0.6)", background: 'transparent', cursor: 'pointer' }}
+      <div className={styles.inner}>
+        <header className={styles.header}>
+          <div style={{ display: 'flex', gap: '1rem', flex: 1 }}>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+               <span className="label-caps" style={{ color: 'var(--accent)', letterSpacing: '0.2em', marginBottom: '-2px' }}>Project S.E.R.U</span>
+               <input 
+                 value={activeClass.name} 
+                 onChange={e => updateClass(activeClass.id, e.target.value)} 
+                 className={styles.classNameInput} 
+               />
+            </div>
+            <select 
+              value={activeClass.category || "General"} 
+              onChange={e => updateClassCategory(activeClass.id, e.target.value)} 
+              className={styles.classNameInput} 
+              style={{ flex: 0.5, fontSize: "clamp(1rem, 1.5vw, 1.5rem)", color: "rgba(255,255,255,0.6)", background: 'transparent', cursor: 'pointer' }}
+            >
+              {folders.map(f => <option key={f} value={f}>{f}</option>)}
+            </select>
+          </div>
+          <div style={{ display: 'flex', gap: '1rem', marginLeft: '1rem' }}>
+            <button className={styles.switchBtn} onClick={() => setSettingsOpen(true)}><Settings size={18} /> SETTINGS</button>
+            <button className={styles.switchBtn} onClick={() => setActiveClass(null)}>SWITCH NODE</button>
+          </div>
+        </header>
+
+        <div className={styles.insightsPanel}>
+          <h2><Zap size={22} color="var(--accent)" /> SYSTEM DIAGNOSTICS</h2>
+          <div className={styles.insightsGrid}>
+            <div className={styles.insightBox}>
+              <span>Level Trend:</span> <strong>{insights.predominantLevel}</strong>
+            </div>
+            <div className={styles.insightBox}>
+              <span>Energy Trend:</span> <strong>{insights.predominantEnergy}</strong>
+            </div>
+          </div>
+          <p className={styles.suggestion}>{insights.suggestion}</p>
+        </div>
+
+        <div className={styles.actionsGrid}>
+          <Link href="/teams" style={{ textDecoration: 'none', display: 'block' }}>
+            <button className={styles.actionBtn} style={{ width: '100%' }}><Users size={24} /> UNIT GENERATOR</button>
+          </Link>
+          <Link href="/games" style={{ textDecoration: 'none', display: 'block' }}>
+            <button className={styles.actionBtn} style={{ width: '100%', borderColor: 'var(--accent)', color: 'var(--accent)', background: 'rgba(0, 255, 65, 0.03)' }}><Brain size={24} /> NEURAL ARCADE</button>
+          </Link>
+          <Link href="/prompts" style={{ textDecoration: 'none', display: 'block' }}>
+            <button className={styles.actionBtn} style={{ width: '100%' }}><Zap size={24} /> PROMPT CORE</button>
+          </Link>
+          <Link href="/wheel" style={{ textDecoration: 'none', display: 'block' }}>
+            <button className={styles.actionBtn} style={{ width: '100%' }}><Zap size={24} /> PROBABILITY WHEEL</button>
+          </Link>
+        </div>
+
+        <div className={styles.studentsSection}>
+          <div 
+            className={styles.rosterHeader}
+            onClick={() => setRosterOpen(prev => !prev)}
+            style={{ cursor: 'pointer', userSelect: 'none' }}
           >
-            {folders.map(f => <option key={f} value={f}>{f}</option>)}
-          </select>
-        </div>
-        <div style={{ display: 'flex', gap: '1rem', marginLeft: '1rem' }}>
-          <button className={styles.switchBtn} onClick={() => setSettingsOpen(true)}><Settings size={20} /></button>
-          <button className={styles.switchBtn} onClick={() => setActiveClass(null)}>Switch Class</button>
-        </div>
-      </header>
-
-      <div className={styles.insightsPanel}>
-        <h2><Zap size={24} /> Quick Insights</h2>
-        <div className={styles.insightsGrid}>
-          <div className={styles.insightBox}>
-            <span>Level Trend:</span> <strong>{insights.predominantLevel}</strong>
+            <h2>Roster ({activeClass.students.length})</h2>
+            <span className={styles.collapseIcon} style={{ transform: rosterOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
           </div>
-          <div className={styles.insightBox}>
-            <span>Energy Trend:</span> <strong>{insights.predominantEnergy}</strong>
-          </div>
-        </div>
-        <p className={styles.suggestion}>{insights.suggestion}</p>
-      </div>
-
-      <div className={styles.actionsGrid}>
-        <Link href="/teams" style={{ textDecoration: 'none', display: 'block' }}>
-          <button className={styles.actionBtn} style={{ width: '100%' }}><Users size={24} /> Generate Teams</button>
-        </Link>
-        <Link href="/games" style={{ textDecoration: 'none', display: 'block' }}>
-          <button className={styles.actionBtn} style={{ width: '100%' }}><Brain size={24} /> Game Arcade</button>
-        </Link>
-        <Link href="/prompts" style={{ textDecoration: 'none', display: 'block' }}>
-          <button className={styles.actionBtn} style={{ width: '100%' }}><Zap size={24} /> Prompts</button>
-        </Link>
-        <Link href="/wheel" style={{ textDecoration: 'none', display: 'block' }}>
-          <button className={styles.actionBtn} style={{ width: '100%' }}><Zap size={24} /> Spin the Wheel</button>
-        </Link>
-      </div>
-
-      <div className={styles.studentsSection}>
-        <div 
-          className={styles.rosterHeader}
-          onClick={() => setRosterOpen(prev => !prev)}
-          style={{ cursor: 'pointer', userSelect: 'none' }}
-        >
-          <h2>Roster ({activeClass.students.length})</h2>
-          <span className={styles.collapseIcon} style={{ transform: rosterOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
-        </div>
-        
-        {rosterOpen && (
-          <>
-            <div className={styles.addStudentBar}>
-              <input 
-                type="text" 
-                value={newStudentName} 
-                onChange={(e) => setNewStudentName(e.target.value)}
-                onPaste={(e) => {
-                  const text = e.clipboardData.getData("text");
-                  if (text.includes("\n")) {
-                    e.preventDefault();
-                    const names = text.split(/\r?\n/).map(n => n.trim()).filter(n => n.length > 0);
-                    if (names.length > 0) {
-                      bulkAddStudents(activeClass.id, names);
+          
+          {rosterOpen && (
+            <>
+              <div className={styles.addStudentBar}>
+                <input 
+                  type="text" 
+                  value={newStudentName} 
+                  onChange={(e) => setNewStudentName(e.target.value)}
+                  onPaste={(e) => {
+                    const text = e.clipboardData.getData("text");
+                    if (text.includes("\n")) {
+                      e.preventDefault();
+                      const names = text.split(/\r?\n/).map(n => n.trim()).filter(n => n.length > 0);
+                      if (names.length > 0) {
+                        bulkAddStudents(activeClass.id, names);
+                      }
+                      setNewStudentName("");
                     }
-                    setNewStudentName("");
-                  }
-                }}
-                placeholder="Student Name (paste from Excel)..." 
-                className={styles.input}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && newStudentName.trim()) {
+                  }}
+                  placeholder="Student Name (paste from Excel)..." 
+                  className={styles.input}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && newStudentName.trim()) {
+                      addStudent(activeClass.id, newStudentName.trim());
+                      setNewStudentName("");
+                    }
+                  }}
+                />
+                <button onClick={() => {
+                  if (newStudentName.trim()) {
                     addStudent(activeClass.id, newStudentName.trim());
                     setNewStudentName("");
                   }
-                }}
-              />
-              <button onClick={() => {
-                if (newStudentName.trim()) {
-                  addStudent(activeClass.id, newStudentName.trim());
-                  setNewStudentName("");
-                }
-              }}>Add</button>
-            </div>
+                }}>Add</button>
+              </div>
 
-            <div className={styles.studentList}>
-              {activeClass.students.map(student => (
-                <div key={student.id} className={styles.studentCard}>
-                  <input 
-                    value={student.name}
-                    onChange={e => updateStudent(activeClass.id, student.id, { name: e.target.value })}
-                    className={styles.studentNameInput}
-                  />
-                  <div className={styles.tags}>
-                    <label>English Fluency
-                      <select value={student.level} onChange={(e) => updateStudent(activeClass.id, student.id, { level: e.target.value as Level })}>
-                        <option value="Low">Low Lvl</option>
-                        <option value="Mid">Mid Lvl</option>
-                        <option value="High">High Lvl</option>
-                      </select>
-                    </label>
-                    <label>Energy Level
-                      <select value={student.energy} onChange={(e) => updateStudent(activeClass.id, student.id, { energy: e.target.value as Energy })}>
-                        <option value="Passive">Passive</option>
-                        <option value="Normal">Normal</option>
-                        <option value="Active">Active</option>
-                      </select>
-                    </label>
-                    <label>Confidence & Output
-                      <select value={student.confidence} onChange={(e) => updateStudent(activeClass.id, student.id, { confidence: e.target.value as Level })}>
-                        <option value="Low">Low Conf</option>
-                        <option value="Mid">Mid Conf</option>
-                        <option value="High">High Conf</option>
-                      </select>
-                    </label>
-                    <button className={styles.removeBtn} onClick={() => removeStudent(activeClass.id, student.id)}>X</button>
+              <div className={styles.studentList}>
+                {activeClass.students.map(student => (
+                  <div key={student.id} className={styles.studentCard}>
+                    <input 
+                      value={student.name}
+                      onChange={e => updateStudent(activeClass.id, student.id, { name: e.target.value })}
+                      className={styles.studentNameInput}
+                    />
+                    <div className={styles.tags}>
+                      <label>English Fluency
+                        <select value={student.level} onChange={(e) => updateStudent(activeClass.id, student.id, { level: e.target.value as Level })}>
+                          <option value="Low">Low Lvl</option>
+                          <option value="Mid">Mid Lvl</option>
+                          <option value="High">High Lvl</option>
+                        </select>
+                      </label>
+                      <label>Energy Level
+                        <select value={student.energy} onChange={(e) => updateStudent(activeClass.id, student.id, { energy: e.target.value as Energy })}>
+                          <option value="Passive">Passive</option>
+                          <option value="Normal">Normal</option>
+                          <option value="Active">Active</option>
+                        </select>
+                      </label>
+                      <label>Confidence & Output
+                        <select value={student.confidence} onChange={(e) => updateStudent(activeClass.id, student.id, { confidence: e.target.value as Level })}>
+                          <option value="Low">Low Conf</option>
+                          <option value="Mid">Mid Conf</option>
+                          <option value="High">High Conf</option>
+                        </select>
+                      </label>
+                      <button className={styles.removeBtn} onClick={() => removeStudent(activeClass.id, student.id)}>X</button>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {settingsModal}

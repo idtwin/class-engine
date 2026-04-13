@@ -3,19 +3,25 @@ import { generateJSON } from "../../lib/llm";
 
 export async function POST(req: Request) {
   try {
-    const { apiKey, provider, ollamaModel, topic, level, mode } = await req.json();
+    const { apiKey, provider, ollamaModel, topic, level, mode, count, circleCount } = await req.json();
+    const finalCount = count || 5;
 
     if (mode === "speed") {
       // Speed Chain: generate categories with valid word lists
       const systemPrompt = `You are an ESL vocabulary game designer creating a "Speed Chain" word game.
 
-Generate 5 category-based word lists for the topic. Each category should have 25+ valid English words.
+Generate ${finalCount} category-based word lists for the topic. Each category should have 30+ valid English words.
 These words will be used in a last-letter chain game (the next word must start with the last letter of the previous word).
 
+CRITICAL: 
+1. Provide a broad variety of words starting with MANY different letters so the game doesn't get stuck.
+2. All words must be strictly relevant to the category.
+3. Include plurals and common variations where appropriate.
+
 Difficulty: ${level}
-- Low: Very simple, common words (animals, food, colors). Suitable for A1 elementary students.
-- Mid: Intermediate vocabulary. Common but varied words.
-- High: Advanced vocabulary, less common words.
+- Beginner: Very simple, common words (animals, food, colors). Suitable for A1-A2 students.
+- Intermediate: B1-B2 level vocabulary. Common but varied words.
+- Advanced: C1-C1+ level vocabulary, fluent-level words.
 
 Return valid JSON — an object with a "categories" array:
 {
@@ -24,14 +30,14 @@ Return valid JSON — an object with a "categories" array:
       "name": "Category Name",
       "startWord": "A good starting word from this category",
       "validWords": ["word1", "word2", "word3", ...],
-      "difficulty": "Low"
+      "difficulty": "${level}"
     }
   ]
 }
 
 All words must be lowercase. No markdown.`;
 
-      const userPrompt = `Topic: ${topic}\n\nGenerate 5 categories with 25+ words each!`;
+      const userPrompt = `Topic: ${topic}\n\nGenerate ${finalCount} categories with 30+ words each! Ensure high vocabulary variety.`;
       const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.9, ollamaModel, provider });
       
       // Handle both array and object responses
@@ -42,45 +48,35 @@ All words must be lowercase. No markdown.`;
     }
 
     // Chain Puzzle: generate compound word chains
-    let chainCount = 5;
-    let chainLength = "4-5";
     let difficultyGuide = "";
 
-    if (level === "Low") {
-      chainCount = 4;
-      chainLength = "3-4";
-      difficultyGuide = `Use VERY common compound words and two-word phrases that A1/elementary ESL students would know.
-Examples: sunshine, bedroom, football, ice cream, hot dog, toothbrush, rainbow, popcorn, starfish.
-Two-word phrases are encouraged: ice cream, cream cheese, cheese cake.`;
-    } else if (level === "Mid") {
-      chainCount = 5;
-      chainLength = "4-5";
-      difficultyGuide = `Use common compound words and phrases suitable for intermediate students.
-Examples: doorstep, notebook, waterfall, downtown, background, headline, eyelid.
-Two-word phrases work too: traffic light, light year, year book.`;
+    if (level === "Beginner") {
+      difficultyGuide = `Use ONLY basic compound words and very common two-word phrases that A1-A2 (Beginner) ESL students know.
+      Examples: sunshine, bedroom, football, ice cream, hot dog, toothbrush, rainbow, popcorn, starfish, goldfish.`;
+    } else if (level === "Intermediate") {
+      difficultyGuide = `Use common compound words and phrasal chunks for B1-B2 (Intermediate) students.
+      Examples: doorstep, notebook, waterfall, downtown, background, headline, eyelid, light year, traffic jam.`;
     } else {
-      chainCount = 6;
-      chainLength = "5-7";
-      difficultyGuide = `Use challenging compound words and phrases for advanced students.
-Examples: watershed, turncoat, undercurrent, thunderstruck, fingerprint, brainwash.
-Complex chains are great: black board, board room, room mate, mate ship.`;
+      difficultyGuide = `Use sophisticated compound words and complex phrases for Fluent/Advanced (C1-C2) speakers.
+      Examples: undercurrent, watershed, turncoat, thunderstruck, fingerprint, brainwash, bottleneck, hearsay.`;
     }
+
+    const isRandom = circleCount === "random";
+    const wordCountRule = isRandom 
+      ? `choose a DIFFERENT number of words (between 4 and 7) for EACH of the ${finalCount} chains independently. Diversity in length is required.` 
+      : `EVERY chain in the "chains" array must have EXACTLY ${circleCount || 5} words in its "words" array. No exceptions.`;
 
     const systemPrompt = `You are creating a "Chain Reaction" word puzzle game for ESL students.
 
-Generate EXACTLY ${chainCount} word chains where EVERY adjacent pair of words forms a real English compound word or common two-word phrase.
+Generate EXACTLY ${finalCount} word chains where EVERY adjacent pair of words forms a real English compound word or common two-word phrase.
 
 ${difficultyGuide}
 
-Each chain must be ${chainLength} words long.
-
 CRITICAL RULES:
-1. Every adjacent pair MUST form a real compound word or common phrase (e.g., SUN+LIGHT=sunlight, ICE+CREAM=ice cream)
-2. Words should be single words (the compound is formed by combining adjacent words)
-3. Double-check every connection is a real compound word or phrase
-4. All words must be UPPERCASE
-
-Return valid JSON — an object with a "chains" array:
+1. WORD COUNT: For this generation, you must ${wordCountRule}
+2. ADJACENT PAIRS: Every adjacent pair MUST form a real compound word or common phrase (e.g., SUN+LIGHT=sunlight, ICE+CREAM=ice cream).
+3. CASE: All words in the "words" array must be UPPERCASE.
+4. JSON STRUCTURE: Return an object with a "chains" array.
 {
   "chains": [
     {
@@ -93,7 +89,7 @@ Return valid JSON — an object with a "chains" array:
 
 The "connections" field shows what compound word/phrase each adjacent pair makes. No markdown.`;
 
-    const userPrompt = `Topic: ${topic}\n\nGenerate ${chainCount} compound word chains now!`;
+    const userPrompt = `Topic: ${topic}\n\nGenerate ${finalCount} compound word chains now! Ensure they are exactly the requested length.`;
     const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.8, ollamaModel, provider });
 
     if (Array.isArray(parsed)) {

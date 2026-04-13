@@ -169,16 +169,14 @@ export default function GameSettingsDrawer({ settings, title = "Game Settings" }
                   <select
                     value={s.value}
                     onChange={e => s.onChange(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "0.7rem 1rem",
-                      borderRadius: "10px",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      background: "rgba(0,0,0,0.3)",
-                      color: "white",
-                      fontSize: "0.95rem",
-                      cursor: "pointer",
-                    }}
+                      style={{
+                        width: "100%",
+                        padding: "0.7rem 1rem",
+                        borderRadius: "10px",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        fontSize: "0.95rem",
+                        cursor: "pointer",
+                      }}
                   >
                     {s.options?.map(o => (
                       <option key={String(o.value)} value={o.value}>{o.label}</option>
