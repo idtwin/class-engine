@@ -8,7 +8,7 @@ import { ArrowLeft, Sparkles, RefreshCw } from "lucide-react";
 
 export default function PromptGenerator() {
   const [mounted, setMounted] = useState(false);
-  const { geminiKey, ollamaModel, llmProvider } = useClassroomStore();
+  const { geminiKey, mistralKey, mistralModel, llmProvider } = useClassroomStore();
   const [generatedPrompts, setGeneratedPrompts] = useState<string[]>([]);
   const [topic, setTopic] = useState("");
   const [promptCount, setPromptCount] = useState(6);
@@ -19,6 +19,7 @@ export default function PromptGenerator() {
   const generatePrompts = async () => {
     if (!topic.trim()) return alert("Please enter a topic!");
     if (llmProvider === 'gemini' && !geminiKey) return alert("Please set your Gemini API key in Dashboard Settings!");
+    if (llmProvider === 'mistral' && !mistralKey) return alert("Please set your Mistral API key in Dashboard Settings!");
 
     setIsGenerating(true);
     setGeneratedPrompts([]);
@@ -28,8 +29,8 @@ export default function PromptGenerator() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          apiKey: geminiKey,
-          ollamaModel,
+          apiKey: llmProvider === 'gemini' ? geminiKey : mistralKey,
+          mistralModel,
           provider: llmProvider,
           topic: topic.trim(),
           count: promptCount,

@@ -65,7 +65,7 @@ const DEFAULT_GAME_BOARD = [
 ];
 
 export default function JeopardyPage() {
-  const { currentTeams, updateTeamScore, geminiKey, ollamaModel, llmProvider, triggerTwist, activeRoomCode, saveBoard, setActiveAwardAmount } = useClassroomStore();
+  const { currentTeams, updateTeamScore, geminiKey, mistralKey, mistralModel, llmProvider, triggerTwist, activeRoomCode, saveBoard, setActiveAwardAmount } = useClassroomStore();
   const [mounted, setMounted] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [topic, setTopic] = useState("");
@@ -137,8 +137,8 @@ export default function JeopardyPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          apiKey: geminiKey, 
-          ollamaModel,
+          apiKey: llmProvider === 'gemini' ? geminiKey : mistralKey, 
+          mistralModel,
           provider: llmProvider,
           topic, 
           level: "Mixed Level Class" 

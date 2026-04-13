@@ -3,7 +3,7 @@ import { generateJSON } from "../../lib/llm";
 
 export async function POST(req: Request) {
   try {
-    const { apiKey, provider, ollamaModel, topic, level } = await req.json();
+    const { apiKey, provider, mistralModel, topic, level } = await req.json();
 
     let levelPrompt = `Generate EXACTLY 10 questions/sentences matching the ${level} difficulty level.`;
     if (level === "Mixed Level") levelPrompt = `Generate EXACTLY 10 questions/sentences spanning varying difficulties (Low, Mid, and High).`;
@@ -30,7 +30,7 @@ Return valid JSON — an array of exactly 10 objects with this schema:
 
     const userPrompt = `Theme/Topic: ${topic}\n\nGenerate the 10 broken sentences now!`;
 
-    const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.95, ollamaModel, provider });
+    const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.95, mistralModel, provider });
 
     return NextResponse.json({ questions: parsed });
   } catch (error: any) {

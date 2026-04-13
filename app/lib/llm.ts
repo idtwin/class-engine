@@ -1,21 +1,20 @@
 /**
- * Shared LLM utility — routes to LM Studio, Ollama, or Gemini
+ * Shared LLM utility — routes to LM Studio, Mistral, or Gemini
  *
  * Provider selection (passed via opts.provider):
  *  "lmstudio" → OpenAI-compatible API at localhost:1234 (LM Studio)
- *  "ollama"   → Ollama native API at localhost:11434
+ *  "mistral"  → Mistral.ai cloud API (requires mistralKey)
  *  "gemini"   → Google Gemini cloud API (requires apiKey)
  */
 
-export type LLMProvider = "lmstudio" | "ollama" | "gemini" | "groq";
+export type LLMProvider = "lmstudio" | "mistral" | "gemini" | "groq";
 
 export interface LLMOptions {
   systemPrompt: string;
   userPrompt: string;
   temperature?: number;
   provider?: LLMProvider;
-  /** Model name — used by Ollama. LM Studio uses whichever model is loaded in the UI. */
-  ollamaModel?: string;
+  mistralModel?: string;
 }
 
 function stripMarkdown(text: string): string {
@@ -34,8 +33,6 @@ async function callLMStudio(opts: LLMOptions): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      // LM Studio uses whatever model is currently loaded — model field is ignored
-      // but must be present for spec compliance
       model: "local-model",
       messages: [
         { role: "system", content: opts.systemPrompt },
@@ -44,10 +41,8 @@ async function callLMStudio(opts: LLMOptions): Promise<string> {
       temperature: opts.temperature ?? 0.7,
       max_tokens: 4096,
       stream: false,
-      // LM Studio only supports "text" or "json_schema" — use text and rely on prompt
       response_format: { type: "text" },
     }),
-    // 120s timeout — first generation on a local model can be slow
     signal: AbortSignal.timeout(120_000),
   });
 
@@ -57,42 +52,41 @@ async function callLMStudio(opts: LLMOptions): Promise<string> {
   }
 
   const data = await res.json();
-  // OpenAI format: choices[0].message.content
   const raw: string = data?.choices?.[0]?.message?.content ?? "";
   return stripMarkdown(raw);
 }
 
-// ── Ollama ────────────────────────────────────────────────────────────────────
-async function callOllama(opts: LLMOptions): Promise<string> {
-  const model = opts.ollamaModel ?? "gemma3:4b";
-  const baseUrl = process.env.OLLAMA_URL ?? "http://localhost:11434";
+// ── Mistral ──────────────────────────────────────────────────────────────────
+async function callMistral(apiKey: string, opts: LLMOptions): Promise<string> {
+  const model = opts.mistralModel ?? "mistral-small-latest";
 
-  const res = await fetch(`${baseUrl}/api/chat`, {
+  const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
     body: JSON.stringify({
       model,
       messages: [
         { role: "system", content: opts.systemPrompt },
         { role: "user",   content: opts.userPrompt }
       ],
-      format: "json",
-      stream: false,
-      options: {
-        temperature: opts.temperature ?? 0.9,
-        num_predict: 4096,
-      }
+      temperature: opts.temperature ?? 0.7,
+      max_tokens: 4096,
+      // Mistral supports json_object for small/medium/large models
+      response_format: { type: "json_object" },
     }),
     signal: AbortSignal.timeout(90_000),
   });
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Ollama error ${res.status}: ${err}`);
+    throw new Error(`Mistral API error ${res.status}: ${err}`);
   }
 
   const data = await res.json();
-  const raw = data?.message?.content ?? "";
+  const raw: string = data?.choices?.[0]?.message?.content ?? "";
   return stripMarkdown(raw);
 }
 
@@ -164,8 +158,11 @@ export async function generateText(
   if (provider === "lmstudio") {
     return callLMStudio(opts);
   }
-  if (provider === "ollama") {
-    return callOllama(opts);
+  if (provider === "mistral") {
+    if (!apiKey || apiKey.trim().length < 10) {
+      throw new Error("Mistral API key is required. Go to Dashboard → Settings and add your key.");
+    }
+    return callMistral(apiKey.trim(), opts);
   }
   if (provider === "groq") {
     const groqKey = process.env.GROQ_API_KEY || apiKey?.trim();
@@ -176,7 +173,7 @@ export async function generateText(
   }
   // Gemini
   if (!apiKey || apiKey.trim().length < 10) {
-    throw new Error("Gemini API key is required. Go to Dashboard → Settings and add your key, or switch to LM Studio / Ollama.");
+    throw new Error("Gemini API key is required. Go to Dashboard → Settings and add your key, or switch to LM Studio / Mistral.");
   }
   return callGemini(apiKey.trim(), opts);
 }

@@ -3,7 +3,7 @@ import { generateJSON } from "../../lib/llm";
 
 export async function POST(req: Request) {
   try {
-    const { apiKey, provider, ollamaModel, topic, level } = await req.json();
+    const { apiKey, provider, mistralModel, topic, level } = await req.json();
 
     const systemPrompt = `You are a creative ESL teacher. Generate a list of 10 "Would You Rather" style debate prompts.
 Topic: ${topic}
@@ -27,7 +27,7 @@ Rules:
 
     const userPrompt = `Topic: ${topic}\nLevel: ${level}\nGenerate JSON now!`;
 
-    const parsed: any = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.9, ollamaModel, provider });
+    const parsed: any = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.9, mistralModel, provider });
 
     const prompts = Array.isArray(parsed) ? parsed : (parsed.prompts || parsed);
     return NextResponse.json({ prompts });

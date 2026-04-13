@@ -23,7 +23,7 @@ type GameState = "SETUP" | "LOADING" | "READY" | "PLAYING" | "REVEALED" | "FINIS
 type RFMode = "buzzer" | "mc";
 
 export default function RapidFire() {
-  const { currentTeams, updateTeamScore, geminiKey, ollamaModel, llmProvider, triggerTwist, activeRoomCode, saveBoard } = useClassroomStore();
+  const { currentTeams, updateTeamScore, geminiKey, mistralKey, mistralModel, llmProvider, triggerTwist, activeRoomCode, saveBoard } = useClassroomStore();
   const [mounted, setMounted] = useState(false);
   const [roomBuzzes, setRoomBuzzes] = useState<any[]>([]);
   const [roomStudents, setRoomStudents] = useState<any[]>([]);
@@ -121,17 +121,25 @@ export default function RapidFire() {
   const generateGame = async () => {
     if (!topic) return alert("Please enter a topic!");
     if (llmProvider === 'gemini' && !geminiKey) return alert("Missing Gemini API Key (set in Dashboard).");
+    if (llmProvider === 'mistral' && !mistralKey) return alert("Missing Mistral API Key (set in Dashboard).");
     
     setIsGenerating(true);
     setGameState("LOADING");
     
     try {
-      const res = await fetch("/api/generate-rapid-fire", {
+      const response = await fetch("/api/generate-rapid-fire", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: geminiKey, ollamaModel, provider: llmProvider, llmProvider, topic, level: targetLevel, mode: rfMode })
+        body: JSON.stringify({ 
+          apiKey: llmProvider === 'gemini' ? geminiKey : mistralKey, 
+          mistralModel, 
+          provider: llmProvider, 
+          topic, 
+          level: targetLevel, 
+          mode: rfMode 
+        })
       });
-      const data = await res.json();
+      const data = await response.json();
       
       if (data.error) throw new Error(data.error);
       

@@ -3,7 +3,7 @@ import { generateJSON } from "../../lib/llm";
 
 export async function POST(req: Request) {
   try {
-    const { apiKey, provider, ollamaModel, topic, level } = await req.json();
+    const { apiKey, provider, mistralModel, topic, level } = await req.json();
 
     const systemPrompt = `You are a creative ESL teacher. Generate a list of 10 Taboo/Password words for a speaking game.
 Topic: ${topic}
@@ -26,7 +26,7 @@ Rules:
 
     const userPrompt = `Topic: ${topic}\nLevel: ${level}\nGenerate JSON now!`;
 
-    const parsed: any = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.8, ollamaModel, provider });
+    const parsed: any = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.8, mistralModel, provider });
 
     // Normalize: auto-unwrap may return array directly or {words:[...]}
     const words = Array.isArray(parsed) ? parsed : (parsed.words || parsed);

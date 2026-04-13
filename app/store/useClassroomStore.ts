@@ -48,12 +48,12 @@ interface ClassroomState {
   closeTwist: () => void;
   teacherFeedback: { difficulty: number, energyBoost: number };
   submitFeedback: (type: "Too easy" | "Too hard" | "Low energy" | "High engagement") => void;
-  geminiKey: string;
-  setGeminiKey: (key: string) => void;
-  llmProvider: "gemini" | "ollama" | "lmstudio" | "groq";
-  setLlmProvider: (p: "gemini" | "ollama" | "lmstudio" | "groq") => void;
-  ollamaModel: string;
-  setOllamaModel: (m: string) => void;
+  mistralKey: string;
+  setMistralKey: (key: string) => void;
+  mistralModel: string;
+  setMistralModel: (m: string) => void;
+  llmProvider: "gemini" | "mistral" | "lmstudio" | "groq";
+  setLlmProvider: (p: "gemini" | "mistral" | "lmstudio" | "groq") => void;
   activeRoomCode: string | null;
   setActiveRoomCode: (code: string | null) => void;
   playMode: 'projector' | 'phone';
@@ -309,10 +309,12 @@ export const useClassroomStore = create<ClassroomState>()(
       
       geminiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
       setGeminiKey: (key) => set({ geminiKey: key }),
-      llmProvider: "lmstudio",
+      mistralKey: "Itfi3iUZwTF9lAST1SdvOfwftSdgO7La",
+      setMistralKey: (key) => set({ mistralKey: key }),
+      mistralModel: "mistral-small-latest",
+      setMistralModel: (m) => set({ mistralModel: m }),
+      llmProvider: "mistral",
       setLlmProvider: (p) => set({ llmProvider: p }),
-      ollamaModel: "gemma3:4b",
-      setOllamaModel: (m) => set({ ollamaModel: m }),
       activeRoomCode: null,
       setActiveRoomCode: (code) => set({ activeRoomCode: code }),
       playMode: 'projector',

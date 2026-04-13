@@ -3,7 +3,7 @@ import { generateJSON } from "../../lib/llm";
 
 export async function POST(req: Request) {
   try {
-    const { apiKey, provider, ollamaModel, topic, level, mode, count, circleCount } = await req.json();
+    const { apiKey, provider, mistralModel, topic, level, mode, count, circleCount } = await req.json();
     const finalCount = count || 5;
 
     if (mode === "speed") {
@@ -38,7 +38,7 @@ Return valid JSON — an object with a "categories" array:
 All words must be lowercase. No markdown.`;
 
       const userPrompt = `Topic: ${topic}\n\nGenerate ${finalCount} categories with 30+ words each! Ensure high vocabulary variety.`;
-      const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.9, ollamaModel, provider });
+      const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.9, mistralModel, provider });
       
       // Handle both array and object responses
       if (Array.isArray(parsed)) {
@@ -90,7 +90,7 @@ CRITICAL RULES:
 The "connections" field shows what compound word/phrase each adjacent pair makes. No markdown.`;
 
     const userPrompt = `Topic: ${topic}\n\nGenerate ${finalCount} compound word chains now! Ensure they are exactly the requested length.`;
-    const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.8, ollamaModel, provider });
+    const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.8, mistralModel, provider });
 
     if (Array.isArray(parsed)) {
       return NextResponse.json({ chains: parsed });

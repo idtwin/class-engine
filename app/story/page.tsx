@@ -11,7 +11,7 @@ import GameTimer from "../components/GameTimer";
 
 export default function StoryChainMode() {
   const [mounted, setMounted] = useState(false);
-  const { triggerTwist, geminiKey, ollamaModel, llmProvider } = useClassroomStore();
+  const { triggerTwist, geminiKey, mistralKey, mistralModel, llmProvider } = useClassroomStore();
   
   const [topic, setTopic] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -51,6 +51,7 @@ export default function StoryChainMode() {
 
   const handleGenerate = async () => {
     if (llmProvider === 'gemini' && !geminiKey) return alert("Please set your Gemini API key in Dashboard Settings!");
+    if (llmProvider === 'mistral' && !mistralKey) return alert("Please set your Mistral API key in Dashboard Settings!");
     if (!topic) return alert("Please enter a topic!");
     
     setIsGenerating(true);
@@ -61,7 +62,13 @@ export default function StoryChainMode() {
       const res = await fetch("/api/generate-story", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: geminiKey, ollamaModel, provider: llmProvider, llmProvider, topic, level: "Mixed Level" })
+        body: JSON.stringify({ 
+          apiKey: llmProvider === 'gemini' ? geminiKey : mistralKey, 
+          mistralModel, 
+          provider: llmProvider, 
+          topic, 
+          level: "Mixed Level" 
+        })
       });
       const data = await res.json();
       if (res.ok && data.rounds) {

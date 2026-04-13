@@ -11,7 +11,7 @@ import GameSettingsDrawer from "../components/GameSettingsDrawer";
 
 export default function HotSeatMode() {
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, triggerTwist, geminiKey, ollamaModel, llmProvider } = useClassroomStore();
+  const { currentTeams, updateTeamScore, triggerTwist, geminiKey, mistralKey, mistralModel, llmProvider } = useClassroomStore();
   
   const [topic, setTopic] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -65,7 +65,13 @@ export default function HotSeatMode() {
       const res = await fetch("/api/generate-hotseat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: geminiKey, ollamaModel, provider: llmProvider, llmProvider, topic, level: "Mixed Level" })
+        body: JSON.stringify({ 
+          apiKey: llmProvider === 'gemini' ? geminiKey : mistralKey, 
+          mistralModel, 
+          provider: llmProvider, 
+          topic, 
+          level: "Mixed Level" 
+        })
       });
       const data = await res.json();
       if (res.ok && data.words) {

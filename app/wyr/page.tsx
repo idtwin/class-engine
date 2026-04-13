@@ -10,7 +10,7 @@ import ScoreboardOverlay from "../components/ScoreboardOverlay";
 
 export default function WouldYouRatherMode() {
   const [mounted, setMounted] = useState(false);
-  const { triggerTwist, geminiKey, ollamaModel, llmProvider, activeRoomCode } = useClassroomStore();
+  const { triggerTwist, geminiKey, mistralKey, mistralModel, llmProvider, activeRoomCode } = useClassroomStore();
   
   const [topic, setTopic] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -53,8 +53,7 @@ export default function WouldYouRatherMode() {
   if (!mounted) return null;
 
   const handleGenerate = async () => {
-    if (llmProvider === 'gemini' && !geminiKey) return alert("Please set your Gemini API key from Dashboard Settings!");
-    if (!topic) return alert("Please enter a topic!");
+    if (!topic.trim()) return alert("Please enter a topic!");
     
     setIsGenerating(true);
     setPrompts([]); 
@@ -63,7 +62,13 @@ export default function WouldYouRatherMode() {
       const res = await fetch("/api/generate-wyr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: geminiKey, ollamaModel, provider: llmProvider, llmProvider, topic, level: "Mixed Level" })
+        body: JSON.stringify({ 
+          apiKey: llmProvider === 'gemini' ? geminiKey : mistralKey, 
+          mistralModel, 
+          provider: llmProvider, 
+          topic, 
+          level: "Mixed Level" 
+        })
       });
       const data = await res.json();
       if (res.ok && data.prompts) {

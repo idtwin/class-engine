@@ -3,7 +3,7 @@ import { generateJSON } from "../../lib/llm";
 
 export async function POST(req: Request) {
   try {
-    const { apiKey, provider, ollamaModel, topic, level, mode } = await req.json();
+    const { apiKey, provider, mistralModel, topic, level, mode } = await req.json();
 
     let systemPrompt: string;
     let userPrompt: string;
@@ -45,7 +45,7 @@ Match the target class level (${level}) in general. No markdown.`;
       userPrompt = `Topic: ${topic}\nTarget Class Level: ${level}\n\nGenerate the 15 questions now!`;
     }
 
-    const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.9, ollamaModel, provider });
+    const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.9, mistralModel, provider });
 
     return NextResponse.json({ questions: parsed });
   } catch (error: any) {

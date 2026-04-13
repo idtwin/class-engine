@@ -35,7 +35,7 @@ interface ChainWord {
 
 export default function ChainReaction() {
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, geminiKey, ollamaModel, llmProvider, triggerTwist } = useClassroomStore();
+  const { currentTeams, updateTeamScore, geminiKey, mistralKey, mistralModel, llmProvider, triggerTwist } = useClassroomStore();
 
   // Setup
   const [gameMode, setGameMode] = useState<GameMode>("puzzle");
@@ -134,10 +134,9 @@ const TEAM_COLORS = [
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          apiKey: geminiKey, 
-          ollamaModel, 
+          apiKey: llmProvider === 'gemini' ? geminiKey : mistralKey, 
+          mistralModel, 
           provider: llmProvider, 
-          llmProvider, 
           topic, 
           level: difficulty, 
           mode: gameMode,
