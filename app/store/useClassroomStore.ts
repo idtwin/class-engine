@@ -48,6 +48,8 @@ interface ClassroomState {
   closeTwist: () => void;
   teacherFeedback: { difficulty: number, energyBoost: number };
   submitFeedback: (type: "Too easy" | "Too hard" | "Low energy" | "High engagement") => void;
+  geminiKey: string;
+  setGeminiKey: (key: string) => void;
   mistralKey: string;
   setMistralKey: (key: string) => void;
   mistralModel: string;
