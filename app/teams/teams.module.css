@@ -509,3 +509,358 @@
   white-space: nowrap;
 }
 .tagCyan { background: rgba(0,200,240,0.1); color: #00c8f0; border: 1px solid rgba(0,200,240,0.25); }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   CLASS MANAGEMENT BAR
+   ────────────────────────────────────────────────────────────────────────── */
+.classBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #0e1420;
+  border: 1px solid #1c2a40;
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.classBarLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.classBarRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.classBarLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #4a637d;
+  flex-shrink: 0;
+}
+
+.classChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 14px;
+  border-radius: 99px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  border: 1px solid #243347;
+  background: transparent;
+  color: #4a637d;
+  transition: all 0.15s;
+}
+.classChip:hover { color: #dce8f5; border-color: #4a637d; }
+
+.classChipActive {
+  border-color: #00c8f0;
+  color: #00c8f0;
+  background: rgba(0,200,240,0.08);
+}
+
+.classChipAdd {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px dashed #243347;
+  background: transparent;
+  color: #4a637d;
+  transition: all 0.15s;
+}
+.classChipAdd:hover { color: #00e87a; border-color: #00e87a; }
+
+.classInlineForm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.classInlineInput {
+  background: #131b2b;
+  border: 1px solid #00c8f0;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #dce8f5;
+  outline: none;
+  width: 160px;
+}
+
+.classInlineBtn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid #243347;
+  background: transparent;
+  color: #4a637d;
+  transition: all 0.15s;
+}
+.classInlineBtn:hover { color: #dce8f5; border-color: #4a637d; }
+
+.classInlineBtnConfirm { border-color: rgba(0,232,122,0.4); color: #00e87a; }
+.classInlineBtnConfirm:hover { background: rgba(0,232,122,0.1); color: #00e87a; }
+
+.classInlineBtnDanger { border-color: rgba(255,68,68,0.4); color: #ff4444; }
+.classInlineBtnDanger:hover { background: rgba(255,68,68,0.15); }
+
+.classDeletePrompt {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #ff4444;
+}
+
+.classActionBtn {
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  border: 1px solid #243347;
+  background: transparent;
+  color: #4a637d;
+  transition: all 0.15s;
+  text-transform: uppercase;
+}
+.classActionBtn:hover { color: #dce8f5; border-color: #4a637d; }
+.classActionBtnDanger:hover { color: #ff4444; border-color: rgba(255,68,68,0.4); }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   STUDENT CARD — ABSENT / PRESENT
+   ────────────────────────────────────────────────────────────────────────── */
+.studentCardAbsent {
+  opacity: 0.5;
+  border-color: #1c2a40 !important;
+  background: #0b1019 !important;
+}
+
+.studentCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.studentNameAbsent {
+  text-decoration: line-through;
+  color: #4a637d !important;
+}
+
+.studentCardActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.studentToggleBtn {
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.studentToggleBtnPresent {
+  background: rgba(0,232,122,0.1);
+  color: #00e87a;
+  border-color: rgba(0,232,122,0.3);
+}
+.studentToggleBtnPresent:hover {
+  background: rgba(255,68,68,0.08);
+  color: #ff8080;
+  border-color: rgba(255,68,68,0.2);
+}
+
+.studentToggleBtnAbsent {
+  background: rgba(255,68,68,0.08);
+  color: #ff8080;
+  border-color: rgba(255,68,68,0.2);
+}
+.studentToggleBtnAbsent:hover {
+  background: rgba(0,232,122,0.1);
+  color: #00e87a;
+  border-color: rgba(0,232,122,0.3);
+}
+
+.studentRemoveBtn {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  opacity: 0.3;
+  transition: opacity 0.15s;
+  padding: 0;
+}
+.studentRemoveBtn:hover { opacity: 1; }
+
+/* Absent info bar */
+.absentBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,68,68,0.06);
+  border: 1px solid rgba(255,68,68,0.18);
+  border-radius: 8px;
+  padding: 8px 14px;
+  margin-bottom: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #ff8080;
+}
+
+.absentBarIcon { font-size: 14px; }
+
+.absentBarReset {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid rgba(0,232,122,0.3);
+  color: #00e87a;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.absentBarReset:hover { background: rgba(0,232,122,0.1); }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   ADD STUDENT CARD
+   ────────────────────────────────────────────────────────────────────────── */
+.addStudentCard {
+  background: #0b1019;
+  border: 1px dashed #243347;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.15s;
+}
+.addStudentCard:hover { border-color: #4a637d; }
+
+.addStudentTitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #4a637d;
+}
+
+.addStudentInput {
+  background: #131b2b;
+  border: 1px solid #243347;
+  border-radius: 7px;
+  padding: 8px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #dce8f5;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+.addStudentInput:focus { border-color: #00c8f0; }
+.addStudentInput::placeholder { color: #4a637d; }
+
+.addStudentButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.bulkTextarea {
+  background: #131b2b;
+  border: 1px solid #243347;
+  border-radius: 7px;
+  padding: 8px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #dce8f5;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+}
+.bulkTextarea:focus { border-color: #00c8f0; }
+.bulkTextarea::placeholder { color: #4a637d; }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   MOVE DROPDOWN
+   ────────────────────────────────────────────────────────────────────────── */
+.moveDropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: #131b2b;
+  border: 1px solid #243347;
+  border-radius: 8px;
+  padding: 4px;
+  z-index: 10;
+  min-width: 120px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.moveDropdownItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  border-radius: 5px;
+  background: transparent;
+  border: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.moveDropdownItem:hover { background: rgba(255,255,255,0.05); }
+
+/* adjustTeamName */
+.adjustTeamName {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* historySection */
+.historySection { margin-bottom: 24px; }
