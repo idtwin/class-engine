@@ -32,7 +32,9 @@ export default function GamesHub() {
     geminiKey, setGeminiKey,
     mistralKey, setMistralKey,
     groqKey, setGroqKey,
+    geminiModel, setGeminiModel,
     mistralModel, setMistralModel,
+    groqModel, setGroqModel,
     seedDemoData, purgeDemoData,
   } = useClassroomStore();
 
@@ -45,6 +47,13 @@ export default function GamesHub() {
   const activeKeySetter = llmProvider === "gemini" ? setGeminiKey
     : llmProvider === "groq" ? setGroqKey
     : setMistralKey;
+
+  const activeModel = llmProvider === "gemini" ? geminiModel
+    : llmProvider === "groq" ? groqModel
+    : mistralModel;
+  const setActiveModel = llmProvider === "gemini" ? setGeminiModel
+    : llmProvider === "groq" ? setGroqModel
+    : setMistralModel;
 
   const [mounted, setMounted] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
@@ -251,8 +260,8 @@ export default function GamesHub() {
                     <input
                       type="text"
                       style={{ width: "100%", fontSize: "14px", background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)", borderRadius: "8px", padding: "8px 12px", boxSizing: "border-box" }}
-                      value={mistralModel}
-                      onChange={e => setMistralModel(e.target.value)}
+                      value={activeModel}
+                      onChange={e => setActiveModel(e.target.value)}
                     />
                   </div>
 

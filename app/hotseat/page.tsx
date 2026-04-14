@@ -11,7 +11,7 @@ import GameSettingsDrawer from "../components/GameSettingsDrawer";
 
 export default function HotSeatMode() {
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, triggerTwist, getActiveApiKey, mistralModel, llmProvider } = useClassroomStore();
+  const { currentTeams, updateTeamScore, triggerTwist, getActiveApiKey, getActiveModel, llmProvider } = useClassroomStore();
   
   const [topic, setTopic] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -67,7 +67,7 @@ export default function HotSeatMode() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           apiKey: getActiveApiKey(), 
-          mistralModel, 
+          mistralModel: getActiveModel(), 
           provider: llmProvider, 
           topic, 
           level: "Mixed Level" 

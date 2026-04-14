@@ -23,7 +23,7 @@ type GameState = "SETUP" | "LOADING" | "READY" | "PLAYING" | "REVEALED" | "FINIS
 type RFMode = "buzzer" | "mc";
 
 export default function RapidFire() {
-  const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider, triggerTwist, activeRoomCode, saveBoard } = useClassroomStore();
+  const { currentTeams, updateTeamScore, getActiveApiKey, getActiveModel, llmProvider, triggerTwist, activeRoomCode, saveBoard } = useClassroomStore();
   const [mounted, setMounted] = useState(false);
   const [roomBuzzes, setRoomBuzzes] = useState<any[]>([]);
   const [roomStudents, setRoomStudents] = useState<any[]>([]);
@@ -132,7 +132,7 @@ export default function RapidFire() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           apiKey: getActiveApiKey(), 
-          mistralModel, 
+          mistralModel: getActiveModel(), 
           provider: llmProvider, 
           topic, 
           level: targetLevel, 

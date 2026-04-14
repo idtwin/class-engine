@@ -74,9 +74,14 @@ interface ClassroomState {
   setMistralKey: (key: string) => void;
   groqKey: string;
   setGroqKey: (key: string) => void;
+  geminiModel: string;
+  setGeminiModel: (m: string) => void;
   mistralModel: string;
   setMistralModel: (m: string) => void;
+  groqModel: string;
+  setGroqModel: (m: string) => void;
   getActiveApiKey: () => string;
+  getActiveModel: () => string;
   
   activeRoomCode: string | null;
   setActiveRoomCode: (code: string | null) => void;
@@ -392,13 +397,23 @@ export const useClassroomStore = create<ClassroomState>()(
       setMistralKey: (key) => set({ mistralKey: key }),
       groqKey: "",
       setGroqKey: (key) => set({ groqKey: key }),
+      geminiModel: "gemini-2.5-flash",
+      setGeminiModel: (m) => set({ geminiModel: m }),
       mistralModel: "mistral-small-latest",
       setMistralModel: (m) => set({ mistralModel: m }),
+      groqModel: "llama-3.3-70b-versatile",
+      setGroqModel: (m) => set({ groqModel: m }),
       getActiveApiKey: () => {
         const { llmProvider, geminiKey, mistralKey, groqKey } = get();
         if (llmProvider === "gemini")  return geminiKey;
         if (llmProvider === "groq")    return groqKey;
         return mistralKey; // mistral + lmstudio both use mistralKey slot
+      },
+      getActiveModel: () => {
+        const { llmProvider, geminiModel, mistralModel, groqModel } = get();
+        if (llmProvider === "gemini")  return geminiModel;
+        if (llmProvider === "groq")    return groqModel;
+        return mistralModel; // mistral + lmstudio
       }
     }),
     {

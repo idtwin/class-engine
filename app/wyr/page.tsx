@@ -10,7 +10,7 @@ import ScoreboardOverlay from "../components/ScoreboardOverlay";
 
 export default function WouldYouRatherMode() {
   const [mounted, setMounted] = useState(false);
-  const { triggerTwist, getActiveApiKey, mistralModel, llmProvider, activeRoomCode } = useClassroomStore();
+  const { triggerTwist, getActiveApiKey, getActiveModel, llmProvider, activeRoomCode } = useClassroomStore();
   
   const [topic, setTopic] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -64,7 +64,7 @@ export default function WouldYouRatherMode() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           apiKey: getActiveApiKey(), 
-          mistralModel, 
+          mistralModel: getActiveModel(), 
           provider: llmProvider, 
           topic, 
           level: "Mixed Level" 

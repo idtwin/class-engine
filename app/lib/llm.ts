@@ -92,8 +92,9 @@ async function callMistral(apiKey: string, opts: LLMOptions): Promise<string> {
 
 // ── Gemini ────────────────────────────────────────────────────────────────────
 async function callGemini(apiKey: string, opts: LLMOptions): Promise<string> {
+  const model = opts.mistralModel ?? "gemini-2.5-flash";
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -117,7 +118,7 @@ async function callGemini(apiKey: string, opts: LLMOptions): Promise<string> {
 
 // ── Groq ─────────────────────────────────────────────────────────────────────
 async function callGroq(apiKey: string, opts: LLMOptions): Promise<string> {
-  const model = "llama-3.3-70b-versatile";
+  const model = opts.mistralModel ?? "llama-3.3-70b-versatile";
 
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",

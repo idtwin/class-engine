@@ -8,7 +8,7 @@ import { ArrowLeft, Sparkles, RefreshCw } from "lucide-react";
 
 export default function PromptGenerator() {
   const [mounted, setMounted] = useState(false);
-  const { getActiveApiKey, mistralModel, llmProvider } = useClassroomStore();
+  const { getActiveApiKey, getActiveModel, llmProvider } = useClassroomStore();
   const [generatedPrompts, setGeneratedPrompts] = useState<string[]>([]);
   const [topic, setTopic] = useState("");
   const [promptCount, setPromptCount] = useState(6);
@@ -30,7 +30,7 @@ export default function PromptGenerator() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           apiKey: getActiveApiKey(),
-          mistralModel,
+          mistralModel: getActiveModel(),
           provider: llmProvider,
           topic: topic.trim(),
           count: promptCount,

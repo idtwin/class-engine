@@ -26,7 +26,7 @@ function shuffleArray<T>(arr: T[]): T[] {
 
 export default function OddOneOut() {
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider, activeRoomCode, saveBoard } = useClassroomStore();
+  const { currentTeams, updateTeamScore, getActiveApiKey, getActiveModel, llmProvider, activeRoomCode, saveBoard } = useClassroomStore();
   
   const handleLoadBoard = (saved: SavedBoard) => {
     setQuestions(saved.content);
@@ -156,7 +156,7 @@ export default function OddOneOut() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           apiKey: getActiveApiKey(), 
-          mistralModel, 
+          mistralModel: getActiveModel(), 
           provider: llmProvider, 
           topic, 
           level: levelFilter 

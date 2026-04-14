@@ -16,7 +16,7 @@ type Question = { level: string, errorType: string, brokenSentence: string, corr
 
 export default function FixIt() {
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider, activeRoomCode } = useClassroomStore();
+  const { currentTeams, updateTeamScore, getActiveApiKey, getActiveModel, llmProvider, activeRoomCode } = useClassroomStore();
   
   const [topic, setTopic] = useState("");
   const [levelFilter, setLevelFilter] = useState("Mixed Level");
@@ -100,7 +100,7 @@ export default function FixIt() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           apiKey: getActiveApiKey(), 
-          mistralModel, 
+          mistralModel: getActiveModel(), 
           provider: llmProvider, 
           topic, 
           level: levelFilter 
