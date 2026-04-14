@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCADE_COMMAND — Teams & Roster</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #07090f;
+    --surface: #0e1420;
+    --surface2: #131b2b;
+    --border: #1c2a40;
+    --border2: #243347;
+    --green: #00e87a;
+    --cyan: #00c8f0;
+    --orange: #ff7d3b;
+    --purple: #b06eff;
+    --yellow: #ffc843;
+    --pink: #ff4d8f;
+    --red: #ff4444;
+    --text: #dce8f5;
+    --muted: #4a637d;
+    --t1: #00e87a; --t2: #00c8f0; --t3: #ffc843; --t4: #ff4d8f; --t5: #b06eff; --t6: #ff7d3b; --t7: #e2e8f0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,232,122,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,232,122,0.015) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(7,9,15,0.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px; height: 52px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-brand { display: flex; align-items: center; gap: 10px; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--green); letter-spacing: 0.05em; }
+  .nav-brand-icon { width: 26px; height: 26px; border: 1.5px solid var(--green); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .nav-links { display: flex; gap: 32px; list-style: none; }
+  .nav-links a { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; color: var(--muted); padding-bottom: 2px; }
+  .nav-links a.active { color: var(--text); border-bottom: 1.5px solid var(--cyan); }
+  .nav-right { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.1em; display: flex; align-items: center; gap: 6px; }
+  .sound-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* PAGE */
+  .page { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 36px 32px 80px; }
+
+  /* PROGRESS STEPPER */
+  .stepper {
+    display: flex; align-items: center; gap: 0;
+    margin-bottom: 40px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px;
+    width: fit-content;
+  }
+  .step {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 20px; border-radius: 9px;
+    cursor: pointer; transition: all 0.2s;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); white-space: nowrap;
+  }
+  .step.active { background: var(--surface2); color: var(--text); }
+  .step.done { color: var(--green); }
+  .step-num {
+    width: 20px; height: 20px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700;
+    background: var(--border); color: var(--muted);
+    flex-shrink: 0;
+  }
+  .step.active .step-num { background: var(--cyan); color: #000; }
+  .step.done .step-num { background: var(--green); color: #000; }
+  .step-divider { width: 24px; height: 1px; background: var(--border); flex-shrink: 0; }
+
+  /* PAGE HEADER */
+  .page-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; }
+  .breadcrumb { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .breadcrumb span { color: var(--cyan); }
+  h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; color: #fff; }
+  .header-actions { display: flex; gap: 10px; align-items: center; }
+
+  /* BUTTONS */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border: none; transition: all 0.15s; }
+  .btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--muted); }
+  .btn-ghost:hover { border-color: var(--text); color: var(--text); }
+  .btn-primary { background: var(--green); color: #000; }
+  .btn-primary:hover { background: #00ff88; }
+  .btn-cyan { background: rgba(0,200,240,0.15); border: 1px solid rgba(0,200,240,0.4); color: var(--cyan); }
+  .btn-cyan:hover { background: rgba(0,200,240,0.25); }
+  .btn-danger { background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.3); color: var(--red); }
+  .btn-danger:hover { background: rgba(255,68,68,0.2); }
+
+  /* ==================== VIEW PANELS ==================== */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ==================== VIEW 1: ROSTER ==================== */
+  .roster-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px; gap: 12px; flex-wrap: wrap;
+  }
+  .roster-search {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 8px 14px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: var(--text); outline: none; width: 260px;
+  }
+  .roster-search::placeholder { color: var(--muted); }
+  .roster-search:focus { border-color: var(--cyan); }
+
+  .roster-stats {
+    display: flex; gap: 20px;
+  }
+  .rstat { text-align: center; }
+  .rstat-val { font-size: 20px; font-weight: 800; color: #fff; line-height: 1; }
+  .rstat-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; margin-top: 2px; }
+
+  .roster-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  }
+
+  .student-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 10px;
+    transition: border-color 0.15s;
+  }
+  .student-card:hover { border-color: var(--border2); }
+
+  .student-name { font-size: 14px; font-weight: 700; color: #fff; }
+
+  .student-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+
+  .stag {
+    padding: 3px 8px; border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.04em; cursor: pointer;
+    transition: all 0.15s; border: 1px solid transparent;
+  }
+  /* Fluency */
+  .stag-fl-low  { background: rgba(255,68,68,0.1);   color: #ff8080; border-color: rgba(255,68,68,0.2); }
+  .stag-fl-mid  { background: rgba(255,200,67,0.1);  color: var(--yellow); border-color: rgba(255,200,67,0.2); }
+  .stag-fl-high { background: rgba(0,232,122,0.1);   color: var(--green); border-color: rgba(0,232,122,0.2); }
+  /* Energy */
+  .stag-en-passive { background: rgba(74,99,125,0.15); color: var(--muted); border-color: var(--border); }
+  .stag-en-normal  { background: rgba(0,200,240,0.1);  color: var(--cyan); border-color: rgba(0,200,240,0.2); }
+  .stag-en-active  { background: rgba(255,125,59,0.1); color: var(--orange); border-color: rgba(255,125,59,0.2); }
+  /* Confidence */
+  .stag-co-low  { background: rgba(255,68,68,0.1);   color: #ff8080; border-color: rgba(255,68,68,0.2); }
+  .stag-co-mid  { background: rgba(255,200,67,0.1);  color: var(--yellow); border-color: rgba(255,200,67,0.2); }
+  .stag-co-high { background: rgba(176,110,255,0.1); color: var(--purple); border-color: rgba(176,110,255,0.2); }
+
+  .stag-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 2px; }
+
+  /* ==================== VIEW 2: TEAM BUILDER ==================== */
+  .builder-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px; gap: 16px; flex-wrap: wrap;
+  }
+
+  .balance-bar-wrap { flex: 1; min-width: 200px; }
+  .balance-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .balance-track { height: 6px; background: var(--border2); border-radius: 99px; overflow: hidden; display: flex; gap: 2px; }
+  .balance-seg { height: 100%; border-radius: 99px; transition: width 0.4s; }
+
+  /* Team cards */
+  .teams-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+  .team-card {
+    background: var(--surface); border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden; transition: border-color 0.2s;
+  }
+
+  .team-header {
+    padding: 14px 16px 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .team-name-row { display: flex; align-items: center; gap: 8px; }
+  .team-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .team-name { font-size: 13px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+
+  /* Balance indicators per team */
+  .team-balance { display: flex; gap: 4px; margin-top: 8px; padding: 0 16px 12px; }
+  .tb-item { flex: 1; }
+  .tb-bar-track { height: 3px; background: var(--border2); border-radius: 99px; overflow: hidden; margin-top: 3px; }
+  .tb-bar-fill { height: 100%; border-radius: 99px; }
+  .tb-label { font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; }
+
+  .team-members { padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+
+  .member-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; border-radius: 7px;
+    background: var(--surface2);
+    cursor: grab; transition: background 0.15s;
+    border: 1px solid transparent;
+  }
+  .member-row:hover { border-color: var(--border2); }
+  .member-row.dragging { opacity: 0.4; }
+
+  .member-name { font-size: 12px; font-weight: 600; color: var(--text); }
+  .member-mini-tags { display: flex; gap: 3px; }
+  .mini-tag {
+    width: 6px; height: 6px; border-radius: 50%;
+    flex-shrink: 0; title: '';
+  }
+  .move-btn {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    letter-spacing: 0.08em; color: var(--muted);
+    background: none; border: none; cursor: pointer;
+    padding: 2px 4px; text-transform: uppercase;
+    transition: color 0.15s;
+  }
+  .move-btn:hover { color: var(--cyan); }
+
+  /* Balance summary strip */
+  .balance-summary {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    margin-bottom: 20px;
+  }
+  .bs-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px;
+  }
+  .bs-title { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+  .bs-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .bs-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+  .bs-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+  .bs-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .bs-val { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; }
+  .bs-track { height: 3px; background: var(--border2); border-radius: 99px; overflow: hidden; margin-bottom: 8px; }
+  .bs-fill { height: 100%; border-radius: 99px; }
+
+  /* ==================== VIEW 3: LIVE SESSION ==================== */
+  .session-top {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .score-card {
+    border-radius: 12px; padding: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    position: relative; overflow: hidden;
+    transition: transform 0.2s;
+  }
+  .score-card:hover { transform: translateY(-2px); }
+
+  .score-card-glow {
+    position: absolute; top: -40px; right: -40px;
+    width: 120px; height: 120px;
+    border-radius: 50%; opacity: 0.08;
+    pointer-events: none;
+  }
+
+  .score-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .score-team-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+  .score-rank { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--muted); }
+  .score-rank.first { color: var(--yellow); }
+
+  .score-value { font-size: 40px; font-weight: 800; line-height: 1; margin-bottom: 6px; }
+  .score-delta { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+  /* Gap bar */
+  .gap-section { margin-bottom: 24px; }
+  .gap-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; display: flex; justify-content: space-between; }
+  .gap-track { height: 10px; background: var(--border2); border-radius: 99px; overflow: hidden; display: flex; }
+  .gap-seg { height: 100%; transition: width 0.6s ease; }
+  .gap-seg:first-child { border-radius: 99px 0 0 99px; }
+  .gap-seg:last-child  { border-radius: 0 99px 99px 0; }
+
+  /* Score history */
+  .history-section { margin-bottom: 24px; }
+  .section-title { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border2), transparent); }
+
+  .history-grid { display: flex; flex-direction: column; gap: 6px; }
+  .history-row {
+    display: grid; grid-template-columns: 120px repeat(4, 1fr) auto;
+    gap: 8px; align-items: center;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px;
+    font-size: 13px;
+  }
+  .history-game { font-weight: 700; color: var(--text); font-size: 12px; }
+  .history-score { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; text-align: center; }
+  .history-winner { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; text-align: right; }
+  .history-header { color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+  /* Score adjust */
+  .adjust-section {}
+  .adjust-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .adjust-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px;
+    display: flex; flex-direction: column; gap: 10px; align-items: center;
+  }
+  .adjust-team-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+  .adjust-controls { display: flex; align-items: center; gap: 8px; }
+  .adj-btn {
+    width: 30px; height: 30px; border-radius: 7px;
+    background: var(--surface2); border: 1px solid var(--border2);
+    font-size: 16px; font-weight: 700; cursor: pointer;
+    color: var(--text); display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .adj-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+  .adj-score { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; min-width: 50px; text-align: center; }
+  .adj-input {
+    width: 70px; text-align: center;
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 6px; padding: 4px 8px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: var(--text); outline: none;
+  }
+  .adj-input:focus { border-color: var(--cyan); }
+
+  /* Dominant alert */
+  .dominant-alert {
+    background: rgba(255,200,67,0.06);
+    border: 1px solid rgba(255,200,67,0.2);
+    border-radius: 10px; padding: 12px 16px;
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 20px;
+    font-size: 13px; color: #94a3b8;
+  }
+  .dominant-icon { font-size: 18px; }
+
+  /* Tag */
+  .tag { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 99px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+  .tag-cyan   { background: rgba(0,200,240,0.1); color: var(--cyan); border: 1px solid rgba(0,200,240,0.25); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <div class="nav-brand-icon">⊞</div>
+    ARCADE_COMMAND
+  </div>
+  <ul class="nav-links">
+    <li><a href="#">Arcade</a></li>
+    <li><a href="#" class="active">Teams & Roster</a></li>
+    <li><a href="#">Analytics</a></li>
+  </ul>
+  <div class="nav-right">
+    <div class="sound-dot"></div>
+    SOUND: ON
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <div class="breadcrumb">PROJECT S.E.R.U // <span>XI – I</span></div>
+      <h1>Teams & Roster</h1>
+    </div>
+    <div class="header-actions">
+      <span class="tag tag-cyan">17 Students</span>
+      <button class="btn btn-ghost">⚙ Settings</button>
+      <button class="btn btn-ghost">⇄ Switch Node</button>
+    </div>
+  </div>
+
+  <!-- STEPPER -->
+  <div class="stepper">
+    <div class="step done" onclick="showView('roster')">
+      <div class="step-num">✓</div>
+      Roster Setup
+    </div>
+    <div class="step-divider"></div>
+    <div class="step active" onclick="showView('builder')">
+      <div class="step-num">2</div>
+      Team Builder
+    </div>
+    <div class="step-divider"></div>
+    <div class="step" onclick="showView('session')">
+      <div class="step-num">3</div>
+      Live Session
+    </div>
+  </div>
+
+  <!-- ==================== VIEW 1: ROSTER ==================== -->
+  <div class="view" id="view-roster">
+    <div class="roster-toolbar">
+      <input class="roster-search" placeholder="Search student..." oninput="filterRoster(this.value)">
+      <div class="roster-stats">
+        <div class="rstat"><div class="rstat-val" style="color:var(--green)">6</div><div class="rstat-label">High Fluency</div></div>
+        <div class="rstat"><div class="rstat-val" style="color:var(--yellow)">7</div><div class="rstat-label">Mid Fluency</div></div>
+        <div class="rstat"><div class="rstat-val" style="color:#ff8080">4</div><div class="rstat-label">Low Fluency</div></div>
+        <div class="rstat"><div class="rstat-val" style="color:var(--orange)">8</div><div class="rstat-label">Active Energy</div></div>
+        <div class="rstat"><div class="rstat-val" style="color:var(--purple)">9</div><div class="rstat-label">High Conf</div></div>
+      </div>
+      <button class="btn btn-primary" onclick="showView('builder')">→ Generate Teams</button>
+    </div>
+
+    <div class="roster-grid" id="rosterGrid"></div>
+  </div>
+
+  <!-- ==================== VIEW 2: TEAM BUILDER ==================== -->
+  <div class="view active" id="view-builder">
+
+    <div class="builder-header">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-ghost" onclick="showView('roster')">← Roster</button>
+        <button class="btn btn-cyan" onclick="regenerateTeams()">↻ Re-generate</button>
+        <button class="btn btn-danger">✕ Clear Scores</button>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);">Teams:</div>
+          <select id="teamCountSelect" onchange="setTeamCount(parseInt(this.value))" style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--text);cursor:pointer;outline:none;letter-spacing:0.06em;">
+            <option value="2">2 Teams</option>
+            <option value="3">3 Teams</option>
+            <option value="4" selected>4 Teams</option>
+            <option value="5">5 Teams</option>
+            <option value="6">6 Teams</option>
+            <option value="7">7 Teams</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="showView('session')">→ Start Session</button>
+      </div>
+    </div>
+
+    <!-- Balance summary -->
+    <div class="balance-summary" id="balanceSummary"></div>
+
+    <!-- Teams grid -->
+    <div class="teams-grid" id="teamsGrid"></div>
+  </div>
+
+  <!-- ==================== VIEW 3: LIVE SESSION ==================== -->
+  <div class="view" id="view-session">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+      <button class="btn btn-ghost" onclick="showView('builder')">← Teams</button>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-ghost">📽 Projector View</button>
+        <button class="btn btn-danger">✕ End Session</button>
+      </div>
+    </div>
+
+    <!-- Score cards -->
+    <div class="session-top" id="scoreCards"></div>
+
+    <!-- Dominant alert -->
+    <div class="dominant-alert" id="dominantAlert">
+      <span class="dominant-icon">⚠️</span>
+      <span id="dominantText">Team 1 is leading by <strong>1,250 pts</strong> — consider a catch-up round.</span>
+    </div>
+
+    <!-- Gap bar -->
+    <div class="gap-section">
+      <div class="gap-label">
+        <span>Score Distribution</span>
+        <span id="gapRange"></span>
+      </div>
+      <div class="gap-track" id="gapTrack"></div>
+    </div>
+
+    <!-- Score history -->
+    <div class="history-section">
+      <div class="section-title">Session History</div>
+      <div class="history-grid" id="historyGrid">
+        <div class="history-row">
+          <div class="history-game history-header">Game</div>
+          <div class="history-score history-header" style="color:var(--t1)">T1</div>
+          <div class="history-score history-header" style="color:var(--t2)">T2</div>
+          <div class="history-score history-header" style="color:var(--t3)">T3</div>
+          <div class="history-score history-header" style="color:var(--t4)">T4</div>
+          <div class="history-winner history-header">Winner</div>
+        </div>
+        <div class="history-row">
+          <div class="history-game">Fix It</div>
+          <div class="history-score" style="color:var(--t1)">+800</div>
+          <div class="history-score" style="color:var(--t2)">+250</div>
+          <div class="history-score" style="color:var(--t3)">+600</div>
+          <div class="history-score" style="color:var(--t4)">+100</div>
+          <div class="history-winner" style="color:var(--t1)">● Team 1</div>
+        </div>
+        <div class="history-row">
+          <div class="history-game">Rapid Fire</div>
+          <div class="history-score" style="color:var(--t1)">+600</div>
+          <div class="history-score" style="color:var(--t2)">+200</div>
+          <div class="history-score" style="color:var(--t3)">+500</div>
+          <div class="history-score" style="color:var(--t4)">+100</div>
+          <div class="history-winner" style="color:var(--t1)">● Team 1</div>
+        </div>
+        <div class="history-row">
+          <div class="history-game">Odd One Out</div>
+          <div class="history-score" style="color:var(--t1)">+500</div>
+          <div class="history-score" style="color:var(--t2)">+200</div>
+          <div class="history-score" style="color:var(--t3)">+300</div>
+          <div class="history-score" style="color:var(--t4)">+0</div>
+          <div class="history-winner" style="color:var(--t1)">● Team 1</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Manual score adjust -->
+    <div class="adjust-section">
+      <div class="section-title">Manual Score Adjust</div>
+      <div class="adjust-grid" id="adjustGrid"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ── Data ──────────────────────────────────────────────────────────────
+  const students = [
+    { name: "Ahmad Rizqi Arrayan",           fl: "low",  en: "normal", co: "mid"  },
+    { name: "Aeni Putri",                    fl: "mid",  en: "passive",co: "low"  },
+    { name: "Al Vinzha Febriano (Alvin)",    fl: "low",  en: "active", co: "high" },
+    { name: "Dimas Pratama Yulianto",        fl: "high", en: "active", co: "high" },
+    { name: "Dinar Arya Putra Rasya",        fl: "high", en: "active", co: "high" },
+    { name: "Fakhri Ramadhan",               fl: "mid",  en: "normal", co: "mid"  },
+    { name: "Ibnu Akhdaan Alfaridzi",        fl: "mid",  en: "active", co: "mid"  },
+    { name: "Keyla Wati Lestari",            fl: "high", en: "normal", co: "high" },
+    { name: "Levy Cipta Astinto",            fl: "mid",  en: "passive",co: "low"  },
+    { name: "Muhammad Ibnu Kamil",           fl: "low",  en: "normal", co: "low"  },
+    { name: "Muhammad Khoirul Azam",         fl: "mid",  en: "active", co: "mid"  },
+    { name: "Muhammad Raffi Ramadhan",       fl: "high", en: "active", co: "high" },
+    { name: "Nadia Kinardewi",               fl: "mid",  en: "passive",co: "mid"  },
+    { name: "Putra Erlangga",                fl: "high", en: "active", co: "high" },
+    { name: "Siti Noor Fathiema Aufa",       fl: "low",  en: "normal", co: "low"  },
+    { name: "Sri Maetami",                   fl: "mid",  en: "passive",co: "low"  },
+    { name: "Steven Putra Iskandar",         fl: "high", en: "active", co: "high" },
+  ];
+
+  const flScore  = { low: 1, mid: 2, high: 3 };
+  const enScore  = { passive: 1, normal: 2, active: 3 };
+  const coScore  = { low: 1, mid: 2, high: 3 };
+  const flColor  = { low: '#ff8080', mid: 'var(--yellow)', high: 'var(--green)' };
+  const enColor  = { passive: 'var(--muted)', normal: 'var(--cyan)', active: 'var(--orange)' };
+  const coColor  = { low: '#ff8080', mid: 'var(--yellow)', high: 'var(--purple)' };
+  const teamColors = ['var(--t1)', 'var(--t2)', 'var(--t3)', 'var(--t4)', 'var(--t5)', 'var(--t6)', 'var(--t7)'];
+  const teamHex    = ['#00e87a', '#00c8f0', '#ffc843', '#ff4d8f', '#b06eff', '#ff7d3b', '#e2e8f0'];
+  const teamNames  = ['Team 1', 'Team 2', 'Team 3', 'Team 4', 'Team 5', 'Team 6', 'Team 7'];
+
+  let teams = [[], [], [], []];
+  let scores = [1900, 650, 1400, 200];
+  let numTeams = 4;
+
+  // ── Roster ────────────────────────────────────────────────────────────
+  function renderRoster(filter = '') {
+    const grid = document.getElementById('rosterGrid');
+    const filtered = students.filter(s => s.name.toLowerCase().includes(filter.toLowerCase()));
+    grid.innerHTML = filtered.map(s => `
+      <div class="student-card">
+        <div class="student-name">${s.name}</div>
+        <div>
+          <div class="stag-label">English Fluency</div>
+          <span class="stag stag-fl-${s.fl}">${s.fl.toUpperCase()} LVL</span>
+        </div>
+        <div style="display:flex;gap:12px;">
+          <div>
+            <div class="stag-label">Energy</div>
+            <span class="stag stag-en-${s.en}">${s.en.toUpperCase()}</span>
+          </div>
+          <div>
+            <div class="stag-label">Confidence</div>
+            <span class="stag stag-co-${s.co}">${s.co.toUpperCase()} CONF</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function filterRoster(val) { renderRoster(val); }
+
+  // ── Team Generation ───────────────────────────────────────────────────
+  function generateTeams(n) {
+    numTeams = n;
+    const sorted = [...students].sort((a, b) =>
+      (flScore[b.fl] + enScore[b.en] + coScore[b.co]) -
+      (flScore[a.fl] + enScore[a.en] + coScore[a.co])
+    );
+    teams = Array.from({ length: n }, () => []);
+    // Snake draft for balance
+    let dir = 1, idx = 0;
+    sorted.forEach((s, i) => {
+      teams[idx].push(s);
+      idx += dir;
+      if (idx >= n) { idx = n - 1; dir = -1; }
+      else if (idx < 0) { idx = 0; dir = 1; }
+    });
+    renderBuilder();
+  }
+
+  function regenerateTeams() { generateTeams(numTeams); }
+  function setTeamCount(n) { document.getElementById('teamCountSelect').value = n; generateTeams(n); }
+
+  function teamStat(team, key, scoreMap) {
+    const vals = team.map(s => scoreMap[s[key]]);
+    return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length / 3 * 100).toFixed(0) : 0;
+  }
+
+  function renderBuilder() {
+    // Balance summary
+    const bs = document.getElementById('balanceSummary');
+    bs.style.gridTemplateColumns = `repeat(${numTeams}, 1fr)`;
+    bs.innerHTML = teams.slice(0, numTeams).map((team, i) => {
+      const fl = teamStat(team, 'fl', flScore);
+      const en = teamStat(team, 'en', enScore);
+      const co = teamStat(team, 'co', coScore);
+      return `
+        <div class="bs-card">
+          <div class="bs-title">
+            <div class="bs-dot" style="background:${teamHex[i]}"></div>
+            <div class="bs-name" style="color:${teamColors[i]}">${teamNames[i]}</div>
+            <div style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">${team.length} students</div>
+          </div>
+          ${[['Fluency', fl, flColor['mid']], ['Energy', en, enColor['normal']], ['Confidence', co, coColor['mid']]].map(([label, val, col]) => `
+            <div class="bs-row"><span class="bs-label">${label}</span><span class="bs-val" style="color:${col}">${val}%</span></div>
+            <div class="bs-track"><div class="bs-fill" style="width:${val}%;background:${col}"></div></div>
+          `).join('')}
+        </div>`;
+    }).join('');
+
+    // Teams grid
+    const tg = document.getElementById('teamsGrid');
+    tg.style.gridTemplateColumns = `repeat(${numTeams}, 1fr)`;
+    tg.innerHTML = teams.slice(0, numTeams).map((team, i) => `
+      <div class="team-card" style="border-top:2px solid ${teamHex[i]}">
+        <div class="team-header">
+          <div>
+            <div class="team-name-row">
+              <div class="team-dot" style="background:${teamHex[i]};box-shadow:0 0 6px ${teamHex[i]}"></div>
+              <div class="team-name" style="color:${teamColors[i]}">${teamNames[i]}</div>
+            </div>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">${team.length} students</div>
+        </div>
+        <div class="team-members">
+          ${team.map(s => `
+            <div class="member-row">
+              <div>
+                <div class="member-name">${s.name}</div>
+                <div class="member-mini-tags" style="margin-top:3px">
+                  <div class="mini-tag" style="background:${flColor[s.fl]}" title="Fluency: ${s.fl}"></div>
+                  <div class="mini-tag" style="background:${enColor[s.en]}" title="Energy: ${s.en}"></div>
+                  <div class="mini-tag" style="background:${coColor[s.co]}" title="Confidence: ${s.co}"></div>
+                </div>
+              </div>
+              <button class="move-btn">Move</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // ── Live Session ──────────────────────────────────────────────────────
+  function renderSession() {
+    const total = scores.slice(0, numTeams).reduce((a, b) => a + b, 0);
+    const max   = Math.max(...scores.slice(0, numTeams));
+    const min   = Math.min(...scores.slice(0, numTeams));
+    const sorted = [...scores.slice(0, numTeams)].sort((a,b)=>b-a);
+
+    // Score cards
+    const sc = document.getElementById('scoreCards');
+    sc.style.gridTemplateColumns = `repeat(${numTeams}, 1fr)`;
+    sc.innerHTML = scores.slice(0, numTeams).map((s, i) => {
+      const rank = sorted.indexOf(s) + 1;
+      return `
+      <div class="score-card" style="border-top:2px solid ${teamHex[i]}">
+        <div class="score-card-glow" style="background:${teamHex[i]}"></div>
+        <div class="score-card-header">
+          <div class="score-team-label" style="color:${teamColors[i]}">${teamNames[i]}</div>
+          <div class="score-rank ${rank===1?'first':''}">${rank===1?'👑':'#'+rank}</div>
+        </div>
+        <div class="score-value" style="color:${teamColors[i]}">${s.toLocaleString()}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">${Math.round(s/total*100)}% of total</div>
+          ${rank===1?`<span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--yellow)">+${(s-sorted[1]).toLocaleString()} lead</span>`:''}
+        </div>
+      </div>`
+    }).join('');
+
+    // Dominant alert
+    const gap = max - min;
+    const alert = document.getElementById('dominantAlert');
+    const leadTeam = teamNames[scores.indexOf(max)];
+    document.getElementById('dominantText').innerHTML =
+      gap > 800
+        ? `<strong style="color:var(--yellow)">${leadTeam}</strong> is leading by <strong>${gap.toLocaleString()} pts</strong> — consider a catch-up bonus round.`
+        : `Scores are tight — gap is only <strong>${gap.toLocaleString()} pts</strong>. Keep it going!`;
+    alert.style.borderColor = gap > 800 ? 'rgba(255,200,67,0.3)' : 'rgba(0,232,122,0.2)';
+    alert.style.background  = gap > 800 ? 'rgba(255,200,67,0.06)' : 'rgba(0,232,122,0.04)';
+
+    // Gap bar
+    document.getElementById('gapRange').textContent = `Gap: ${gap.toLocaleString()} pts`;
+    document.getElementById('gapTrack').innerHTML = scores.slice(0, numTeams).map((s, i) =>
+      `<div class="gap-seg" style="width:${s/total*100}%;background:${teamHex[i]}"></div>`
+    ).join('');
+
+    // Adjust grid
+    const ag = document.getElementById('adjustGrid');
+    ag.style.gridTemplateColumns = `repeat(${numTeams}, 1fr)`;
+    ag.innerHTML = scores.slice(0, numTeams).map((s, i) => `
+      <div class="adjust-card">
+        <div class="adjust-team-name" style="color:${teamColors[i]}">${teamNames[i]}</div>
+        <div class="adjust-controls">
+          <button class="adj-btn" onclick="adjustScore(${i}, -100)">−</button>
+          <div class="adj-score" style="color:${teamColors[i]}">${s.toLocaleString()}</div>
+          <button class="adj-btn" onclick="adjustScore(${i}, +100)">+</button>
+        </div>
+        <input class="adj-input" type="number" placeholder="+/− pts" onkeydown="if(event.key==='Enter'){adjustScore(${i},parseInt(this.value)||0);this.value='';}">
+      </div>
+    `).join('');
+  }
+
+  function adjustScore(teamIdx, delta) {
+    scores[teamIdx] = Math.max(0, scores[teamIdx] + delta);
+    renderSession();
+  }
+
+  // ── Navigation ────────────────────────────────────────────────────────
+  function showView(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+
+    const steps = document.querySelectorAll('.step');
+    const order = ['roster', 'builder', 'session'];
+    const idx   = order.indexOf(name);
+    steps.forEach((s, i) => {
+      s.classList.remove('active', 'done');
+      if (i < idx) s.classList.add('done');
+      else if (i === idx) s.classList.add('active');
+    });
+
+    if (name === 'session') renderSession();
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────
+  renderRoster();
+  generateTeams(4);
+</script>
+</body>
+</html>

@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCADE_COMMAND — Student Phone UI</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2436;
+    --border: #1e3048;
+    --green: #00e87a;
+    --cyan: #00c8f0;
+    --orange: #ff7d3b;
+    --purple: #b06eff;
+    --yellow: #ffc843;
+    --pink: #ff4d8f;
+    --text: #f0f6ff;
+    --muted: #4a637d;
+    --t1: #00e87a; --t2: #00c8f0; --t3: #ffc843; --t4: #ff4d8f;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #060810;
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 60px;
+    gap: 48px;
+  }
+
+  /* Page title */
+  .page-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #2a4060;
+    text-align: center;
+  }
+
+  /* State nav */
+  .state-nav {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .state-btn {
+    padding: 8px 16px;
+    border-radius: 99px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid #1e3048;
+    background: transparent;
+    color: #4a637d;
+    transition: all 0.15s;
+  }
+
+  .state-btn.active, .state-btn:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    background: rgba(0,200,240,0.08);
+  }
+
+  /* Phone frame */
+  .phone-row {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .phone-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #2a4060;
+  }
+
+  .phone {
+    width: 320px;
+    min-height: 620px;
+    background: var(--bg);
+    border-radius: 36px;
+    border: 2px solid #1a2e48;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px #0d1b2e;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Notch */
+  .notch {
+    width: 90px; height: 24px;
+    background: #060810;
+    border-radius: 0 0 16px 16px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 10;
+    flex-shrink: 0;
+  }
+
+  .phone-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0 0 24px;
+    overflow: hidden;
+  }
+
+  /* ==================== STATE 1: CONNECT ==================== */
+  .connect-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 24px 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .connect-bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(0,200,240,0.08) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  .connect-logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--cyan);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .connect-logo-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: blink 1.5s infinite;
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .connect-title {
+    font-size: 26px;
+    font-weight: 900;
+    color: #fff;
+    text-align: center;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+
+  .connect-sub {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .connect-field-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    align-self: flex-start;
+    margin-bottom: 6px;
+    width: 100%;
+  }
+
+  .connect-select {
+    width: 100%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a637d' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    margin-bottom: 20px;
+    transition: border-color 0.2s;
+  }
+
+  .connect-select:focus { border-color: var(--cyan); }
+
+  .connect-btn {
+    width: 100%;
+    padding: 16px;
+    border-radius: 16px;
+    background: var(--cyan);
+    border: none;
+    font-family: 'Nunito', sans-serif;
+    font-size: 16px;
+    font-weight: 900;
+    color: #000;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: all 0.15s;
+    box-shadow: 0 8px 24px rgba(0,200,240,0.3);
+  }
+
+  .connect-btn:hover { background: #20d8ff; transform: translateY(-1px); }
+
+  .connect-class-badge {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: rgba(0,232,122,0.08);
+    border: 1px solid rgba(0,232,122,0.2);
+    border-radius: 99px;
+  }
+
+  .connect-class-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+  .connect-class-text { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--green); letter-spacing: 0.08em; }
+
+  /* ==================== STATE 2: LOBBY ==================== */
+  .lobby-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .lobby-header {
+    padding: 16px 20px 0;
+    position: relative;
+  }
+
+  .lobby-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .lobby-team-banner {
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .lobby-team-glow {
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    opacity: 0.2;
+    pointer-events: none;
+  }
+
+  .lobby-greeting {
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 2px;
+  }
+
+  .lobby-name {
+    font-size: 22px;
+    font-weight: 900;
+    color: #fff;
+    margin-bottom: 10px;
+    line-height: 1.1;
+  }
+
+  .lobby-team-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 99px;
+    background: rgba(0,0,0,0.25);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  /* Stats row */
+  .lobby-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 0 20px 16px;
+  }
+
+  .lobby-stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px;
+    text-align: center;
+  }
+
+  .lobby-stat-val {
+    font-size: 20px;
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 3px;
+  }
+
+  .lobby-stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* Team scores */
+  .lobby-scores-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0 20px;
+    margin-bottom: 10px;
+  }
+
+  .lobby-score-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  .lobby-score-row.me { background: rgba(0,200,240,0.05); }
+
+  .lobby-score-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .lobby-score-name { flex: 1; font-size: 13px; font-weight: 700; color: var(--text); }
+  .lobby-score-pts { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; }
+
+  /* Waiting pulse */
+  .lobby-waiting {
+    margin: 16px 20px 0;
+    padding: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .waiting-dots {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .waiting-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--cyan);
+    animation: waitdot 1.2s infinite;
+  }
+
+  .waiting-dot:nth-child(2) { animation-delay: 0.2s; }
+  .waiting-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes waitdot { 0%,80%,100%{opacity:0.2;transform:scale(0.8)} 40%{opacity:1;transform:scale(1)} }
+
+  .waiting-text { font-size: 13px; font-weight: 700; color: var(--muted); }
+
+  /* ==================== STATE 3: IN-GAME (Fix It) ==================== */
+  .game-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .game-header {
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .game-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 99px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .game-badge-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    animation: blink 1s infinite;
+  }
+
+  .game-timer {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--yellow);
+  }
+
+  .game-team-strip {
+    height: 4px;
+  }
+
+  /* Fix It specific */
+  .fixit-body {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .fixit-prompt-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .fixit-sentence {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.6;
+    position: relative;
+  }
+
+  .fixit-error {
+    background: rgba(255,68,68,0.15);
+    color: #ff8080;
+    text-decoration: underline wavy #ff4444;
+    border-radius: 4px;
+    padding: 0 2px;
+  }
+
+  .fixit-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .fixit-input-wrap {
+    position: relative;
+  }
+
+  .fixit-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    outline: none;
+    resize: none;
+    transition: border-color 0.2s;
+    line-height: 1.5;
+  }
+
+  .fixit-input::placeholder { color: var(--muted); font-weight: 600; }
+  .fixit-input:focus { border-color: var(--cyan); }
+
+  .fixit-submit {
+    width: 100%;
+    padding: 18px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, var(--cyan), #0090ff);
+    border: none;
+    font-family: 'Nunito', sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    color: #fff;
+    cursor: pointer;
+    letter-spacing: 0.01em;
+    box-shadow: 0 8px 28px rgba(0,200,240,0.35);
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .fixit-submit:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,200,240,0.45); }
+  .fixit-submit:active { transform: translateY(0); }
+
+  /* Button game (Odd One Out / Rapid Fire) */
+  .btn-game-body {
+    flex: 1;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .btn-game-question {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  .btn-game-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    flex: 1;
+  }
+
+  .option-btn {
+    padding: 0 12px;
+    border-radius: 18px;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .option-btn:hover { border-color: var(--cyan); color: var(--cyan); background: rgba(0,200,240,0.08); transform: scale(1.02); }
+  .option-btn:active { transform: scale(0.97); }
+  .option-btn.selected { border-color: var(--green); background: rgba(0,232,122,0.12); color: var(--green); }
+
+  /* Buzz button */
+  .buzz-body {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .buzz-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .buzz-btn {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, rgba(255,125,59,0.9), rgba(220,50,0,0.95));
+    border: none;
+    box-shadow:
+      0 0 0 8px rgba(255,125,59,0.15),
+      0 0 0 16px rgba(255,125,59,0.07),
+      0 20px 60px rgba(255,100,0,0.4);
+    cursor: pointer;
+    font-family: 'Nunito', sans-serif;
+    font-size: 28px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 0.02em;
+    transition: all 0.12s;
+    animation: buzzPulse 2s infinite;
+  }
+
+  @keyframes buzzPulse {
+    0%,100% { box-shadow: 0 0 0 8px rgba(255,125,59,0.15), 0 0 0 16px rgba(255,125,59,0.07), 0 20px 60px rgba(255,100,0,0.4); }
+    50% { box-shadow: 0 0 0 12px rgba(255,125,59,0.2), 0 0 0 24px rgba(255,125,59,0.08), 0 20px 60px rgba(255,100,0,0.5); }
+  }
+
+  .buzz-btn:active {
+    transform: scale(0.93);
+    box-shadow: 0 0 0 4px rgba(255,125,59,0.3), 0 8px 20px rgba(255,100,0,0.5);
+    animation: none;
+  }
+
+  .buzz-team-score {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* ==================== STATE 4: POST-SUBMIT ==================== */
+  .feedback-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    gap: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Correct state */
+  .feedback-correct-bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 30%, rgba(0,232,122,0.12) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  .feedback-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  .feedback-icon.correct {
+    background: rgba(0,232,122,0.15);
+    border: 2px solid rgba(0,232,122,0.4);
+    animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  .feedback-icon.wrong {
+    background: rgba(255,68,68,0.12);
+    border: 2px solid rgba(255,68,68,0.3);
+    animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes popIn { 0%{transform:scale(0);opacity:0} 100%{transform:scale(1);opacity:1} }
+
+  .feedback-result {
+    font-size: 26px;
+    font-weight: 900;
+    text-align: center;
+  }
+
+  .feedback-result.correct { color: var(--green); }
+  .feedback-result.wrong   { color: #ff6060; }
+
+  .feedback-ai-card {
+    width: 100%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    padding: 16px;
+  }
+
+  .feedback-ai-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .feedback-ai-text {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  .feedback-ai-text strong { color: var(--cyan); }
+
+  /* Score streak row */
+  .feedback-score-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .feedback-score-card {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px;
+    text-align: center;
+  }
+
+  .feedback-score-val {
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 3px;
+  }
+
+  .feedback-score-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* Streak fire */
+  .streak-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 99px;
+    background: rgba(255,200,67,0.1);
+    border: 1px solid rgba(255,200,67,0.25);
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--yellow);
+  }
+
+  /* Waiting for class */
+  .feedback-waiting {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .feedback-waiting-text {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+
+  /* Demo toggle */
+  .demo-controls {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .demo-btn {
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid #1e3048;
+    background: transparent;
+    color: #4a637d;
+    transition: all 0.15s;
+  }
+
+  .demo-btn.active {
+    border-color: var(--orange);
+    color: var(--orange);
+    background: rgba(255,125,59,0.08);
+  }
+
+  .demo-btn:hover:not(.active) { color: var(--text); border-color: #2a4060; }
+</style>
+</head>
+<body>
+
+<div class="page-title">// ARCADE_COMMAND — STUDENT PHONE UI — ALL STATES</div>
+
+<!-- State nav -->
+<div class="state-nav">
+  <button class="state-btn active" onclick="showState('connect')">① Connect</button>
+  <button class="state-btn" onclick="showState('lobby')">② Lobby</button>
+  <button class="state-btn" onclick="showState('game')">③ In-Game</button>
+  <button class="state-btn" onclick="showState('feedback')">④ Post-Submit</button>
+</div>
+
+<!-- ==================== CONNECT ==================== -->
+<div id="state-connect" class="phone-row">
+  <div class="phone-wrap">
+    <div class="phone-label">// STATE 1 — CONNECT</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="phone-content">
+        <div class="connect-screen">
+          <div class="connect-bg"></div>
+
+          <div class="connect-logo">
+            <div class="connect-logo-dot"></div>
+            ARCADE_COMMAND
+          </div>
+
+          <div style="font-size:52px;margin-bottom:12px;">🎮</div>
+
+          <div class="connect-title">Ready to<br>Play?</div>
+          <div class="connect-sub">Select your name to join</div>
+
+          <div style="width:100%">
+            <div class="connect-field-label">Your Name</div>
+            <select class="connect-select">
+              <option value="" disabled selected>Choose your name...</option>
+              <option>Ahmad Rizqi Arrayan</option>
+              <option>Aeni Putri</option>
+              <option>Al Vinzha Febriano (Alvin)</option>
+              <option>Dimas Pratama Yulianto</option>
+              <option>Dinar Arya Putra Rasya</option>
+              <option>Fakhri Ramadhan</option>
+              <option>Keyla Wati Lestari</option>
+              <option>Muhammad Khoirul Azam</option>
+            </select>
+
+            <button class="connect-btn" onclick="showState('lobby')">Join Class →</button>
+          </div>
+
+          <div class="connect-class-badge">
+            <div class="connect-class-dot"></div>
+            <div class="connect-class-text">XI – I · SMA · 17 Students</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== LOBBY ==================== -->
+<div id="state-lobby" class="phone-row" style="display:none">
+  <div class="phone-wrap">
+    <div class="phone-label">// STATE 2 — LOBBY</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="phone-content">
+        <div class="lobby-screen">
+
+          <div style="padding:16px 20px 12px;">
+            <!-- Team banner -->
+            <div class="lobby-team-banner" style="background:linear-gradient(135deg,rgba(0,200,240,0.15),rgba(0,200,240,0.05));border:1.5px solid rgba(0,200,240,0.25);">
+              <div class="lobby-team-glow" style="background:var(--cyan)"></div>
+              <div class="lobby-greeting">Welcome back,</div>
+              <div class="lobby-name">Dimas Pratama 👋</div>
+              <div class="lobby-team-label" style="color:var(--cyan)">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--cyan)"></div>
+                TEAM 2
+              </div>
+            </div>
+          </div>
+
+          <!-- Personal stats -->
+          <div class="lobby-stats">
+            <div class="lobby-stat">
+              <div class="lobby-stat-val" style="color:var(--yellow)">🔥 4</div>
+              <div class="lobby-stat-label">Streak</div>
+            </div>
+            <div class="lobby-stat">
+              <div class="lobby-stat-val" style="color:var(--green)">340</div>
+              <div class="lobby-stat-label">My Score</div>
+            </div>
+            <div class="lobby-stat">
+              <div class="lobby-stat-val" style="color:var(--purple)">82%</div>
+              <div class="lobby-stat-label">Accuracy</div>
+            </div>
+          </div>
+
+          <!-- Team scores -->
+          <div class="lobby-scores-title">Team Standings</div>
+          <div class="lobby-score-row">
+            <div class="lobby-score-dot" style="background:var(--t1)"></div>
+            <div class="lobby-score-name">Team 1</div>
+            <div class="lobby-score-pts" style="color:var(--t1)">1,900</div>
+            <div style="font-size:14px;margin-left:4px;">👑</div>
+          </div>
+          <div class="lobby-score-row">
+            <div class="lobby-score-dot" style="background:var(--t3)"></div>
+            <div class="lobby-score-name">Team 3</div>
+            <div class="lobby-score-pts" style="color:var(--t3)">1,400</div>
+          </div>
+          <div class="lobby-score-row me">
+            <div class="lobby-score-dot" style="background:var(--t2)"></div>
+            <div class="lobby-score-name">Team 2 <span style="font-size:11px;color:var(--cyan);font-family:'JetBrains Mono',monospace;"> ← YOU</span></div>
+            <div class="lobby-score-pts" style="color:var(--t2)">650</div>
+          </div>
+          <div class="lobby-score-row">
+            <div class="lobby-score-dot" style="background:var(--t4)"></div>
+            <div class="lobby-score-name">Team 4</div>
+            <div class="lobby-score-pts" style="color:var(--t4)">200</div>
+          </div>
+
+          <!-- Waiting indicator -->
+          <div class="lobby-waiting">
+            <div class="waiting-dots">
+              <div class="waiting-dot"></div>
+              <div class="waiting-dot"></div>
+              <div class="waiting-dot"></div>
+            </div>
+            <div class="waiting-text">Waiting for teacher to start...</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== IN-GAME ==================== -->
+<div id="state-game" class="phone-row" style="display:none">
+
+  <!-- Fix It -->
+  <div class="phone-wrap">
+    <div class="phone-label">// FIX IT — Text Input</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="game-team-strip" style="background:linear-gradient(90deg,var(--t2),var(--cyan))"></div>
+      <div class="phone-content">
+        <div class="game-screen">
+          <div class="game-header">
+            <div class="game-badge" style="background:rgba(255,200,67,0.1);border:1px solid rgba(255,200,67,0.25);">
+              <div class="game-badge-dot" style="background:var(--yellow)"></div>
+              <span style="font-size:10px;color:var(--yellow);">FIX IT</span>
+            </div>
+            <div class="game-timer">0:24</div>
+          </div>
+
+          <div class="fixit-body">
+            <div class="fixit-prompt-label">Find & fix the error</div>
+
+            <div class="fixit-sentence">
+              She <span class="fixit-error">don't</span> like eating vegetables since she was a child.
+            </div>
+
+            <div class="fixit-hint">
+              <span style="color:var(--yellow)">💡</span>
+              Hint: Check the verb form
+            </div>
+
+            <textarea class="fixit-input" rows="2" placeholder="Type the corrected sentence..."></textarea>
+
+            <button class="fixit-submit" onclick="showState('feedback')">
+              Submit Answer ✓
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Odd One Out -->
+  <div class="phone-wrap">
+    <div class="phone-label">// ODD ONE OUT — Button Select</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="game-team-strip" style="background:linear-gradient(90deg,var(--t2),var(--cyan))"></div>
+      <div class="phone-content">
+        <div class="game-screen">
+          <div class="game-header">
+            <div class="game-badge" style="background:rgba(176,110,255,0.1);border:1px solid rgba(176,110,255,0.25);">
+              <div class="game-badge-dot" style="background:var(--purple)"></div>
+              <span style="font-size:10px;color:var(--purple);">ODD ONE OUT</span>
+            </div>
+            <div class="game-timer">0:18</div>
+          </div>
+
+          <div class="btn-game-body">
+            <div class="btn-game-question">Which word does NOT belong with the others?</div>
+            <div class="btn-game-options">
+              <button class="option-btn">🏖️<br>Beach</button>
+              <button class="option-btn">🏔️<br>Mountain</button>
+              <button class="option-btn selected">🍕<br>Pizza</button>
+              <button class="option-btn">🌊<br>Ocean</button>
+            </div>
+            <button class="fixit-submit" style="background:linear-gradient(135deg,var(--purple),#7040d0);" onclick="showState('feedback')">
+              Submit ✓
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Buzz -->
+  <div class="phone-wrap">
+    <div class="phone-label">// JEOPARDY — Buzz</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="game-team-strip" style="background:linear-gradient(90deg,var(--t2),var(--cyan))"></div>
+      <div class="phone-content">
+        <div class="game-screen">
+          <div class="game-header">
+            <div class="game-badge" style="background:rgba(0,232,122,0.1);border:1px solid rgba(0,232,122,0.25);">
+              <div class="game-badge-dot" style="background:var(--green)"></div>
+              <span style="font-size:10px;color:var(--green);">JEOPARDY</span>
+            </div>
+            <div class="game-timer">0:30</div>
+          </div>
+
+          <div class="buzz-body">
+            <div class="buzz-label">Know the answer?</div>
+            <button class="buzz-btn" onclick="showState('feedback')">BUZZ!</button>
+            <div class="buzz-team-score">
+              Team 2 · <span style="color:var(--cyan);font-weight:800;">650 pts</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== POST-SUBMIT ==================== -->
+<div id="state-feedback" class="phone-row" style="display:none">
+
+  <!-- Correct -->
+  <div class="phone-wrap">
+    <div class="phone-label">// CORRECT ✓</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="game-team-strip" style="background:linear-gradient(90deg,var(--t2),var(--cyan))"></div>
+      <div class="phone-content">
+        <div class="feedback-screen">
+          <div class="feedback-correct-bg"></div>
+
+          <div class="feedback-icon correct">✓</div>
+          <div class="feedback-result correct">Correct!</div>
+
+          <!-- AI feedback -->
+          <div class="feedback-ai-card">
+            <div class="feedback-ai-label">⚡ AI Feedback</div>
+            <div class="feedback-ai-text">
+              Great fix! <strong>"doesn't"</strong> is correct here because the subject "She" is third-person singular. You changed <strong>"don't"</strong> → <strong>"doesn't"</strong> perfectly. 🎯
+            </div>
+          </div>
+
+          <!-- Score update -->
+          <div class="feedback-score-row">
+            <div class="feedback-score-card">
+              <div class="feedback-score-val" style="color:var(--green)">+100</div>
+              <div class="feedback-score-label">Points</div>
+            </div>
+            <div class="feedback-score-card">
+              <div class="feedback-score-val" style="color:var(--yellow)">440</div>
+              <div class="feedback-score-label">My Total</div>
+            </div>
+          </div>
+
+          <!-- Streak -->
+          <div class="streak-badge">🔥 5 in a row!</div>
+
+          <!-- Waiting -->
+          <div class="feedback-waiting">
+            <div class="waiting-dots">
+              <div class="waiting-dot"></div>
+              <div class="waiting-dot"></div>
+              <div class="waiting-dot"></div>
+            </div>
+            <div class="feedback-waiting-text">Waiting for class...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wrong -->
+  <div class="phone-wrap">
+    <div class="phone-label">// NOT QUITE ✗</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="game-team-strip" style="background:linear-gradient(90deg,var(--t2),var(--cyan))"></div>
+      <div class="phone-content">
+        <div class="feedback-screen">
+          <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(255,68,68,0.08) 0%,transparent 65%);pointer-events:none;"></div>
+
+          <div class="feedback-icon wrong">✗</div>
+          <div class="feedback-result wrong">Not Quite</div>
+
+          <!-- AI feedback -->
+          <div class="feedback-ai-card">
+            <div class="feedback-ai-label" style="color:var(--orange)">⚡ AI Feedback</div>
+            <div class="feedback-ai-text">
+              Close! The error is with the <strong style="color:var(--orange)">verb agreement</strong>. "She" needs a different form of "do" as an auxiliary. Think about how we change verbs for third-person singular. Try again next round! 💪
+            </div>
+          </div>
+
+          <!-- Score update -->
+          <div class="feedback-score-row">
+            <div class="feedback-score-card">
+              <div class="feedback-score-val" style="color:var(--muted)">+0</div>
+              <div class="feedback-score-label">Points</div>
+            </div>
+            <div class="feedback-score-card">
+              <div class="feedback-score-val" style="color:var(--text)">340</div>
+              <div class="feedback-score-label">My Total</div>
+            </div>
+          </div>
+
+          <!-- Streak lost -->
+          <div class="streak-badge" style="background:rgba(255,68,68,0.08);border-color:rgba(255,68,68,0.2);color:#ff8080;">
+            💔 Streak lost
+          </div>
+
+          <!-- Waiting -->
+          <div class="feedback-waiting">
+            <div class="waiting-dots">
+              <div class="waiting-dot" style="background:var(--muted)"></div>
+              <div class="waiting-dot" style="background:var(--muted)"></div>
+              <div class="waiting-dot" style="background:var(--muted)"></div>
+            </div>
+            <div class="feedback-waiting-text">Waiting for class...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function showState(state) {
+    document.querySelectorAll('[id^="state-"]').forEach(el => el.style.display = 'none');
+    document.getElementById('state-' + state).style.display = 'flex';
+    document.querySelectorAll('.state-btn').forEach((btn, i) => {
+      btn.classList.toggle('active', btn.textContent.toLowerCase().includes(state.substring(0,3)));
+    });
+  }
+
+  // Option button toggle
+  document.querySelectorAll('.option-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      this.closest('.btn-game-options').querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+      this.classList.add('selected');
+    });
+  });
+</script>
+</body>
+</html>

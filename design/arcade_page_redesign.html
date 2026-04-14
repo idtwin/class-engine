@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCADE_COMMAND — Arcade</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #07090f;
+    --surface: #0e1420;
+    --surface2: #131b2b;
+    --border: #1c2a40;
+    --border2: #243347;
+    --green: #00e87a;
+    --cyan: #00c8f0;
+    --orange: #ff7d3b;
+    --purple: #b06eff;
+    --yellow: #ffc843;
+    --pink: #ff4d8f;
+    --text: #dce8f5;
+    --muted: #4a637d;
+    --dim: #1e2e42;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,232,122,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,232,122,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(7,9,15,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 0.05em;
+  }
+
+  .nav-brand-icon {
+    width: 26px;
+    height: 26px;
+    border: 1.5px solid var(--green);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--muted);
+    transition: color 0.2s;
+    padding-bottom: 2px;
+  }
+
+  .nav-links a.active {
+    color: var(--text);
+    border-bottom: 1.5px solid var(--green);
+  }
+
+  .nav-right {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .sound-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* PAGE WRAPPER */
+  .page {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 32px 80px;
+  }
+
+  /* PAGE HEADER */
+  .page-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 36px;
+  }
+
+  .breadcrumb {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .breadcrumb span { color: var(--green); }
+
+  h1 {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #fff;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+  }
+
+  .btn-ghost:hover { border-color: var(--text); color: var(--text); }
+
+  /* FEATURED CARD */
+  .featured-wrapper {
+    margin-bottom: 40px;
+    position: relative;
+  }
+
+  .featured-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--yellow);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .featured-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border2), transparent);
+  }
+
+  .featured-card {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    padding: 32px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 32px;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .featured-card:hover {
+    border-color: var(--orange);
+    transform: translateY(-2px);
+  }
+
+  /* Glow blob behind featured */
+  .featured-card::before {
+    content: '';
+    position: absolute;
+    top: -60px;
+    right: -60px;
+    width: 280px;
+    height: 280px;
+    background: radial-gradient(circle, rgba(255,125,59,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .featured-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .featured-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(255,125,59,0.15);
+    border: 1px solid rgba(255,125,59,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+
+  .featured-name {
+    font-size: 28px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.02em;
+  }
+
+  .featured-desc {
+    color: #6b87a0;
+    font-size: 14px;
+    line-height: 1.7;
+    max-width: 520px;
+    margin-bottom: 20px;
+  }
+
+  .featured-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .featured-launch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .launch-btn {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255,125,59,0.2), rgba(255,125,59,0.05));
+    border: 1.5px solid rgba(255,125,59,0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .launch-btn:hover {
+    background: rgba(255,125,59,0.25);
+    border-color: var(--orange);
+    box-shadow: 0 0 30px rgba(255,125,59,0.2);
+  }
+
+  .launch-btn-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--orange);
+  }
+
+  .launch-btn-icon {
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  .reroll {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    cursor: pointer;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s;
+    background: none;
+    border: none;
+    padding: 0;
+  }
+
+  .reroll:hover { color: var(--text); }
+
+  /* Session stats row */
+  .session-stats {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .stat-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .stat-value.good { color: var(--green); }
+  .stat-value.mid  { color: var(--yellow); }
+  .stat-value.low  { color: var(--pink); }
+
+  .stat-divider {
+    width: 1px;
+    height: 32px;
+    background: var(--border);
+  }
+
+  .stat-bar-wrap {
+    flex: 1;
+    max-width: 160px;
+  }
+
+  .stat-bar-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+
+  .stat-bar-track {
+    height: 5px;
+    background: var(--border2);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .stat-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.6s ease;
+  }
+
+  /* Class selector chip */
+  .class-chip-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .class-chip-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .class-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+
+  .class-chip.active {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    background: rgba(0,200,240,0.08);
+  }
+
+  .class-chip:hover:not(.active) {
+    border-color: var(--border2);
+    color: var(--text);
+  }
+
+  /* TAGS / PILLS */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .tag-energy-high { background: rgba(255,77,143,0.1); color: var(--pink); border: 1px solid rgba(255,77,143,0.25); }
+  .tag-energy-mid  { background: rgba(255,200,67,0.1); color: var(--yellow); border: 1px solid rgba(255,200,67,0.25); }
+  .tag-energy-low  { background: rgba(0,200,240,0.1); color: var(--cyan); border: 1px solid rgba(0,200,240,0.25); }
+  .tag-phone       { background: rgba(0,232,122,0.1); color: var(--green); border: 1px solid rgba(0,232,122,0.25); }
+  .tag-no-phone    { background: rgba(74,99,125,0.1); color: var(--muted); border: 1px solid var(--border); }
+  .tag-skill       { background: rgba(176,110,255,0.1); color: var(--purple); border: 1px solid rgba(176,110,255,0.25); }
+
+  /* CATEGORY SECTION */
+  .categories { display: flex; flex-direction: column; gap: 36px; }
+
+  .category-block {}
+
+  .category-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .category-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+  }
+
+  .cat-vocab   { background: rgba(176,110,255,0.15); border: 1px solid rgba(176,110,255,0.3); }
+  .cat-reading { background: rgba(0,200,240,0.15);   border: 1px solid rgba(0,200,240,0.3); }
+  .cat-writing { background: rgba(0,232,122,0.15);   border: 1px solid rgba(0,232,122,0.3); }
+  .cat-speaking{ background: rgba(255,77,143,0.15);  border: 1px solid rgba(255,77,143,0.3); }
+
+  .category-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .cat-vocab-text   { color: var(--purple); }
+  .cat-reading-text { color: var(--cyan); }
+  .cat-writing-text { color: var(--green); }
+  .cat-speaking-text{ color: var(--pink); }
+
+  .category-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: 4px;
+  }
+
+  .category-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border2), transparent);
+  }
+
+  /* GAME CARDS GRID */
+  .games-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .game-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.18s;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .game-card:hover {
+    border-color: var(--border2);
+    background: var(--surface2);
+    transform: translateY(-2px);
+  }
+
+  .game-card:hover .init-label { opacity: 1; }
+
+  .game-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .game-card-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .game-card-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.01em;
+    margin-bottom: 6px;
+  }
+
+  .game-card-desc {
+    font-size: 12px;
+    color: #4a637d;
+    line-height: 1.65;
+    flex: 1;
+  }
+
+  .game-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .game-card-tags {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+
+  .init-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    opacity: 0;
+    transition: opacity 0.18s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+
+  /* Filter bar */
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 36px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+
+  .filter-btn:hover, .filter-btn.active {
+    border-color: var(--green);
+    color: var(--green);
+    background: rgba(0,232,122,0.05);
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-brand-icon">⊞</div>
+    ARCADE_COMMAND
+  </div>
+  <ul class="nav-links">
+    <li><a href="#" class="active">Arcade</a></li>
+    <li><a href="#">Teams &amp; Roster</a></li>
+    <li><a href="#">Analytics</a></li>
+  </ul>
+  <div class="nav-right">
+    <div class="sound-dot"></div>
+    SOUND: ON
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <div class="breadcrumb">SYSTEM_READY // <span>SELECT_MODULE</span></div>
+      <h1>ARCADE_COMMAND</h1>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost">⊞ Library</button>
+    </div>
+  </div>
+
+  <!-- FEATURED -->
+  <div class="featured-wrapper">
+    <div class="featured-label">⏱ Last Played</div>
+
+    <!-- Class selector -->
+    <div class="class-chip-row">
+      <span class="class-chip-label">Class:</span>
+      <button class="class-chip" onclick="selectClass('global', this)">🌐 All Classes</button>
+      <button class="class-chip active" onclick="selectClass('XI-I', this)">XI – I</button>
+      <button class="class-chip" onclick="selectClass('XI-II', this)">XI – II</button>
+      <button class="class-chip" onclick="selectClass('XI-III', this)">XI – III</button>
+    </div>
+
+    <div class="featured-card" id="featuredCard">
+      <div style="flex:1">
+        <div class="featured-meta">
+          <div class="featured-icon" id="featuredIcon">⚡</div>
+          <div>
+            <div class="featured-name" id="featuredName">Rapid Fire</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-top:3px;" id="featuredWhen">Last played <strong style="color:var(--text)">2 days ago</strong> · XI – I</div>
+          </div>
+        </div>
+        <div class="featured-desc" id="featuredDesc">Fast-paced buzzer game. AI pre-generates 15–20 questions routed by student level. Great for high-energy warm-ups and vocab review.</div>
+        <div class="featured-tags" id="featuredTags">
+          <span class="tag tag-energy-high">🔥 High Energy</span>
+          <span class="tag tag-phone">📱 Phone Active</span>
+          <span class="tag tag-skill">Speaking</span>
+        </div>
+
+        <!-- Session stats -->
+        <div class="session-stats">
+          <div class="stat-item">
+            <div class="stat-label">Score</div>
+            <div class="stat-value good" id="featuredScore">1,840</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <div class="stat-label">Accuracy</div>
+            <div class="stat-value good" id="featuredAccuracy">74%</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-bar-wrap">
+            <div class="stat-bar-label">Accuracy</div>
+            <div class="stat-bar-track">
+              <div class="stat-bar-fill" id="featuredBar" style="width:74%;background:var(--green);"></div>
+            </div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <div class="stat-label">vs. Last Session</div>
+            <div class="stat-value good" id="featuredDelta">↑ +8%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="featured-launch">
+        <button class="launch-btn" onclick="alert('Launching module...')">
+          <div class="launch-btn-icon">▶</div>
+          <div class="launch-btn-text">Launch</div>
+        </button>
+        <button class="reroll" onclick="cycleFeatured()">↻ Different game</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="filterGames('all', this)">All</button>
+    <button class="filter-btn" onclick="filterGames('vocabulary', this)">Vocabulary</button>
+    <button class="filter-btn" onclick="filterGames('reading', this)">Reading</button>
+    <button class="filter-btn" onclick="filterGames('writing', this)">Writing</button>
+    <button class="filter-btn" onclick="filterGames('speaking', this)">Speaking</button>
+    <button class="filter-btn" onclick="filterGames('phone', this)">📱 Phone Active</button>
+  </div>
+
+  <!-- CATEGORIES -->
+  <div class="categories" id="categoriesContainer">
+
+    <!-- VOCABULARY -->
+    <div class="category-block" data-category="vocabulary">
+      <div class="category-header">
+        <div class="category-icon cat-vocab">🔤</div>
+        <div class="category-title cat-vocab-text">Vocabulary <span class="category-count">· 3 games</span></div>
+        <div class="category-line"></div>
+      </div>
+      <div class="games-grid">
+
+        <div class="game-card" data-skill="vocabulary" data-phone="true">
+          <div class="game-card-top">
+            <div class="game-card-icon" style="background:rgba(255,200,67,0.12);border:1px solid rgba(255,200,67,0.25);">🟡</div>
+          </div>
+          <div>
+            <div class="game-card-name">Fix It</div>
+            <div class="game-card-desc">Find the single error in a broken sentence before other teams. Race, Auction, and Spot &amp; Swap modes.</div>
+          </div>
+          <div class="game-card-footer">
+            <div class="game-card-tags">
+              <span class="tag tag-energy-mid">⚡ Mid Energy</span>
+              <span class="tag tag-phone">📱 Phone</span>
+            </div>
+            <div class="init-label">Init →</div>
+          </div>
+        </div>
+
+        <div class="game-card" data-skill="vocabulary" data-phone="true">
+          <div class="game-card-top">
+            <div class="game-card-icon" style="background:rgba(176,110,255,0.12);border:1px solid rgba(176,110,255,0.25);">🔮</div>
+          </div>
+          <div>
+            <div class="game-card-name">Odd One Out</div>
+            <div class="game-card-desc">AI-powered word classification. Classic, Debate, and Elimination modes. Find the outlier!</div>
+          </div>
+          <div class="game-card-footer">
+            <div class="game-card-tags">
+              <span class="tag tag-energy-mid">⚡ Mid Energy</span>
+              <span class="tag tag-phone">📱 Phone</span>
+            </div>
+            <div class="init-label">Init →</div>
+          </div>
+        </div>
+
+        <div class="game-card" data-skill="vocabulary" data-phone="false">
+          <div class="game-card-top">
+            <div class="game-card-icon" style="background:rgba(0,232,122,0.12);border:1px solid rgba(0,232,122,0.25);">🔗</div>
+          </div>
+          <div>
+            <div class="game-card-name">Chain Reaction</div>
+            <div class="game-card-desc">Compound word chains or last-letter races. Letter hints reveal on wrong answers.</div>
+          </div>
+          <div class="game-card-footer">
+            <div class="game-card-tags">
+              <span class="tag tag-energy-high">🔥 High Energy</span>
+              <span class="tag tag-no-phone">No Phone</span>
+            </div>
+            <div class="init-label">Init →</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- READING -->
+    <div class="category-block" data-category="reading">
+      <div class="category-header">
+        <div class="category-icon cat-reading">📖</div>
+        <div class="category-title cat-reading-text">Reading <span class="category-count">· 2 games</span></div>
+        <div class="category-line"></div>
+      </div>
+      <div class="games-grid">
+
+        <div class="game-card" data-skill="reading" data-phone="true">
+          <div class="game-card-top">
+            <div class="game-card-icon" style="background:rgba(0,200,240,0.12);border:1px solid rgba(0,200,240,0.25);">🖼️</div>
+          </div>
+          <div>
+            <div class="game-card-name">Picture Reveal</div>
+            <div class="game-card-desc">Answer rapid-fire questions to reveal a hidden AI-generated image tile by tile.</div>
+          </div>
+          <div class="game-card-footer">
+            <div class="game-card-tags">
+              <span class="tag tag-energy-high">🔥 High Energy</span>
+              <span class="tag tag-phone">📱 Phone</span>
+            </div>
+            <div class="init-label">Init →</div>
+          </div>
+        </div>
+
+        <div class="game-card" data-skill="reading" data-phone="false">
+          <div class="game-card-top">
+            <div class="game-card-icon" style="background:rgba(0,232,122,0.12);border:1px solid rgba(0,232,122,0.25);">⊞</div>
+          </div>
+          <div>
+            <div class="game-card-name">Jeopardy</div>
+            <div class="game-card-desc">The classic 5×5 board. AI dynamically generates categories and high-context visual aids.</div>
+          </div>
+          <div class="game-card-footer">
+            <div class="game-card-tags">
+              <span class="tag tag-energy-mid">⚡ Mid Energy</span>
+              <span class="tag tag-phone">📱 Phone</span>
+            </div>
+            <div class="init-label">Init →</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- WRITING -->
+    <div class="category-block" data-category="writing">
+      <div class="category-header">
+        <div class="category-icon cat-writing">✍️</div>
+        <div class="category-title cat-writing-text">Writing <span class="category-count">· 2 games</span></div>
+        <div class="category-line"></div>
+      </div>
+      <div class="games-grid">
+
+        <div class="game-card" data-skill="writing" data-phone="false">
+          <div class="game-card-top">
+            <div class="game-card-icon" style="background:rgba(0,232,122,0.12);border:1px solid rgba(0,232,122,0.25);">📖</div>
+          </div>
+          <div>
+            <div class="game-card-name">Story Chain</div>
+            <div class="game-card-desc">Improv rules! Chain the story blocks using AI-forced keywords before the timer ends.</div>
+          </div>
+          <div class="game-card-footer">
+            <div class="game-card-tags">
+              <span class="tag tag-energy-low">💧 Low Energy</span>
+              <span class="tag tag-no-phone">No Phone</span>
+            </div>
+            <div class="init-label">Init →</div>
+          </div>
+        </div>
+
+        <div class="game-card" data-skill="writing" data-phone="true">
+          <div class="game-card-top">
+            <div class="game-card-icon" style="background:rgba(255,77,143,0.12);border:1px solid rgba(255,77,143,0.25);">💬</div>
+          </div>
+          <div>
+            <div class="game-card-name">Would You Rather</div>
+            <div class="game-card-desc">AI split-screen debate generator forcing students to argue bizarre scenarios.</div>
+          </div>
+          <div class="game-card-footer">
+            <div class="game-card-tags">
+              <span class="tag tag-energy-mid">⚡ Mid Energy</span>
+              <span class="tag tag-phone">📱 Phone</span>
+            </div>
+            <div class="init-label">Init →</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SPEAKING -->
+    <div class="category-block" data-category="speaking">
+      <div class="category-header">
+        <div class="category-icon cat-speaking">🎙️</div>
+        <div class="category-title cat-speaking-text">Speaking <span class="category-count">· 2 games</span></div>
+        <div class="category-line"></div>
+      </div>
+      <div class="games-grid">
+
+        <div class="game-card" data-skill="speaking" data-phone="false">
+          <div class="game-card-top">
+            <div class="game-card-icon" style="background:rgba(0,200,240,0.12);border:1px solid rgba(0,200,240,0.25);">⚡</div>
+          </div>
+          <div>
+            <div class="game-card-name">Rapid Fire</div>
+            <div class="game-card-desc">Fast-paced buzzer game. AI pre-generates 15–20 questions routed by student level.</div>
+          </div>
+          <div class="game-card-footer">
+            <div class="game-card-tags">
+              <span class="tag tag-energy-high">🔥 High Energy</span>
+              <span class="tag tag-phone">📱 Phone</span>
+            </div>
+            <div class="init-label">Init →</div>
+          </div>
+        </div>
+
+        <div class="game-card" data-skill="speaking" data-phone="false">
+          <div class="game-card-top">
+            <div class="game-card-icon" style="background:rgba(255,125,59,0.12);border:1px solid rgba(255,125,59,0.25);">🔥</div>
+          </div>
+          <div>
+            <div class="game-card-name">The Hot Seat</div>
+            <div class="game-card-desc">Fast-paced Taboo. Describe the hidden word to the student facing away from the projector.</div>
+          </div>
+          <div class="game-card-footer">
+            <div class="game-card-tags">
+              <span class="tag tag-energy-high">🔥 High Energy</span>
+              <span class="tag tag-no-phone">No Phone</span>
+            </div>
+            <div class="init-label">Init →</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const games = [
+    { name: "Rapid Fire",     icon: "⚡", desc: "Fast-paced buzzer game. AI pre-generates 15–20 questions routed by student level. Great for high-energy warm-ups.", energy: "high", phone: true,  skill: "Speaking"   },
+    { name: "Fix It",         icon: "🟡", desc: "Find the single error in a broken sentence before other teams. Race, Auction, and Spot & Swap modes.", energy: "mid",  phone: true,  skill: "Vocabulary" },
+    { name: "Odd One Out",    icon: "🔮", desc: "AI-powered word classification. Classic, Debate, and Elimination modes. Find the outlier!",              energy: "mid",  phone: true,  skill: "Vocabulary" },
+    { name: "Jeopardy",       icon: "⊞", desc: "The classic 5×5 board. AI dynamically generates categories and high-context visual aids.",                energy: "mid",  phone: true,  skill: "Reading"    },
+    { name: "The Hot Seat",   icon: "🔥", desc: "Fast-paced Taboo. Describe the hidden word to the student facing away from the projector.",              energy: "high", phone: false, skill: "Speaking"   },
+    { name: "Picture Reveal", icon: "🖼️", desc: "Answer rapid-fire questions to reveal a hidden AI-generated image tile by tile.",                        energy: "high", phone: true,  skill: "Reading"    },
+    { name: "Would You Rather",icon:"💬", desc: "AI split-screen debate generator forcing students to argue bizarre scenarios.",                           energy: "mid",  phone: true,  skill: "Writing"    },
+    { name: "Story Chain",    icon: "📖", desc: "Improv rules! Chain the story blocks using AI-forced keywords before the timer ends.",                   energy: "low",  phone: false, skill: "Writing"    },
+    { name: "Chain Reaction", icon: "🔗", desc: "Compound word chains or last-letter races. Letter hints reveal on wrong answers.",                       energy: "high", phone: false, skill: "Vocabulary" },
+  ];
+
+  // Mock last-played history per class
+  const classHistory = {
+    'global': { gameIndex: 0, when: '2 days ago', className: 'XI – I', score: 1840, accuracy: 74, delta: '+8%', deltaDir: 'up' },
+    'XI-I':   { gameIndex: 0, when: '2 days ago', className: 'XI – I', score: 1840, accuracy: 74, delta: '+8%', deltaDir: 'up' },
+    'XI-II':  { gameIndex: 2, when: '4 days ago', className: 'XI – II', score: 1220, accuracy: 58, delta: '-4%', deltaDir: 'down' },
+    'XI-III': { gameIndex: 5, when: 'yesterday',  className: 'XI – III', score: 2100, accuracy: 81, delta: '+12%', deltaDir: 'up' },
+  };
+
+  let activeClass = 'XI-I';
+
+  const energyTag = {
+    high: '<span class="tag tag-energy-high">🔥 High Energy</span>',
+    mid:  '<span class="tag tag-energy-mid">⚡ Mid Energy</span>',
+    low:  '<span class="tag tag-energy-low">💧 Low Energy</span>',
+  };
+
+  function renderFeatured(classKey) {
+    const h = classHistory[classKey];
+    const g = games[h.gameIndex];
+    const acc = h.accuracy;
+    const barColor = acc >= 70 ? 'var(--green)' : acc >= 50 ? 'var(--yellow)' : 'var(--pink)';
+    const valClass = acc >= 70 ? 'good' : acc >= 50 ? 'mid' : 'low';
+    const deltaColor = h.deltaDir === 'up' ? 'var(--green)' : 'var(--pink)';
+    const deltaArrow = h.deltaDir === 'up' ? '↑' : '↓';
+
+    document.getElementById('featuredIcon').textContent     = g.icon;
+    document.getElementById('featuredName').textContent     = g.name;
+    document.getElementById('featuredDesc').textContent     = g.desc;
+    document.getElementById('featuredWhen').innerHTML       = `Last played <strong style="color:var(--text)">${h.when}</strong> · ${h.className}`;
+    document.getElementById('featuredScore').textContent    = h.score.toLocaleString();
+    document.getElementById('featuredAccuracy').textContent = acc + '%';
+    document.getElementById('featuredAccuracy').className   = 'stat-value ' + valClass;
+    document.getElementById('featuredScore').className      = 'stat-value ' + valClass;
+    document.getElementById('featuredBar').style.width      = acc + '%';
+    document.getElementById('featuredBar').style.background = barColor;
+    document.getElementById('featuredDelta').innerHTML      = `<span style="color:${deltaColor}">${deltaArrow} ${h.delta}</span>`;
+    document.getElementById('featuredTags').innerHTML       =
+      energyTag[g.energy] +
+      (g.phone ? '<span class="tag tag-phone">📱 Phone Active</span>' : '<span class="tag tag-no-phone">No Phone</span>') +
+      `<span class="tag tag-skill">${g.skill}</span>`;
+  }
+
+  function selectClass(classKey, btn) {
+    activeClass = classKey;
+    document.querySelectorAll('.class-chip').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderFeatured(classKey);
+  }
+
+  function cycleFeatured() {
+    const h = classHistory[activeClass];
+    h.gameIndex = (h.gameIndex + 1) % games.length;
+    renderFeatured(activeClass);
+  }
+
+  function filterGames(filter, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.category-block').forEach(block => {
+      const cards = block.querySelectorAll('.game-card');
+      let visible = 0;
+      cards.forEach(card => {
+        let show = false;
+        if (filter === 'all') show = true;
+        else if (filter === 'phone') show = card.dataset.phone === 'true';
+        else show = card.dataset.skill === filter;
+        card.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      block.style.display = visible === 0 ? 'none' : '';
+    });
+  }
+
+  // Init
+  renderFeatured('XI-I');
+</script>
+</body>
+</html>
