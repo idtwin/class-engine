@@ -19,7 +19,7 @@ function buildImageUrl(answer: string, prompt: string) {
 
 export default function PictureRevealMode() {
   const [mounted, setMounted] = useState(false);
-  const { geminiKey, mistralKey, mistralModel, llmProvider, setActiveAwardAmount } = useClassroomStore();
+  const { getActiveApiKey, mistralModel, llmProvider, setActiveAwardAmount } = useClassroomStore();
 
   const [topic, setTopic] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -74,7 +74,7 @@ export default function PictureRevealMode() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          apiKey: llmProvider === 'gemini' ? geminiKey : mistralKey, 
+          apiKey: getActiveApiKey(), 
           mistralModel, 
           provider: llmProvider, 
           topic, 

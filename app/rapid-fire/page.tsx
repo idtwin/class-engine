@@ -23,7 +23,7 @@ type GameState = "SETUP" | "LOADING" | "READY" | "PLAYING" | "REVEALED" | "FINIS
 type RFMode = "buzzer" | "mc";
 
 export default function RapidFire() {
-  const { currentTeams, updateTeamScore, geminiKey, mistralKey, mistralModel, llmProvider, triggerTwist, activeRoomCode, saveBoard } = useClassroomStore();
+  const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider, triggerTwist, activeRoomCode, saveBoard } = useClassroomStore();
   const [mounted, setMounted] = useState(false);
   const [roomBuzzes, setRoomBuzzes] = useState<any[]>([]);
   const [roomStudents, setRoomStudents] = useState<any[]>([]);
@@ -120,8 +120,8 @@ export default function RapidFire() {
 
   const generateGame = async () => {
     if (!topic) return alert("Please enter a topic!");
-    if (llmProvider === 'gemini' && !geminiKey) return alert("Missing Gemini API Key (set in Dashboard).");
-    if (llmProvider === 'mistral' && !mistralKey) return alert("Missing Mistral API Key (set in Dashboard).");
+    
+    if (!getActiveApiKey() && llmProvider !== 'lmstudio') return alert("Please set your API key in Dashboard → Config first!");
     
     setIsGenerating(true);
     setGameState("LOADING");
@@ -131,7 +131,7 @@ export default function RapidFire() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          apiKey: llmProvider === 'gemini' ? geminiKey : mistralKey, 
+          apiKey: getActiveApiKey(), 
           mistralModel, 
           provider: llmProvider, 
           topic, 
@@ -364,7 +364,7 @@ export default function RapidFire() {
             <div style={{ display: "flex", gap: "1rem" }}>
               <button 
                 onClick={generateGame} 
-                disabled={isGenerating || (llmProvider === 'gemini' && !geminiKey)} 
+                disabled={isGenerating || (!getActiveApiKey() && llmProvider !== 'lmstudio')} 
                 className={styles.btnSolid} 
                 style={{ flex: 1, justifyContent: 'center' }}
               >

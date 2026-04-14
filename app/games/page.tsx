@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./games.module.css";
 import BoardLibrary from "../components/BoardLibrary";
-import { SavedBoard } from "../store/useClassroomStore";
+import { SavedBoard, useClassroomStore } from "../store/useClassroomStore";
 
 // Game data aligned with brief
 const GAMES_DATA = [
@@ -27,12 +27,32 @@ const classHistory: Record<string, any> = {
 };
 
 export default function GamesHub() {
+  const {
+    llmProvider, setLlmProvider,
+    geminiKey, setGeminiKey,
+    mistralKey, setMistralKey,
+    groqKey, setGroqKey,
+    mistralModel, setMistralModel,
+    seedDemoData, purgeDemoData,
+  } = useClassroomStore();
+
+  const activeKeyLabel = llmProvider === "gemini" ? "Gemini API Key"
+    : llmProvider === "groq" ? "Groq API Key"
+    : "Mistral API Key";
+  const activeKeyValue = llmProvider === "gemini" ? geminiKey
+    : llmProvider === "groq" ? groqKey
+    : mistralKey;
+  const activeKeySetter = llmProvider === "gemini" ? setGeminiKey
+    : llmProvider === "groq" ? setGroqKey
+    : setMistralKey;
+
   const [mounted, setMounted] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
   const [activeClass, setActiveClass] = useState("XI-I");
   const [filter, setFilter] = useState("all");
   const [libOpen, setLibOpen] = useState(false);
   const [featIdx, setFeatIdx] = useState(0);
+  const [showSettings, setShowSettings] = useState(false);
 
   const router = useRouter();
 
@@ -70,6 +90,7 @@ export default function GamesHub() {
              ⊞ Library
            </button>
            <BoardLibrary triggerOpen={libOpen} onClose={() => setLibOpen(false)} onLoadBoard={(b) => handleLaunch(`/${b.gameType}`)} hideTriggerButton={true} />
+           <button className={`${styles.btn} ${styles.btnPurple}`} onClick={() => setShowSettings(true)}>⚙ Settings</button>
         </div>
       </div>
 
@@ -188,6 +209,83 @@ export default function GamesHub() {
           );
         })}
       </div>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className={styles.modalOverlay} onClick={() => setShowSettings(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: "22px", marginBottom: "24px", color: "var(--purple)" }}>Settings</h2>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <button
+                  style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: "8px", background: "var(--green)", color: "#000", fontWeight: 700, cursor: "pointer", fontSize: "13px" }}
+                  onClick={() => { seedDemoData(); setShowSettings(false); }}>
+                  Load Sample Data
+                </button>
+                <button
+                  style={{ width: "100%", padding: "10px 16px", border: "1px solid var(--pink)", borderRadius: "8px", background: "rgba(255,77,143,0.1)", color: "var(--pink)", fontWeight: 700, cursor: "pointer", fontSize: "13px" }}
+                  onClick={() => { purgeDemoData(); setShowSettings(false); }}>
+                  Clear All Data
+                </button>
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "10px", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>AI Provider</label>
+                <select
+                  style={{ width: "100%", fontSize: "14px", background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)", borderRadius: "8px", padding: "8px 12px" }}
+                  value={llmProvider}
+                  onChange={e => setLlmProvider(e.target.value as any)}
+                >
+                  <option value="gemini">Google Gemini</option>
+                  <option value="mistral">Mistral</option>
+                  <option value="groq">Groq</option>
+                  <option value="lmstudio">LM Studio (Local)</option>
+                </select>
+              </div>
+
+              {llmProvider !== "lmstudio" && (
+                <>
+                  <div>
+                    <label style={{ display: "block", fontSize: "10px", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>Model Name</label>
+                    <input
+                      type="text"
+                      style={{ width: "100%", fontSize: "14px", background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)", borderRadius: "8px", padding: "8px 12px", boxSizing: "border-box" }}
+                      value={mistralModel}
+                      onChange={e => setMistralModel(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: "10px", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>{activeKeyLabel}</label>
+                    <input
+                      type="password"
+                      style={{ width: "100%", fontSize: "14px", background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)", borderRadius: "8px", padding: "8px 12px", boxSizing: "border-box" }}
+                      placeholder={llmProvider === "gemini" ? "AIza..." : llmProvider === "groq" ? "gsk_..." : "your-api-key..."}
+                      value={activeKeyValue}
+                      onChange={e => activeKeySetter(e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
+
+              {llmProvider === "lmstudio" && (
+                <div style={{ fontSize: "12px", color: "var(--muted)", padding: "12px", background: "rgba(0,232,122,0.06)", border: "1px solid rgba(0,232,122,0.15)", borderRadius: "8px" }}>
+                  LM Studio runs locally — no API key needed. Make sure the server is running on <strong style={{ color: "var(--green)" }}>port 1234</strong>.
+                </div>
+              )}
+            </div>
+
+            <div style={{ marginTop: "32px", display: "flex", justifyContent: "flex-end" }}>
+              <button
+                style={{ padding: "8px 24px", border: "1px solid var(--border2)", borderRadius: "8px", background: "transparent", color: "var(--muted)", cursor: "pointer", fontSize: "14px" }}
+                onClick={() => setShowSettings(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

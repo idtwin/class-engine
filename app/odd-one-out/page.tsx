@@ -26,7 +26,7 @@ function shuffleArray<T>(arr: T[]): T[] {
 
 export default function OddOneOut() {
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, geminiKey, mistralKey, mistralModel, llmProvider, activeRoomCode, saveBoard } = useClassroomStore();
+  const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider, activeRoomCode, saveBoard } = useClassroomStore();
   
   const handleLoadBoard = (saved: SavedBoard) => {
     setQuestions(saved.content);
@@ -130,8 +130,8 @@ export default function OddOneOut() {
   if (!mounted) return null;
 
   const handleGenerate = async () => {
-    if (llmProvider === 'gemini' && !geminiKey) return alert("Please set your Gemini API key in Dashboard Settings!");
-    if (llmProvider === 'mistral' && !mistralKey) return alert("Please set your Mistral API key in Dashboard Settings!");
+    
+    
     if (!topic) return alert("Please enter a topic!");
     
     setIsGenerating(true);
@@ -155,7 +155,7 @@ export default function OddOneOut() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          apiKey: llmProvider === 'gemini' ? geminiKey : mistralKey, 
+          apiKey: getActiveApiKey(), 
           mistralModel, 
           provider: llmProvider, 
           topic, 

@@ -72,8 +72,11 @@ interface ClassroomState {
   setGeminiKey: (key: string) => void;
   mistralKey: string;
   setMistralKey: (key: string) => void;
+  groqKey: string;
+  setGroqKey: (key: string) => void;
   mistralModel: string;
   setMistralModel: (m: string) => void;
+  getActiveApiKey: () => string;
   
   activeRoomCode: string | null;
   setActiveRoomCode: (code: string | null) => void;
@@ -387,8 +390,16 @@ export const useClassroomStore = create<ClassroomState>()(
       setGeminiKey: (key) => set({ geminiKey: key }),
       mistralKey: "Itfi3iUZwTF9lAST1SdvOfwftSdgO7La",
       setMistralKey: (key) => set({ mistralKey: key }),
+      groqKey: "",
+      setGroqKey: (key) => set({ groqKey: key }),
       mistralModel: "mistral-small-latest",
-      setMistralModel: (m) => set({ mistralModel: m })
+      setMistralModel: (m) => set({ mistralModel: m }),
+      getActiveApiKey: () => {
+        const { llmProvider, geminiKey, mistralKey, groqKey } = get();
+        if (llmProvider === "gemini")  return geminiKey;
+        if (llmProvider === "groq")    return groqKey;
+        return mistralKey; // mistral + lmstudio both use mistralKey slot
+      }
     }),
     {
       name: "classroom-engine-storage",

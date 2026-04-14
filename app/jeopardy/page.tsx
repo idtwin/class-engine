@@ -65,7 +65,7 @@ const DEFAULT_GAME_BOARD = [
 ];
 
 export default function JeopardyPage() {
-  const { currentTeams, updateTeamScore, geminiKey, mistralKey, mistralModel, llmProvider, triggerTwist, activeRoomCode, saveBoard, setActiveAwardAmount } = useClassroomStore();
+  const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider, triggerTwist, activeRoomCode, saveBoard, setActiveAwardAmount } = useClassroomStore();
   const [mounted, setMounted] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [topic, setTopic] = useState("");
@@ -127,7 +127,7 @@ export default function JeopardyPage() {
   if (!mounted) return null;
 
   const handleGenerate = async () => {
-    if (llmProvider === 'gemini' && !geminiKey) return alert("Please set your Gemini API key in the Dashboard Settings first!");
+    if (!getActiveApiKey() && llmProvider !== 'lmstudio') return alert("Please set your API key in Dashboard → Config first!");
     if (!topic) return alert("Please enter a topic!");
     
     setIsGenerating(true);
@@ -137,7 +137,7 @@ export default function JeopardyPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          apiKey: llmProvider === 'gemini' ? geminiKey : mistralKey, 
+          apiKey: getActiveApiKey(), 
           mistralModel,
           provider: llmProvider,
           topic, 

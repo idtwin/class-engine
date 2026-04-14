@@ -16,7 +16,7 @@ type Question = { level: string, errorType: string, brokenSentence: string, corr
 
 export default function FixIt() {
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, geminiKey, mistralKey, mistralModel, llmProvider, activeRoomCode } = useClassroomStore();
+  const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider, activeRoomCode } = useClassroomStore();
   
   const [topic, setTopic] = useState("");
   const [levelFilter, setLevelFilter] = useState("Mixed Level");
@@ -82,8 +82,8 @@ export default function FixIt() {
   if (!mounted) return null;
 
   const handleGenerate = async () => {
-    if (llmProvider === 'gemini' && !geminiKey) return alert("Please set your Gemini API key in Dashboard Settings!");
-    if (llmProvider === 'mistral' && !mistralKey) return alert("Please set your Mistral API key in Dashboard Settings!");
+    
+    
     if (!topic) return alert("Please enter a theme/topic!");
     
     setIsGenerating(true);
@@ -99,7 +99,7 @@ export default function FixIt() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          apiKey: llmProvider === 'gemini' ? geminiKey : mistralKey, 
+          apiKey: getActiveApiKey(), 
           mistralModel, 
           provider: llmProvider, 
           topic, 
