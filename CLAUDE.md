@@ -84,3 +84,27 @@ See `/design/ARCADE_COMMAND_Technical_Brief.md` for complete specifications incl
 3. Explore the existing codebase to understand current structure
 4. Confirm understanding before making changes
 5. Work one phase at a time — confirm after each phase before proceeding
+
+---
+
+## Behavioral Guidelines (Karpathy-Inspired)
+
+### 1. Think Before Coding
+- Surface assumptions and ambiguity **before** writing a single line
+- If a request has multiple valid interpretations, list them and ask
+- Never silently fill in gaps with guesses — confusion stated upfront saves rewrites
+
+### 2. Simplicity First
+- Write the minimum code that solves exactly what was asked
+- No extra features, no abstractions for single-use patterns
+- If a simpler path exists, take it and note the trade-off
+
+### 3. Surgical Changes
+- When editing existing code, touch **only** what's necessary
+- Match the surrounding code style exactly — don't reformat unrelated lines
+- Never refactor, rename, or restructure unless explicitly asked
+
+### 4. Goal-Driven Execution
+- Translate each request into a concrete, verifiable success criterion
+- State what "done" looks like before starting
+- After completing, confirm the criterion is met before moving on

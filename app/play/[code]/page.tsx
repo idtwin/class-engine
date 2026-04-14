@@ -687,112 +687,143 @@ export default function PlayPage() {
   // ── FIX IT ───────────────────────────────────────
   if (room.gameMode === "fixit" && room.currentQuestion) {
     const q = room.currentQuestion;
-    const fixMode = q.fixit_mode || "Easy";
-    const isRevealed = room.answerRevealed;
-    const myAnswer = selectedWord || (hasSubmitted ? textInput : "");
+    // Room-level mode is authoritative (set by teacher on launch/next);
+    // fall back to question-level, then default to Easy
+    const fixMode: "Easy" | "Hard" =
+      (room.fixitMode as "Easy" | "Hard") ||
+      (q.fixit_mode  as "Easy" | "Hard") ||
+      "Easy";
 
-    // Split sentence around wrong word for display
-    const sentenceParts = q.wrongWord
-      ? q.sentence?.split(new RegExp(`(\\b${q.wrongWord.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b)`, "i")) || [q.sentence]
-      : [q.sentence];
+    const myAnswer = selectedWord || (hasSubmitted ? textInput : "");
+    const answered = !!myAnswer;
+    const revealed = !!room.answerRevealed;
+
+    // Split sentence for wrong-word highlight
+    const wrongWordRegex = q.wrongWord
+      ? new RegExp(`(\\b${q.wrongWord.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b)`, "i")
+      : null;
+    const sentenceParts: string[] = wrongWordRegex && q.sentence
+      ? q.sentence.split(wrongWordRegex)
+      : [q.sentence || ""];
+
+    // Immediate feedback helpers
+    const fixitFeedback = (word: string) => {
+      const correct = word.trim().toLowerCase() === (q.correctWord || "").toLowerCase();
+      const concept = q.errorType ? ` This is a ${q.errorType} error.` : "";
+      recordResult(
+        correct,
+        correct
+          ? `Correct! "${q.correctWord}" is right.${concept}`
+          : `Not quite — the correct word is "${q.correctWord}". ${q.hint || "Keep it up!"}`
+      );
+    };
+
+    const handleEasyTap = async (word: string) => {
+      if (answered || teammateBlocked) return;
+      const result = await sendAction("student_answer", { studentId, answer: word });
+      if (result?.error === "teammate_answered") {
+        setTeammateBlocked(result.answeredBy);
+        return;
+      }
+      setSelectedWord(word);
+      fixitFeedback(word);
+    };
+
+    const handleHardLockIn = async () => {
+      if (!textInput.trim() || hasSubmitted || teammateBlocked) return;
+      const result = await sendAction("student_answer", { studentId, answer: textInput.trim() });
+      if (result?.error === "teammate_answered") {
+        setTeammateBlocked(result.answeredBy);
+        return;
+      }
+      setHasSubmitted(true);
+      fixitFeedback(textInput.trim());
+    };
 
     return (
       <div className={styles.screen}>
         {renderGameChrome()}
-        <div className={styles.gameBody}>
+        <div className={styles.fixitBody}>
 
-          {/* Sentence with wrong word underlined */}
-          <div style={{
-            fontSize: 17,
-            fontWeight: 700,
-            color: "#dce8f5",
-            lineHeight: 1.5,
-            textAlign: "center",
-            padding: "0 8px",
-            fontFamily: "var(--font-nunito, Nunito, sans-serif)",
-          }}>
+          {/* Prompt label */}
+          <div className={styles.fixitPromptLabel}>Find &amp; fix the error</div>
+
+          {/* Sentence card — big, centered, wrong word highlighted */}
+          <div className={styles.fixitSentenceCard}>
             {sentenceParts.map((part, i) =>
-              sentenceParts.length > 1 && i === 1
-                ? <span key={i} style={{
-                    color: "#ffc843",
-                    textDecoration: "underline",
-                    textUnderlineOffset: "4px",
-                    textDecorationColor: "rgba(255,200,67,0.5)",
-                  }}>{part}</span>
-                : part
+              wrongWordRegex && wrongWordRegex.test(part)
+                ? <span key={i} className={styles.fixitWrongWord}>{part}</span>
+                : <span key={i}>{part}</span>
             )}
           </div>
 
-          {!isRevealed ? (
-            <>
-              {/* Easy mode: word option buttons */}
-              {fixMode === "Easy" && q.options && (
-                <div className={styles.optionsGrid}>
-                  {(q.options as string[]).map((word: string, i: number) => {
-                    const letters = ["A", "B", "C", "D"];
-                    const picked = myAnswer === word;
-                    const anyPicked = !!myAnswer;
-                    return (
-                      <button
-                        key={word}
-                        className={`${styles.optionBtn} ${picked ? styles.optionSelected : ""} ${anyPicked && !picked ? styles.optionDisabled : ""}`}
-                        onClick={async () => {
-                          if (myAnswer || teammateBlocked) return;
-                          const result = await sendAction("student_answer", { studentId, answer: word });
-                          if (result?.error === "teammate_answered") {
-                            setTeammateBlocked(result.answeredBy);
-                            return;
-                          }
-                          setSelectedWord(word);
-                        }}
-                        disabled={!!myAnswer || !!teammateBlocked}
-                      >
-                        <div style={{ fontFamily: "var(--font-mono,'JetBrains Mono',monospace)", fontSize: 16, fontWeight: 700, opacity: 0.6, marginBottom: 4 }}>{letters[i]}</div>
-                        <div style={{ fontSize: 20, fontWeight: 800 }}>{word}</div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Hard mode: single word text input */}
-              {fixMode === "Hard" && !hasSubmitted && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%" }}>
-                  <input
-                    className={styles.fixitInput}
-                    type="text"
-                    placeholder="Type the correct word..."
-                    value={textInput}
-                    onChange={e => setTextInput(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && textInput.trim() && handleSubmitAnswer()}
-                    autoComplete="off"
-                    autoCapitalize="off"
-                    spellCheck={false}
-                  />
-                  <button
-                    className={styles.fixitSubmit}
-                    onClick={handleSubmitAnswer}
-                    disabled={!textInput.trim()}
-                  >
-                    Lock In ✓
-                  </button>
-                </div>
-              )}
-
-              {(myAnswer || hasSubmitted) && (
-                <div style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: "#00c8f0" }}>
-                  Answer locked ✓ · Waiting for reveal...
-                </div>
-              )}
-            </>
-          ) : (
-            /* Revealed — show result inline (useEffect handles feedback screen) */
-            <div style={{ textAlign: "center", fontSize: 15, color: "#4a637d" }}>
-              Answer revealed — checking your result...
+          {/* Error type pill */}
+          {q.errorType && (
+            <div className={styles.fixitTypePill}>
+              {q.errorType}
             </div>
           )}
 
+          {/* Teammate blocked */}
           {renderTeammateBlock()}
+
+          {/* ── EASY: 4 large tap targets ── */}
+          {!teammateBlocked && fixMode === "Easy" && q.options && !answered && !revealed && (
+            <div className={styles.fixitOptionsGrid}>
+              {(q.options as string[]).map((word: string, i: number) => (
+                <button
+                  key={word}
+                  className={styles.fixitOptionBtn}
+                  onClick={() => handleEasyTap(word)}
+                >
+                  <span className={styles.fixitOptionLetter}>
+                    {["A","B","C","D"][i]}
+                  </span>
+                  <span className={styles.fixitOptionWord}>{word}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* ── HARD: single-word input ── */}
+          {!teammateBlocked && fixMode === "Hard" && !answered && !revealed && (
+            <div className={styles.fixitHardWrap}>
+              {q.hint && (
+                <div className={styles.fixitHint}>
+                  <span>💡</span>
+                  <span>{q.hint}</span>
+                </div>
+              )}
+              <input
+                className={styles.fixitSingleInput}
+                type="text"
+                placeholder="Type the correct word..."
+                value={textInput}
+                onChange={e => setTextInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && textInput.trim() && handleHardLockIn()}
+                autoComplete="off"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                autoFocus
+              />
+              <button
+                className={styles.fixitLockBtn}
+                onClick={handleHardLockIn}
+                disabled={!textInput.trim()}
+              >
+                Lock In ✓
+              </button>
+            </div>
+          )}
+
+          {/* Time's up — didn't answer before reveal */}
+          {!answered && revealed && !teammateBlocked && (
+            <div className={styles.fixitTimesUp}>
+              ⏱ Time's up — watch the projector!
+            </div>
+          )}
+
         </div>
       </div>
     );
@@ -897,96 +928,6 @@ export default function PlayPage() {
             </div>
           )}
           {renderTeammateBlock()}
-        </div>
-      </div>
-    );
-  }
-
-  // ── FIX IT ───────────────────────────────────────
-  if (room.gameMode === "fixit") {
-    const isRevealed  = room.answerRevealed;
-    const sInfo       = room.students?.find((s: any) => s.id === studentId);
-    const myAnswer    = sInfo?.lastAnswer || textInput;
-    const correctAnswer = room.currentQuestion?.correctedSentence;
-    const isCorrect   = myAnswer && correctAnswer &&
-      myAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
-    const timeMs      = sInfo?.answerTime && room.questionStartTime
-      ? ((sInfo.answerTime - room.questionStartTime) / 1000).toFixed(1) + "s"
-      : "";
-
-    return (
-      <div className={styles.screen}>
-        {renderGameChrome()}
-        <div className={styles.gameBody}>
-          <div className={styles.fixitPromptLabel}>Find &amp; fix the error</div>
-
-          {/* Sentence */}
-          {room.currentQuestion?.brokenSentence && !isRevealed && (
-            <div className={styles.fixitSentence}>
-              &ldquo;{room.currentQuestion.brokenSentence}&rdquo;
-            </div>
-          )}
-
-          {/* Hint */}
-          {room.currentQuestion?.hint && !isRevealed && !hasSubmitted && (
-            <div className={styles.fixitHint}>
-              💡 <span>{room.currentQuestion.hint}</span>
-            </div>
-          )}
-
-          {!isRevealed ? (
-            <>
-              {teammateBlocked ? renderTeammateBlock() : (
-                <>
-                  <textarea
-                    className={styles.fixitInput}
-                    value={textInput}
-                    onChange={e => setTextInput(e.target.value)}
-                    disabled={hasSubmitted}
-                    placeholder="Type the corrected sentence..."
-                  />
-                  <button
-                    className={styles.fixitSubmit}
-                    onClick={handleSubmitAnswer}
-                    disabled={hasSubmitted || !textInput.trim()}
-                  >
-                    {hasSubmitted ? "Locked In ✓" : <>Submit Answer ✓</>}
-                  </button>
-                </>
-              )}
-            </>
-          ) : (
-            /* Answer revealed by teacher */
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{
-                padding: 20,
-                borderRadius: 18,
-                border: `2px solid ${isCorrect ? "rgba(0,232,122,0.4)" : "rgba(255,68,68,0.35)"}`,
-                background: isCorrect ? "rgba(0,232,122,0.08)" : "rgba(255,68,68,0.08)",
-                textAlign: "center"
-              }}>
-                <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 4 }}>
-                  {isCorrect ? "✓ You got it!" : "✗ Incorrect"}
-                </div>
-                {timeMs && (
-                  <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>Locked in at {timeMs}</div>
-                )}
-              </div>
-              <div style={{ background: "#0e1520", padding: 16, borderRadius: 16 }}>
-                <div style={{ fontSize: 11, color: "#4a637d", fontFamily: "var(--font-mono,'JetBrains Mono',monospace)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Your Answer</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: isCorrect ? "#00e87a" : "#ff6060" }}>&ldquo;{myAnswer}&rdquo;</div>
-              </div>
-              {!isCorrect && (
-                <div style={{ background: "#0e1520", padding: 16, borderRadius: 16 }}>
-                  <div style={{ fontSize: 11, color: "#4a637d", fontFamily: "var(--font-mono,'JetBrains Mono',monospace)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Correct Answer</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: "#00c8f0" }}>&ldquo;{correctAnswer}&rdquo;</div>
-                </div>
-              )}
-              <div style={{ textAlign: "center", fontSize: 13, fontWeight: 600, color: "#4a637d" }}>
-                Waiting for next round...
-              </div>
-            </div>
-          )}
         </div>
       </div>
     );

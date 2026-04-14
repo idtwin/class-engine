@@ -129,7 +129,7 @@ export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
        <div className={styles.modal}>
           <button className={styles.closeBtn} onClick={() => setIsOpen(false)}><X /></button>
           
-          <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: 'var(--accent)' }}>Live Session Active</h2>
+          <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--cyan)', fontFamily: "var(--font-mono,'JetBrains Mono',monospace)", letterSpacing: '0.1em', textTransform: 'uppercase' }}>Live Session Active</h2>
           
           {loading ? (
              <p>Spinning up Serverless Node...</p>
@@ -146,7 +146,7 @@ export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
                 </div>
 
                 <div className={styles.rosterCol}>
-                   <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}><Users /> Live Roster ({roster.length})</h3>
+                   <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '13px', fontFamily: "var(--font-mono,'JetBrains Mono',monospace)", letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)' }}><Users size={14} /> Live Roster ({roster.length})</h3>
                    <div className={styles.rosterList}>
                       {roster.map((s, i) => (
                         <div key={i} className={styles.rosterItem}>
@@ -162,11 +162,21 @@ export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
              </div>
           )}
           
-          <div style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '1rem' }}>
+          <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '8px' }}>
             <button className={styles.endBtn} onClick={endSession} style={{ flex: 1 }}>
               End Session
             </button>
-            <button className={styles.endBtn} onClick={launchMatch} style={{ flex: 2, background: 'var(--accent)', color: 'black' }}>
+            <button
+              className={styles.endBtn}
+              onClick={launchMatch}
+              style={{
+                flex: 2,
+                background: '#00e87a',
+                color: '#000',
+                border: 'none',
+                fontSize: '13px',
+              }}
+            >
               LAUNCH GAME 🚀
             </button>
           </div>

@@ -26,7 +26,11 @@ export async function POST(req: Request) {
       room.questionStartTime = Date.now();
       room.answerRevealed = false;
     }
-    if (action === "set_game_mode") room.gameMode = payload.gameMode;
+    if (action === "set_game_mode") {
+      room.gameMode = payload.gameMode;
+      // Optional per-game sub-settings (e.g. fixitMode: "Easy"|"Hard")
+      if (payload.fixitMode !== undefined) room.fixitMode = payload.fixitMode;
+    }
     if (action === "end_session") room.status = "ended";
     if (action === "reveal_answer") room.answerRevealed = true;
     if (action === "end_session") room.status = "ended";

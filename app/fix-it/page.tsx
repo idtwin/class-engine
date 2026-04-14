@@ -7,7 +7,7 @@ import MultiplayerHost from "../components/MultiplayerHost";
 
 // ── Types ────────────────────────────────────────────
 type GameMode = "Easy" | "Hard";
-type Phase = "SETUP" | "GENERATING" | "PLAYING" | "REVEALED" | "FINISHED";
+type Phase = "SETUP" | "GENERATING" | "READY" | "PLAYING" | "REVEALED" | "FINISHED";
 
 interface Question {
   level: string;
@@ -127,7 +127,10 @@ export default function FixIt() {
 
   if (!mounted) return null;
 
-  // ── Generate ─────────────────────────────────────────
+  const currentQ = questions[qIndex];
+  const lockedCount = roomStudents.filter(s => s.answered).length;
+
+  // ── Generate — fetches questions then waits in lobby ──
   const handleGenerate = async () => {
     if (!topic.trim()) return;
     setPhase("GENERATING");
@@ -148,14 +151,32 @@ export default function FixIt() {
       setQIndex(0);
       setShowHint(false);
       setPointsAwarded({});
-      setPhase("PLAYING");
-      await clearRoom();
-      await pushQuestion(data.questions[0]);
-      startTimer();
+      setPhase("READY"); // ← hold in lobby until teacher taps Launch
     } catch (err: any) {
       console.error(err);
       setPhase("SETUP");
     }
+  };
+
+  // ── Launch — teacher decides when to start ────────────
+  const handleLaunch = async () => {
+    // Activate room: set game mode + status so phones transition out of lobby
+    if (activeRoomCode) {
+      await fetch("/api/room/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: activeRoomCode, action: "set_game_mode", payload: { gameMode: "fixit", fixitMode: mode } })
+      }).catch(() => {});
+      await fetch("/api/room/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: activeRoomCode, action: "update_status", payload: { status: "playing" } })
+      }).catch(() => {});
+    }
+    setPhase("PLAYING");
+    await clearRoom();
+    await pushQuestion(questions[0]);
+    startTimer();
   };
 
   // ── Reveal ────────────────────────────────────────────
@@ -230,8 +251,8 @@ export default function FixIt() {
   // ═══════════════════════════════════════════════════
   return (
     <>
-      {/* ── Setup / Generating modal ── */}
-      {(phase === "SETUP" || phase === "GENERATING") && (
+      {/* ── Setup / Generating / Lobby modal ── */}
+      {(phase === "SETUP" || phase === "GENERATING" || phase === "READY") && (
         <div className={styles.setupOverlay}>
           <div className={styles.setupModal}>
             <div className={styles.setupTitle}>
@@ -249,6 +270,50 @@ export default function FixIt() {
               <div className={styles.generatingState}>
                 <div className={styles.spinner} />
                 <div className={styles.generatingText}>Generating questions...</div>
+              </div>
+            ) : phase === "READY" ? (
+              <div className={styles.lobbyState}>
+                {/* Ready badge */}
+                <div className={styles.lobbyReadyBadge}>
+                  <span className={styles.lobbyReadyDot} />
+                  <span>{questions.length} questions ready</span>
+                  <span className={`${styles.modeBadge} ${mode === "Easy" ? styles.modeBadgeEasy : styles.modeBadgeHard}`}>
+                    {mode}
+                  </span>
+                </div>
+
+                {/* Joined students */}
+                <div className={styles.lobbySection}>
+                  <div className={styles.setupLabel}>
+                    Students joined
+                    <span className={styles.lobbyJoinCount}>{roomStudents.length}</span>
+                  </div>
+                  {roomStudents.length === 0 ? (
+                    <div className={styles.lobbyEmpty}>Waiting for students to connect...</div>
+                  ) : (
+                    <div className={styles.lobbyStudentGrid}>
+                      {roomStudents.map(s => {
+                        const team = currentTeams.find(t => t.students.some(ts => ts.name === s.name));
+                        return (
+                          <div key={s.id || s.name} className={styles.lobbyStudent}>
+                            <span className={styles.lobbyStudentName}>{s.name}</span>
+                            {team && <span className={styles.lobbyStudentTeam}>{team.name}</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className={styles.lobbyActions}>
+                  <button className={styles.btnLaunch} onClick={handleLaunch}>
+                    Launch Game →
+                  </button>
+                  <button className={styles.btnBackSetup} onClick={() => setPhase("SETUP")}>
+                    ← Back
+                  </button>
+                </div>
               </div>
             ) : (
               <>

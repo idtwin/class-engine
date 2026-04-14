@@ -236,10 +236,13 @@
 }
 
 .joinBtn:disabled {
-  opacity: 0.35;
+  background: transparent;
+  color: var(--muted, #4a637d);
+  border: 1.5px solid #1e3048;
+  box-shadow: none;
   cursor: not-allowed;
   transform: none;
-  box-shadow: none;
+  opacity: 1;
 }
 
 /* ── Error message ── */
