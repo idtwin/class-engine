@@ -36,6 +36,8 @@ export default function GamesHub() {
     mistralModel, setMistralModel,
     groqModel, setGroqModel,
     seedDemoData, purgeDemoData,
+    classes, activeClassId, setActiveClass,
+    playMode, setPlayMode,
   } = useClassroomStore();
 
   const activeKeyLabel = llmProvider === "gemini" ? "Gemini API Key"
@@ -57,7 +59,6 @@ export default function GamesHub() {
 
   const [mounted, setMounted] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
-  const [activeClass, setActiveClass] = useState("XI-I");
   const [filter, setFilter] = useState("all");
   const [libOpen, setLibOpen] = useState(false);
   const [featIdx, setFeatIdx] = useState(0);
@@ -73,7 +74,8 @@ export default function GamesHub() {
     setTimeout(() => { router.push(href); }, 400);
   };
 
-  const featuredHistory = classHistory[activeClass];
+  const activeClass = classes.find(c => c.id === activeClassId);
+  const featuredHistory = classHistory[activeClass?.name ?? 'global'] ?? classHistory['global'];
   const featuredGame = GAMES_DATA[featIdx];
   
   const barColor = featuredHistory.accuracy >= 70 ? 'var(--green)' : featuredHistory.accuracy >= 50 ? 'var(--yellow)' : 'var(--pink)';
@@ -99,6 +101,22 @@ export default function GamesHub() {
              ⊞ Library
            </button>
            <BoardLibrary triggerOpen={libOpen} onClose={() => setLibOpen(false)} onLoadBoard={(b) => handleLaunch(`/${b.gameType}`)} hideTriggerButton={true} />
+           <div className={styles.modeToggle}>
+             <button
+               className={`${styles.modeToggleBtn} ${playMode === 'projector' ? styles.modeToggleBtnActive : ''}`}
+               onClick={() => setPlayMode('projector')}
+               title="Projector / Teacher view"
+             >
+               📺 Projector
+             </button>
+             <button
+               className={`${styles.modeToggleBtn} ${playMode === 'phone' ? styles.modeToggleBtnActive : ''}`}
+               onClick={() => setPlayMode('phone')}
+               title="Phone / Student view"
+             >
+               📱 Phone
+             </button>
+           </div>
            <button className={`${styles.btn} ${styles.btnPurple}`} onClick={() => setShowSettings(true)}>⚙ Settings</button>
         </div>
       </div>
@@ -108,11 +126,24 @@ export default function GamesHub() {
 
         <div className={styles.classChipRow}>
           <span className={styles.classChipLabel}>Class:</span>
-          {['global', 'XI-I', 'XI-II', 'XI-III'].map(cls => (
-            <button key={cls} className={`${styles.classChip} ${activeClass === cls ? styles.active : ''}`} onClick={() => setActiveClass(cls)}>
-              {cls === 'global' ? '🌐 All Classes' : `XI – ${cls.split('-')[1]}`}
+          <button
+            className={`${styles.classChip} ${activeClassId === null ? styles.active : ''}`}
+            onClick={() => setActiveClass(null)}
+          >
+            🌐 All Classes
+          </button>
+          {classes.map(cls => (
+            <button
+              key={cls.id}
+              className={`${styles.classChip} ${activeClassId === cls.id ? styles.active : ''}`}
+              onClick={() => setActiveClass(cls.id)}
+            >
+              {cls.name}
             </button>
           ))}
+          <a href="/teams" className={`${styles.classChip} ${styles.classChipManage}`}>
+            + Manage
+          </a>
         </div>
 
         <div className={styles.featuredCard} onClick={() => handleLaunch(`/${featuredGame.id}`)}>

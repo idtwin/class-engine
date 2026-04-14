@@ -61,6 +61,38 @@
   align-items: center;
 }
 
+/* Play mode toggle (Projector / Phone) */
+.modeToggle {
+  display: flex;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border2);
+}
+
+.modeToggleBtn {
+  padding: 8px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.modeToggleBtn:hover {
+  color: var(--text);
+  background: var(--surface2);
+}
+
+.modeToggleBtnActive {
+  background: var(--surface2);
+  color: var(--cyan);
+}
+
 /* ──────────────────────────────────────────────────────────────────────────
    BUTTONS
    ────────────────────────────────────────────────────────────────────────── */
@@ -358,6 +390,17 @@
 }
 
 .classChip:hover:not(.active) {
+  border-color: var(--border2);
+  color: var(--text);
+}
+
+.classChipManage {
+  text-decoration: none;
+  margin-left: 4px;
+  opacity: 0.6;
+}
+.classChipManage:hover {
+  opacity: 1;
   border-color: var(--border2);
   color: var(--text);
 }
