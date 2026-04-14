@@ -23,7 +23,8 @@ export default function TopNav() {
   if (isHidden) return null;
 
   // Route markers
-  const isArcade = pathname.startsWith("/games") || pathname === "/fix-it";
+  const GAME_PATHS = ["/fix-it","/odd-one-out","/jeopardy","/rapid-fire","/chain-reaction","/hotseat","/reveal","/story","/wyr","/prompts","/wheel"];
+  const isArcade = pathname.startsWith("/games") || GAME_PATHS.some(p => pathname === p);
   const isTeams = pathname === "/teams";
   const isAnalytics = pathname === "/dashboard";
 

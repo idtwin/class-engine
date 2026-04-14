@@ -1,61 +1,71 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import styles from "./fix.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
-import Link from "next/link";
-import { ArrowLeft, Sparkles, Lightbulb, ChevronRight, Eye, RefreshCw, Zap } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
-import GameTimer from "../components/GameTimer";
-import ScoreboardOverlay from "../components/ScoreboardOverlay";
-import { stopAllSFX } from "../lib/audio";
-import CommandShell from "../components/CommandShell";
 
-type Mode = "Race" | "Auction" | "Spot & Swap";
-type Question = { level: string, errorType: string, brokenSentence: string, correctedSentence: string, hint: string };
+// ── Types ────────────────────────────────────────────
+type GameMode = "Easy" | "Hard";
+type Phase = "SETUP" | "GENERATING" | "PLAYING" | "REVEALED" | "FINISHED";
 
+interface Question {
+  level: string;
+  errorType: string;
+  sentence: string;
+  wrongWord: string;
+  correctWord: string;
+  hint: string;
+  options: string[]; // always 4 items
+}
+
+const LETTER = ["A", "B", "C", "D"];
+
+// ── Sentence renderer ────────────────────────────────
+function HighlightedSentence({ sentence, wrongWord }: { sentence: string; wrongWord: string }) {
+  const regex = new RegExp(`(\\b${wrongWord.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b)`, "i");
+  const parts = sentence.split(regex);
+  return (
+    <span className={styles.sentence}>
+      {parts.map((part, i) =>
+        regex.test(part)
+          ? <span key={i} className={styles.wrongWord}>{part}</span>
+          : part
+      )}
+    </span>
+  );
+}
+
+// ── Main component ────────────────────────────────────
 export default function FixIt() {
-  const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, getActiveApiKey, getActiveModel, llmProvider, activeRoomCode } = useClassroomStore();
-  
-  const [topic, setTopic] = useState("");
-  const [levelFilter, setLevelFilter] = useState("Mixed Level");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [questions, setQuestions] = useState<Question[] | null>(null);
-  const [activeMode, setActiveMode] = useState<Mode>("Race");
-  
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [showHint, setShowHint] = useState(false);
-  const [showErrorFlag, setShowErrorFlag] = useState(false);
-  const [showAnswer, setShowAnswer] = useState(false);
-  
-  const [penalizeWrong, setPenalizeWrong] = useState(false);
-  const [pointsEarned, setPointsEarned] = useState<Record<string, number>>({});
+  const {
+    currentTeams, updateTeamScore,
+    getActiveApiKey, getActiveModel, llmProvider,
+    activeRoomCode,
+  } = useClassroomStore();
 
-  // Auction mode local betting state mapping TeamID -> bet amount
-  const [teamBets, setTeamBets] = useState<Record<string, string>>({});
+  // Setup state
+  const [topic, setTopic]       = useState("");
+  const [level, setLevel]       = useState("Mixed Level");
+  const [mode, setMode]         = useState<GameMode>("Easy");
+  const [timerDur, setTimerDur] = useState(30); // 0 = off
 
-  // Live student responses from Redis polling
+  // Game state
+  const [phase, setPhase]         = useState<Phase>("SETUP");
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [qIndex, setQIndex]       = useState(0);
+  const [showHint, setShowHint]   = useState(false);
+  const [timeLeft, setTimeLeft]   = useState(0);
+  const [timerActive, setTimerActive] = useState(false);
+  const [pointsAwarded, setPointsAwarded] = useState<Record<string, number>>({});
+
+  // Room polling
   const [roomStudents, setRoomStudents] = useState<any[]>([]);
-  const [roomBuzzes, setRoomBuzzes] = useState<any[]>([]);
-  const [roomData, setRoomData] = useState<any>(null);
+  const [mounted, setMounted] = useState(false);
 
-  // Push the first question when generated
-  useEffect(() => {
-    if (activeRoomCode && questions && currentIndex === 0) {
-       fetch("/api/room/action", {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({
-            code: activeRoomCode,
-            action: "set_question",
-            payload: { question: questions[0] }
-         })
-       }).catch((e) => console.error("Sync Error", e));
-    }
-  }, [questions, activeRoomCode]);
+  useEffect(() => { setMounted(true); }, []);
 
-  // Poll for student responses
+  // Poll room
   useEffect(() => {
     if (!activeRoomCode) return;
     const poll = async () => {
@@ -63,308 +73,475 @@ export default function FixIt() {
         const res = await fetch(`/api/room/get?code=${activeRoomCode}`);
         if (res.ok) {
           const data = await res.json();
-          setRoomData(data);
           setRoomStudents(data.students || []);
-          setRoomBuzzes(data.buzzes || []);
         }
-      } catch (e) {}
+      } catch {}
     };
     poll();
     const id = setInterval(poll, 1500);
     return () => clearInterval(id);
   }, [activeRoomCode]);
 
+  // Timer countdown
   useEffect(() => {
-    setMounted(true);
-    return () => stopAllSFX();
-  }, []);
+    if (!timerActive || timeLeft <= 0) return;
+    const id = setInterval(() => setTimeLeft(t => {
+      if (t <= 1) { setTimerActive(false); return 0; }
+      return t - 1;
+    }), 1000);
+    return () => clearInterval(id);
+  }, [timerActive, timeLeft]);
 
   if (!mounted) return null;
 
-  const handleGenerate = async () => {
-    
-    
-    if (!topic) return alert("Please enter a theme/topic!");
-    
-    setIsGenerating(true);
-    setQuestions(null);
-    setCurrentIndex(0);
-    setShowHint(false);
-    setShowErrorFlag(false);
-    setShowAnswer(false);
-    setPointsEarned({});
+  const currentQ = questions[qIndex];
+  const lockedCount = roomStudents.filter(s => s.answered).length;
 
+  // ── Helpers ─────────────────────────────────────────
+  const startTimer = useCallback(() => {
+    if (timerDur === 0) return;
+    setTimeLeft(timerDur);
+    setTimerActive(true);
+  }, [timerDur]);
+
+  const pushQuestion = useCallback(async (q: Question) => {
+    if (!activeRoomCode) return;
+    await fetch("/api/room/action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code: activeRoomCode,
+        action: "set_question",
+        payload: {
+          question: { ...q, gameMode: "fixit", fixit_mode: mode },
+          questionDuration: timerDur > 0 ? timerDur : null,
+          questionStartTime: Date.now(),
+        }
+      })
+    }).catch(() => {});
+  }, [activeRoomCode, mode, timerDur]);
+
+  const clearRoom = useCallback(async () => {
+    if (!activeRoomCode) return;
+    await fetch("/api/room/action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: activeRoomCode, action: "clear_answers", payload: {} })
+    }).catch(() => {});
+  }, [activeRoomCode]);
+
+  // ── Generate ─────────────────────────────────────────
+  const handleGenerate = async () => {
+    if (!topic.trim()) return;
+    setPhase("GENERATING");
     try {
       const res = await fetch("/api/generate-fix-it", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          apiKey: getActiveApiKey(), 
-          mistralModel: getActiveModel(), 
-          provider: llmProvider, 
-          topic, 
-          level: levelFilter 
+        body: JSON.stringify({
+          apiKey: getActiveApiKey(),
+          mistralModel: getActiveModel(),
+          provider: llmProvider,
+          topic, level, mode,
         })
       });
       const data = await res.json();
-      if (res.ok && data.questions) {
-        setQuestions(data.questions);
-        
-        // initialize default 1 pt bets
-        const initialBets: Record<string, string> = {};
-        currentTeams.forEach(t => initialBets[t.id] = "1");
-        setTeamBets(initialBets);
-
-      } else {
-        alert("Error: " + (data.error || "Unknown Error"));
-      }
-    } catch (e: any) {
-      alert("Failed to generate: " + e.message);
-    }
-    setIsGenerating(false);
-  };
-
-  const nextQuestion = () => {
-    if (questions && currentIndex < questions.length - 1) {
-      const nextIdx = currentIndex + 1;
-      setCurrentIndex(nextIdx);
+      if (!res.ok || !data.questions) throw new Error(data.error || "Generation failed");
+      setQuestions(data.questions);
+      setQIndex(0);
       setShowHint(false);
-      setShowErrorFlag(false);
-      setShowAnswer(false);
-      setPointsEarned({});
-      
-      // Clear all phone buzzers/inputs and push new question sequentially
-      if (activeRoomCode) {
-        fetch("/api/room/action", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: activeRoomCode, action: "clear_answers", payload: {} })
-        }).then(() => {
-          fetch("/api/room/action", {
-             method: "POST",
-             headers: { "Content-Type": "application/json" },
-             body: JSON.stringify({
-                code: activeRoomCode,
-                action: "set_question",
-                payload: { question: questions[nextIdx] }
-             })
-          });
-        }).catch(()=>{});
-      }
+      setPointsAwarded({});
+      setPhase("PLAYING");
+      await clearRoom();
+      await pushQuestion(data.questions[0]);
+      startTimer();
+    } catch (err: any) {
+      console.error(err);
+      setPhase("SETUP");
     }
   };
 
-  const currentQ = questions?.[currentIndex];
+  // ── Reveal ────────────────────────────────────────────
+  const handleReveal = async () => {
+    setTimerActive(false);
+    setPhase("REVEALED");
 
+    // Notify phones
+    if (activeRoomCode) {
+      await fetch("/api/room/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: {} })
+      }).catch(() => {});
+    }
+
+    if (!currentQ) return;
+
+    // Fetch fresh room data for scoring
+    let students = roomStudents;
+    if (activeRoomCode) {
+      try {
+        const res = await fetch(`/api/room/get?code=${activeRoomCode}`);
+        if (res.ok) {
+          const data = await res.json();
+          students = data.students || [];
+          setRoomStudents(students);
+        }
+      } catch {}
+    }
+
+    // Score: answered students sorted by answer time
+    const correct = students.filter(s =>
+      s.answered &&
+      s.lastAnswer?.trim().toLowerCase() === currentQ.correctWord.toLowerCase()
+    );
+    correct.sort((a, b) => (a.answerTime || 0) - (b.answerTime || 0));
+
+    const pts: Record<string, number> = {};
+    const ptValues = [500, 400, 300, 200];
+    correct.forEach((s, i) => {
+      const award = ptValues[i] ?? 100;
+      pts[s.name] = award;
+      const team = currentTeams.find(t => t.students.some(ts => ts.name === s.name));
+      if (team) updateTeamScore(team.id, award);
+    });
+    setPointsAwarded(pts);
+  };
+
+  // ── Next question ─────────────────────────────────────
+  const handleNext = async () => {
+    const nextIdx = qIndex + 1;
+    if (nextIdx >= questions.length) {
+      setPhase("FINISHED");
+      return;
+    }
+    setQIndex(nextIdx);
+    setShowHint(false);
+    setPointsAwarded({});
+    setPhase("PLAYING");
+    await clearRoom();
+    await pushQuestion(questions[nextIdx]);
+    startTimer();
+  };
+
+  // ── Timer helpers ─────────────────────────────────────
+  const timerPct = timerDur > 0 ? (timeLeft / timerDur) * 100 : 100;
+  const timerUrgent = timeLeft <= 5 && timerDur > 0 && timerActive;
+
+  // ═══════════════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════════════
   return (
-    <div className={styles.container}>
-      <div className={styles.leftDecor}>
-        LAT: 40.7128° N<br/>
-        LNG: 74.0060° W<br/>
-        STREAM: ENCRYPTED
-      </div>
+    <>
+      {/* ── Setup / Generating modal ── */}
+      {(phase === "SETUP" || phase === "GENERATING") && (
+        <div className={styles.setupOverlay}>
+          <div className={styles.setupModal}>
+            <div className={styles.setupTitle}>
+              <div className={styles.setupTitleIcon}>🟡</div>
+              <div>
+                <div className={styles.setupTitleText}>Fix It</div>
+                <div className={styles.setupTitleSub}>Grammar Correction Game</div>
+              </div>
+              <div style={{ marginLeft: "auto" }}>
+                <MultiplayerHost gameMode="fixit" />
+              </div>
+            </div>
 
-      {/* Hidden Control Panel for Teacher (Kept for functionality) */}
-      {!questions && (
-        <header className={styles.header}>
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-             <h1 style={{ margin: 0, color: 'var(--accent-cyan)' }}>Fix It Generator</h1>
-          </div>
-          
-          <div className={styles.aiControls}>
-            <MultiplayerHost gameMode="fixit" />
-            <select 
-              value={levelFilter} 
-              onChange={e => setLevelFilter(e.target.value)}
-              className={styles.topicInput}
-            >
-              <option value="Mixed Level">Mixed Level</option>
-              <option value="Low">Low</option>
-              <option value="Mid">Mid</option>
-              <option value="High">High</option>
-            </select>
-            <input 
-              placeholder="Theme (e.g. Travel)" 
-              value={topic}
-              onChange={e => setTopic(e.target.value)}
-              className={styles.topicInput}
-              onKeyDown={e => e.key === "Enter" && !isGenerating && handleGenerate()}
-            />
-            <button onClick={handleGenerate} disabled={isGenerating} className={styles.genBtn}>
-              <Sparkles size={18} /> GENERATE
-            </button>
-          </div>
-        </header>
-      )}
+            {phase === "GENERATING" ? (
+              <div className={styles.generatingState}>
+                <div className={styles.spinner} />
+                <div className={styles.generatingText}>Generating questions...</div>
+              </div>
+            ) : (
+              <>
+                <div className={styles.setupField}>
+                  <div className={styles.setupLabel}>Topic / Theme</div>
+                  <input
+                    className={styles.setupInput}
+                    placeholder="e.g. Travel, Food, School life..."
+                    value={topic}
+                    onChange={e => setTopic(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && topic.trim() && handleGenerate()}
+                    autoFocus
+                  />
+                </div>
 
-      {isGenerating ? (
-        <div className={styles.loadingState}>
-          <Sparkles size={100} className={styles.spinIcon} style={{ color: 'var(--accent)' }} />
-          <h2 className="glow-text">NEURAL ERROR ANALYSIS...</h2>
-        </div>
-      ) : !questions ? (
-        <div className={styles.emptyState}>
-          <p className="label-caps">System Idle</p>
-          <p style={{ opacity: 0.5 }}>Enter a language module topic to generate grammar corrections.</p>
-        </div>
-      ) : (
-        <div className={styles.canvasLeft}>
-           <div className={styles.gameSplit}>
-             {/* Left Column: Primary Sentence Area */}
-             <div className={styles.leftCol}>
-               <div className={styles.cyanLine} />
-               <div className={styles.seqLabel}>CORRECTION_REQUIRED // SEQUENCE_{String(currentIndex+1).padStart(2,'0')}</div>
-               
-               <h1 className={styles.mainSentence}>
-                  {!showAnswer ? currentQ?.brokenSentence : currentQ?.correctedSentence}
-               </h1>
-
-               <div className={styles.techControls}>
-                 <button 
-                    className={styles.btnSolidCyan} 
-                    onClick={() => setShowHint(true)} 
-                    disabled={showHint || showAnswer}
-                 >
-                    <Zap size={20} /> DEPLOY HINT
-                 </button>
-                 
-                 {!showAnswer ? (
-                   <button 
-                      className={styles.btnOutlineCyan} 
-                      onClick={() => {
-                          setShowAnswer(true);
-                          if (activeRoomCode) {
-                            fetch("/api/room/action", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: {} })
-                            }).catch(() => {});
-                          }
-
-                          // Automated Tiered Scoring System
-                          const answeredStudents = roomStudents.filter((s: any) => s.answered && s.lastAnswer);
-                          const correctAnswers: any[] = [];
-                          const wrongAnswers: any[] = [];
-                          
-                          answeredStudents.forEach((s: any) => {
-                             const isCorrect = currentQ && s.lastAnswer?.toLowerCase().trim() === currentQ.correctedSentence.toLowerCase().trim();
-                             if (isCorrect) correctAnswers.push(s);
-                             else wrongAnswers.push(s);
-                          });
-                          
-                          correctAnswers.sort((a, b) => (a.answerTime || 0) - (b.answerTime || 0));
-                          const newPointsEarned: Record<string, number> = {};
-                          
-                          correctAnswers.forEach((s, idx) => {
-                             let pts = 100;
-                             if (idx === 0) pts = 500;
-                             else if (idx === 1) pts = 400;
-                             else if (idx === 2) pts = 300;
-                             else if (idx === 3) pts = 200;
-                             
-                             newPointsEarned[s.id] = pts;
-                             const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
-                             if (team) updateTeamScore(team.id, pts);
-                          });
-                          
-                          if (penalizeWrong) {
-                             wrongAnswers.forEach(s => {
-                                 newPointsEarned[s.id] = -100;
-                                 const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
-                                 if (team) updateTeamScore(team.id, -100);
-                             });
-                          }
-                          setPointsEarned(newPointsEarned);
-                      }}
-                   >
-                      <Eye size={20} /> REVEAL CORRECTION
-                   </button>
-                 ) : (
-                   <button 
-                      className={styles.btnOutlineCyan} 
-                      onClick={nextQuestion} 
-                      disabled={currentIndex === questions.length - 1} 
-                      style={{ borderColor: 'var(--accent-green)', color: 'var(--accent-green)' }}
-                   >
-                      NEXT SEQUENCE <ChevronRight size={20} />
-                   </button>
-                 )}
-               </div>
-             </div>
-
-             {/* Right Column: System Logs & Network Status */}
-             <div className={styles.rightCol}>
-               <div className={styles.systemLog}>
-                  <div className={styles.logHeader}>SYSTEM_LOG_v4.2</div>
-                  <div className={styles.logBody}>
-                    <span style={{ color: 'var(--accent-green)' }}>[INIT]</span> Target sequence localized.<br/>
-                    {">"} Error classification: "{currentQ?.errorType}" anomaly detected...<br/>
-                    {showHint && <><span style={{color: 'white'}}>{">"} SYSTEM_HINT: {currentQ?.hint}</span><br/></>}
-                    
-                    {roomStudents.filter((s:any) => s.answered).map((s:any, idx:number) => (
-                       <div key={idx} style={{ color: 'var(--accent-cyan)' }}>
-                         {">"} [SIGNAL LOCKED] {s.name} has transmitted correction.
-                       </div>
-                    ))}
-
-                    {showAnswer && <><span style={{color: 'var(--accent-green)'}}>{">"} [RESOLVED] Syntax matrix stabilized.</span><br/></>}
-
-                    {showAnswer && Object.entries(pointsEarned).map(([studentId, pts]) => {
-                       const studentName = roomStudents.find((s:any) => s.id === studentId)?.name || 'Unknown Node';
-                       return (
-                         <div key={studentId} style={{ color: pts > 0 ? 'var(--accent-green)' : '#ef4444' }}>
-                            {">"} [SCORE] {studentName} {pts > 0 ? `+${pts}` : pts} pts.
-                         </div>
-                       );
-                    })}
-                    <br/>
-                    <span style={{ opacity: 0.5 }}>{">"} AWAITING_NEXT_SEQUENCE_</span>
+                <div className={styles.setupRow}>
+                  <div className={styles.setupField}>
+                    <div className={styles.setupLabel}>Level</div>
+                    <select className={styles.setupSelect} value={level} onChange={e => setLevel(e.target.value)}>
+                      <option value="Mixed Level">Mixed Level</option>
+                      <option value="Low">Low (A1)</option>
+                      <option value="Mid">Mid (A2)</option>
+                      <option value="High">High (B1)</option>
+                    </select>
                   </div>
-               </div>
+                  <div className={styles.setupField}>
+                    <div className={styles.setupLabel}>Timer per Question</div>
+                    <select className={styles.setupSelect} value={timerDur} onChange={e => setTimerDur(Number(e.target.value))}>
+                      <option value={0}>Off (teacher-paced)</option>
+                      <option value={15}>15 seconds</option>
+                      <option value={30}>30 seconds</option>
+                      <option value={45}>45 seconds</option>
+                      <option value={60}>60 seconds</option>
+                    </select>
+                  </div>
+                </div>
 
-               {/* Pre-reveal Status Cards */}
-               {!showAnswer && activeRoomCode && roomStudents.length > 0 && (
-                 <div style={{ width: '100%', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
-                   <h3 style={{ marginBottom: '1rem', color: 'var(--accent-cyan)', fontFamily: 'monospace', fontSize: '0.7rem' }}>// NETWORK_STATUS: {roomStudents.filter((s:any) => s.answered).length} LOCKED</h3>
-                   <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                     {roomStudents.map((s: any, i: number) => (
-                       <div key={i} style={{
-                         padding: '0.3rem 0.6rem',
-                         borderRadius: '4px',
-                         fontSize: '0.75rem',
-                         background: s.answered ? 'rgba(45,212,191,0.1)' : 'rgba(255,255,255,0.02)',
-                         border: `1px solid ${s.answered ? 'var(--accent-cyan)' : 'rgba(255,255,255,0.05)'}`,
-                         opacity: s.answered ? 1 : 0.4,
-                         color: s.answered ? 'var(--accent-cyan)' : 'white'
-                       }}>
-                         {s.name}
-                       </div>
-                     ))}
-                   </div>
-                 </div>
-               )}
+                <div className={styles.setupField}>
+                  <div className={styles.setupLabel}>Mode</div>
+                  <div className={styles.modeToggle}>
+                    <button
+                      className={`${styles.modeBtn} ${mode === "Easy" ? styles.modeBtnActive : ""}`}
+                      onClick={() => setMode("Easy")}
+                    >
+                      <span className={styles.modeBtnIcon}>🔵</span>
+                      <span className={styles.modeBtnLabel}>Easy</span>
+                      <span className={styles.modeBtnDesc}>4 multiple choice options</span>
+                    </button>
+                    <button
+                      className={`${styles.modeBtn} ${mode === "Hard" ? styles.modeBtnActive : ""}`}
+                      onClick={() => setMode("Hard")}
+                    >
+                      <span className={styles.modeBtnIcon}>🔴</span>
+                      <span className={styles.modeBtnLabel}>Hard</span>
+                      <span className={styles.modeBtnDesc}>Type the correct word</span>
+                    </button>
+                  </div>
+                </div>
 
-               {/* Post-reveal UI for student analytics */}
-               {showAnswer && activeRoomCode && roomStudents.filter((s: any) => s.answered).length > 0 && (
-                 <div style={{ width: '100%', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
-                   <h3 style={{ marginBottom: '1rem', color: 'var(--accent-green)', fontFamily: 'monospace', fontSize: '0.7rem' }}>// NETWORK_RESPONSES</h3>
-                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                     {roomStudents.filter((s: any) => s.answered).map((s: any, i: number) => {
-                       const isCorrect = currentQ && s.lastAnswer?.toLowerCase().trim() === currentQ.correctedSentence.toLowerCase().trim();
-                       return (
-                         <div key={i} style={{ padding: '0.6rem 0.8rem', background: 'rgba(0,0,0,0.3)', border: `1px solid ${isCorrect ? 'var(--accent-green)' : 'rgba(255,0,0,0.3)'}`, borderRadius: '4px' }}>
-                           <div style={{ fontWeight: 800, color: isCorrect ? 'white' : 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>{s.name}</div>
-                           <div style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', wordBreak: 'break-word' }}>{s.lastAnswer}</div>
-                         </div>
-                       );
-                     })}
-                   </div>
-                 </div>
-               )}
-             </div>
-           </div>
+                <button
+                  className={styles.btnGenerate}
+                  onClick={handleGenerate}
+                  disabled={!topic.trim()}
+                >
+                  Generate Questions
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
-    </div>
+
+      {/* ── Three-zone game layout ── */}
+      <div className={styles.page}>
+
+        {/* Zone 1: Header */}
+        <div className={styles.gameHeader}>
+          <span className={styles.gameTitle}>Fix It</span>
+          <div className={styles.headerDivider} />
+          {phase !== "SETUP" && phase !== "GENERATING" && (
+            <>
+              <span className={styles.qCounter}>
+                Q <span className={styles.qCounterNum}>{qIndex + 1}</span> / {questions.length}
+              </span>
+              <div className={styles.headerDivider} />
+              <span className={`${styles.modeBadge} ${mode === "Easy" ? styles.modeBadgeEasy : styles.modeBadgeHard}`}>
+                {mode}
+              </span>
+            </>
+          )}
+
+          <div className={styles.headerSpacer} />
+
+          {/* Timer */}
+          {timerDur > 0 && phase === "PLAYING" && (
+            <div className={styles.timerWrap}>
+              <div className={`${styles.timerNum} ${timerUrgent ? styles.timerNumUrgent : ""}`}>
+                {timeLeft}
+              </div>
+              <div className={styles.timerBar}>
+                <div
+                  className={`${styles.timerBarFill} ${timerUrgent ? styles.timerBarFillUrgent : ""}`}
+                  style={{ width: `${timerPct}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Zone 2: Content */}
+        <div className={styles.gameContent}>
+
+          {/* ── PLAYING ── */}
+          {(phase === "PLAYING" || phase === "REVEALED") && currentQ && (
+            <>
+              <div className={styles.errorTypeLabel}>
+                Error type: <span className={styles.errorTypeName}>{currentQ.errorType}</span>
+              </div>
+
+              {/* Sentence */}
+              <div className={styles.sentenceWrap}>
+                {phase === "PLAYING"
+                  ? <HighlightedSentence sentence={currentQ.sentence} wrongWord={currentQ.wrongWord} />
+                  : null
+                }
+              </div>
+
+              {/* PLAYING state controls */}
+              {phase === "PLAYING" && (
+                <>
+                  {/* Easy: MC options */}
+                  {mode === "Easy" && (
+                    <div className={styles.optionsGrid}>
+                      {currentQ.options.map((opt, i) => (
+                        <div key={opt} className={styles.optionCard}>
+                          <span className={styles.optionLetter}>{LETTER[i]}</span>
+                          <span className={styles.optionText}>{opt}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Hard: waiting status */}
+                  {mode === "Hard" && (
+                    <div className={styles.hardStatus}>
+                      <div className={styles.hardStatusDots}>
+                        {[0, 1, 2].map(i => (
+                          <div
+                            key={i}
+                            className={`${styles.hardStatusDot} ${lockedCount > i ? styles.hardStatusDotActive : ""}`}
+                          />
+                        ))}
+                      </div>
+                      <div className={styles.hardStatusText}>
+                        <span className={styles.hardStatusCount}>{lockedCount}</span>
+                        {" "}answer{lockedCount !== 1 ? "s" : ""} locked
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Hint (Hard mode only) */}
+                  {mode === "Hard" && showHint && (
+                    <div className={styles.hintCard}>
+                      <span className={styles.hintIcon}>💡</span>
+                      <span className={styles.hintText}>{currentQ.hint}</span>
+                    </div>
+                  )}
+
+                  {/* Student answer chips */}
+                  {roomStudents.length > 0 && (
+                    <div className={styles.answersRow}>
+                      {roomStudents.map(s => (
+                        <div
+                          key={s.id}
+                          className={`${styles.answerChip} ${s.answered ? styles.answerChipLocked : ""}`}
+                        >
+                          {s.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Controls */}
+                  <div className={styles.controls}>
+                    <button className={styles.btnReveal} onClick={handleReveal}>
+                      Reveal Answer
+                    </button>
+                    {mode === "Hard" && !showHint && (
+                      <button className={styles.btnHint} onClick={() => setShowHint(true)}>
+                        💡 Show Hint
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* REVEALED state */}
+              {phase === "REVEALED" && (
+                <>
+                  <div className={styles.revealBlock}>
+                    {/* Before */}
+                    <div className={styles.revealRow}>
+                      <span className={styles.revealIcon}>❌</span>
+                      <span className={`${styles.revealSentence} ${styles.revealWrong}`}>
+                        {currentQ.sentence.split(new RegExp(`(\\b${currentQ.wrongWord.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b)`, "i")).map((part, i, arr) =>
+                          arr.length > 1 && i === 1
+                            ? <span key={i} className={styles.revealStrike}>{part}</span>
+                            : part
+                        )}
+                      </span>
+                    </div>
+                    {/* After */}
+                    <div className={styles.revealRow}>
+                      <span className={styles.revealIcon}>✅</span>
+                      <span className={`${styles.revealSentence} ${styles.revealCorrect}`}>
+                        {currentQ.sentence.split(new RegExp(`(\\b${currentQ.wrongWord.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b)`, "i")).map((part, i, arr) =>
+                          arr.length > 1 && i === 1
+                            ? <span key={i} className={styles.revealHighlight}>{currentQ.correctWord}</span>
+                            : part
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Score awards */}
+                  {Object.keys(pointsAwarded).length > 0 && (
+                    <div className={styles.scoreAwards}>
+                      {Object.entries(pointsAwarded).map(([name, pts]) => {
+                        const team = currentTeams.find(t => t.students.some(s => s.name === name));
+                        return (
+                          <div key={name} className={styles.scoreAward}>
+                            <span className={styles.scoreAwardTeam}>{team?.name || name}</span>
+                            <span className={styles.scoreAwardPts}>+{pts}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Post-reveal answer chips */}
+                  {roomStudents.filter(s => s.answered).length > 0 && (
+                    <div className={styles.answersRow}>
+                      {roomStudents.filter(s => s.answered).map(s => {
+                        const correct = s.lastAnswer?.trim().toLowerCase() === currentQ.correctWord.toLowerCase();
+                        return (
+                          <div
+                            key={s.id}
+                            className={`${styles.answerChip} ${correct ? styles.answerChipCorrect : styles.answerChipWrong}`}
+                          >
+                            {s.name} · {s.lastAnswer}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className={styles.controls}>
+                    <button
+                      className={styles.btnNext}
+                      onClick={handleNext}
+                    >
+                      {qIndex + 1 >= questions.length ? "Finish Game" : "Next Question →"}
+                    </button>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
+          {/* ── FINISHED ── */}
+          {phase === "FINISHED" && (
+            <div className={styles.finishedScreen}>
+              <div className={styles.finishedEmoji}>🏁</div>
+              <div className={styles.finishedTitle}>Round Complete!</div>
+              <div className={styles.finishedSub}>{questions.length} questions · {mode} mode</div>
+              <button
+                className={styles.btnPlayAgain}
+                onClick={() => {
+                  setPhase("SETUP");
+                  setQuestions([]);
+                  setQIndex(0);
+                  setTopic("");
+                }}
+              >
+                Play Again
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

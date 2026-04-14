@@ -29,6 +29,10 @@
   --t6: #ff7d3b;
   --t7: #e2e8f0;
 
+  /* --- Layout Heights --- */
+  --nav-h: 60px;
+  --scoreboard-h: 88px;
+
   /* --- Typography --- */
   --text: #dce8f5;
   --muted: #4a637d;
