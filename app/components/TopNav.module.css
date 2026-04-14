@@ -1,130 +1,121 @@
-.topNavWrapper {
-  width: 100%;
-  position: fixed;
+.nav {
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
-  z-index: 200;
-  background: var(--background);
-}
-
-.topNav {
+  z-index: 100;
+  background: rgba(7, 9, 15, 0.85); /* rgba equivalent of --bg */
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  height: 52px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 3rem;
-  width: 100%;
-  height: var(--header-height);
+  justify-content: space-between;
 }
 
-.logo {
-  font-family: 'Space Grotesk', sans-serif;
-  font-weight: 800;
-  font-size: 1.5rem;
-  color: var(--accent-green);
-  text-shadow: 0 0 10px rgba(0, 255, 65, 0.4);
-  cursor: pointer;
-  letter-spacing: -0.02em;
-}
-
-.links {
+.navBrand {
   display: flex;
-  gap: 3rem;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
+.navBrandIcon {
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid var(--green);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.navLinks {
+  display: flex;
+  gap: 32px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .navLink {
+  position: relative;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
-  font-family: monospace;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  padding-bottom: 0.25rem;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-  text-transform: uppercase;
+  color: var(--muted);
+  transition: color 0.2s;
+  padding: 10px 0;
 }
 
 .navLink:hover {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text);
 }
 
 .navLink.active {
-  color: var(--foreground);
-  border-bottom: 2px solid var(--accent-green);
+  color: var(--text);
 }
 
-.timerCluster {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+/* The U-shaped highlight */
+.navLink.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0px;
+  left: -8px;
+  right: -8px;
+  height: 8px;
+  border: 1.5px solid var(--accent);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  pointer-events: none;
 }
 
-.timerLabel {
-  font-family: monospace;
-  font-size: 0.7rem;
-  color: var(--accent-green);
+.navRight {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--muted);
   letter-spacing: 0.1em;
-}
-
-.timerValue {
-  font-family: 'Space Grotesk', sans-serif;
-  font-weight: 800;
-  font-size: 2.5rem;
-  color: var(--accent-green);
-  line-height: 1;
-  text-shadow: 0 0 15px rgba(0, 255, 65, 0.4);
-}
-.muteBtn {
-  background: rgba(255, 255, 255, 0.03);
-  color: white;
-  width: 42px;
-  height: 42px;
-  border-radius: 8px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: all 0.2s;
-  cursor: pointer;
-  margin-left: auto;
-}
-
-.muteBtn:hover {
-  background: rgba(0, 229, 255, 0.1);
-  border-color: var(--accent-cyan);
-  color: var(--accent-cyan);
-}
-
-.topBackBtn {
-  background: rgba(0, 255, 65, 0.05);
-  color: var(--accent-green);
-  width: 44px;
-  height: 44px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(0, 255, 65, 0.2);
-  transition: all 0.2s;
+  gap: 6px;
+  background: none;
+  border: none;
   cursor: pointer;
 }
 
-.topBackBtn:hover {
-  background: rgba(0, 255, 65, 0.15);
-  border-color: var(--accent-green);
-  box-shadow: 0 0 15px rgba(0, 255, 65, 0.1);
+.navRight:hover {
+  color: var(--text);
 }
 
-.neonDivider {
-  width: 100%;
-  height: 1px;
-  background: var(--accent-green);
-  opacity: 0.8;
-  box-shadow: 0 0 8px var(--accent-green);
+.soundDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse 2s infinite;
+}
+
+.soundDotOff {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }

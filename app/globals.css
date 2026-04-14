@@ -1,469 +1,150 @@
 /* =====================================================
-   CLASS ENGINE — ARCADE COMMAND DESIGN SYSTEM
-   Theme: Kinetic Command Center
+   ARCADE_COMMAND — OFFICIAL DESIGN SYSTEM
+   Theme: Dark Terminal (Teacher) / Energetic Mobile (Student)
    ===================================================== */
-
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap');
 
 :root {
   /* --- Core Surfaces --- */
-  --background: #070B19;
-  --surface: #0F172A;
-  --surface-2: #1E293B;
-  --surface-3: #334155;
-  --surface-hover: #263859;
+  --bg: #07090f;
+  --surface: #0e1420;
+  --surface2: #131b2b;
+  --border: #1c2a40;
+  --border2: #243347;
 
   /* --- Accent Colors --- */
-  --accent-cyan: #00E5FF;
-  --accent-green: #00FF41;
-  --accent: #38BDF8;
-  --accent-hover: #BAE6FD;
-  --accent-secondary: #818CF8;
-  --accent-tertiary: #F472B6;
+  --green: #00e87a;
+  --cyan: #00c8f0;
+  --orange: #ff7d3b;
+  --purple: #b06eff;
+  --yellow: #ffc843;
+  --pink: #ff4d8f;
+  --red: #ff4444;
 
   /* --- Team Colors --- */
-  --team-1: #00FF41;
-  --team-2: #00E5FF;
-  --team-3: #FFB800;
-  --team-4: #FF2D78;
-  --team-5: #BC13FE;
-  --team-6: #FF6B35;
-  --team-7: #00E5FF;
-  --team-8: #A8FF3E;
+  --t1: #00e87a;
+  --t2: #00c8f0;
+  --t3: #ffc843;
+  --t4: #ff4d8f;
+  --t5: #b06eff;
+  --t6: #ff7d3b;
+  --t7: #e2e8f0;
 
   /* --- Typography --- */
-  --foreground: #ffffff;
-  --text-muted: rgba(255, 255, 255, 0.6);
-  --text-label: rgba(255, 255, 255, 0.4);
-
-  /* --- UI Chrome --- */
-  --border: rgba(255, 255, 255, 0.05);
-  --border-accent: var(--accent);
-  --panel: rgba(14, 14, 14, 0.8);
-  --panel-border: rgba(255, 255, 255, 0.05);
-  --grid-color: rgba(255, 255, 255, 0.03);
-
-  /* --- HUD Dimensions --- */
-  --header-height: 56px;
-  --scoreboard-height: 110px;
-  --game-area-height: calc(100vh - var(--header-height) - var(--scoreboard-height));
+  --text: #dce8f5;
+  --muted: #4a637d;
+  --dim: #1e2e42;
+  
+  /* Next.js Font Mappings */
+  --font-main: var(--font-syne);
+  --font-mono: var(--font-jetbrains);
+  --font-phone: var(--font-nunito);
 }
 
 /* ── Base Reset ── */
-html, body {
-  max-width: 100vw;
-  overflow-x: hidden;
-  overflow-y: hidden; /* No page-level scroll — games must contain themselves */
-  background-color: var(--background);
-  background-image: linear-gradient(
-      var(--grid-color) 1px, 
-      transparent 1px
-    );
-  background-size: 100% 4px;
-  background-attachment: fixed;
-  color: var(--foreground);
-  font-family: 'Manrope', sans-serif;
+* {
   margin: 0;
   padding: 0;
-  height: 100vh;
+  box-sizing: border-box;
+}
+
+html, body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-main), sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
-* {
-  box-sizing: border-box;
+/* No page-level scroll on projector views */
+body.no-scroll {
+  overflow: hidden;
+  height: 100vh;
+}
+
+/* Subtle grid background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,232,122,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,232,122,0.015) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* ── Typography ── */
 h1, h2, h3, h4, h5, h6 {
-  margin: 0;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-main), sans-serif;
   font-weight: 800;
   letter-spacing: -0.02em;
-  line-height: 1.1;
 }
 
-h1 {
-  font-size: clamp(2rem, 5vw, 4rem);
+p, span, div, button {
+  font-family: var(--font-main), sans-serif;
 }
 
-h2 {
-  font-size: clamp(1.5rem, 3vw, 2.5rem);
+.mono {
+  font-family: var(--font-mono), monospace;
 }
 
-h3 {
-  font-size: clamp(1.25rem, 2vw, 1.75rem);
-}
-
-p, span, div, input, textarea {
-  font-family: 'Manrope', sans-serif;
-  font-size: 1rem;
-  line-height: 1.6;
-}
-
-/* ── Base Button ── */
-button {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 1rem;
-  font-weight: 700;
-  padding: 0.875rem 1.75rem;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  background: var(--accent-bright);
-  color: #000000;
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  letter-spacing: 0.02em;
-}
-
-button:hover {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
-}
-
-button:active {
-  transform: scale(0.98);
-}
-
-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* ── Secondary Button ── */
-.btn-secondary {
-  background: var(--surface-3);
-  color: var(--foreground);
-  border: 1px solid var(--border);
-}
-
-.btn-secondary:hover {
-  background: var(--surface-hover);
-  border-color: var(--accent);
-  box-shadow: -4px 0 0 var(--accent);
-}
-
-/* ── Card / Panel ── */
-.card {
-  background: var(--surface-3);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1.5rem;
-  transition: all 0.15s ease;
-}
-
-.card:hover {
-  border-color: var(--accent);
-  box-shadow: -4px 0 0 var(--accent);
-}
-
-/* ── Header Bar (HUD) ── */
-.header-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--header-height);
-  background: var(--surface);
-  border-bottom: 1px solid var(--accent);
-  display: flex;
+/* ── Common Components ── */
+.btn {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 1.5rem;
-  z-index: 100;
-}
-
-.header-brand {
-  font-size: 0.875rem;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  color: var(--accent);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
 }
 
-.header-nav {
-  display: flex;
-  gap: 1.5rem;
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--muted);
 }
 
-.header-nav a {
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
-  text-decoration: none;
-  text-transform: uppercase;
-  transition: color 0.15s ease;
+.btn-ghost:hover {
+  border-color: var(--text);
+  color: var(--text);
 }
 
-.header-nav a:hover {
-  color: var(--accent);
+.btn-primary {
+  background: var(--green);
+  color: #000;
 }
 
-/* ── Timer Ring ── */
-.timer-ring {
-  width: var(--timer-size);
-  height: var(--timer-size);
-  position: relative;
+.btn-primary:hover {
+  background: #00ff88;
 }
 
-.timer-ring svg {
-  transform: rotate(-90deg);
-}
-
-.timer-ring .track {
-  fill: none;
-  stroke: var(--surface-3);
-  stroke-width: 4;
-}
-
-.timer-ring .progress {
-  fill: none;
-  stroke: var(--accent-bright);
-  stroke-width: 4;
-  stroke-linecap: round;
-  transition: stroke-dashoffset 0.5s ease;
-}
-
-.timer-ring .time-text {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: var(--foreground);
-}
-
-.timer-ring .time-label {
-  position: absolute;
-  bottom: -1.25rem;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.625rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
+/* ── Tags ── */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
-/* ── Scoreboard ── */
-.scoreboard {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: var(--scoreboard-height);
-  background: var(--surface-2);
-  display: flex;
-  border-top: 1px solid var(--border);
-  z-index: 100;
-}
-
-.scoreboard-team {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.scoreboard-team:last-child {
-  border-right: none;
-}
-
-.scoreboard-team::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-}
-
-.scoreboard-team.team-1::before { background: var(--team-1); }
-.scoreboard-team.team-2::before { background: var(--team-2); }
-.scoreboard-team.team-3::before { background: var(--team-3); }
-.scoreboard-team.team-4::before { background: var(--team-4); }
-
-.scoreboard-icon {
-  font-size: 1rem;
-  opacity: 0.6;
-}
-
-.scoreboard-label {
-  font-size: 0.625rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
-  text-transform: uppercase;
-}
-
-.scoreboard-score {
-  font-size: 2.2rem;
-  font-weight: 800;
-  line-height: 1;
-}
-
-/* ── Input Fields ── */
-input, textarea {
-  background: var(--surface-3);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.875rem 1rem;
-  color: var(--foreground);
-  font-size: 1rem;
-  transition: all 0.15s ease;
-}
-
-input:focus, textarea:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: -4px 0 0 var(--accent);
-}
-
-input::placeholder, textarea::placeholder {
-  color: var(--text-label);
-}
-
-/* ── Select Dropdowns ── */
-select {
-  background: var(--surface-3);
-  color: var(--foreground);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.875rem 1rem;
-  cursor: pointer;
-  appearance: none; /* Reset for custom styles if needed */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 1rem center;
-  padding-right: 2.5rem;
-}
-
-select:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: -4px 0 0 var(--accent);
-}
-
-/* Force dark background for options to prevent system default white-on-white */
-select option {
-  background-color: #0f172a; /* Solid surface color */
-  color: #ffffff;
-}
-
-/* ── Label Caps ── */
-.label-caps {
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-label);
-}
-
-/* ── Neon Glow Text ── */
-.neon {
-  color: var(--accent);
-  text-shadow: 0 0 20px var(--accent-glow);
-}
-
-/* ── Scrollbar ── */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 255, 147, 0.3);
-}
-
-/* ── Utility Classes ── */
+/* ── Utility ── */
 .container {
-  max-width: 1200px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 0 2rem;
-}
-
-/* ── Game Page Container — fills exact space between TopNav and Scoreboard ── */
-.game-page {
-  position: fixed;
-  top: var(--header-height);
-  left: 0;
-  right: 0;
-  bottom: var(--scoreboard-height);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.flex {
-  display: flex;
-}
-
-.flex-col {
-  flex-direction: column;
-}
-
-.items-center {
-  align-items: center;
-}
-
-.justify-center {
-  justify-content: center;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.gap-1 { gap: 0.5rem; }
-.gap-2 { gap: 1rem; }
-.gap-3 { gap: 1.5rem; }
-.gap-4 { gap: 2rem; }
-
-.text-center { text-align: center; }
-.text-muted { color: var(--text-muted); }
-.text-accent { color: var(--accent); }
-
-/* ── Game-Specific ── */
-.game-title {
-  font-size: clamp(1.5rem, 4vw, 3rem);
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  text-align: center;
-}
-
-.grid-4 {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.grid-5x5 {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0.75rem;
-}
-
-@media (max-width: 768px) {
-  .grid-4 {
-    grid-template-columns: 1fr;
-  }
-  
-  .grid-5x5 {
-    grid-template-columns: repeat(3, 1fr);
-  }
+  padding: 0 32px;
 }

@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import styles from "./TopNav.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
-import { Volume2, VolumeX, ArrowLeft, LayoutGrid, Cpu } from "lucide-react";
 
 const HIDDEN_PATHS = new Set(["/", "/join", "/play"]);
 
@@ -18,67 +17,63 @@ export default function TopNav() {
 
   if (!mounted) return null;
   
-  // Clean paths check
   const isHidden = Array.from(HIDDEN_PATHS).some(path => 
     pathname === path || pathname.startsWith("/play/")
   );
   if (isHidden) return null;
 
+  // Route markers
+  const isArcade = pathname.startsWith("/games") || pathname === "/fix-it";
+  const isTeams = pathname === "/teams";
+  const isAnalytics = pathname === "/dashboard";
+
   return (
-    <div className={styles.topNavWrapper}>
-      <header className={styles.topNav}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          {pathname !== '/games' && (
-            <button 
-              onClick={() => router.push('/games')} 
-              className={styles.topBackBtn}
-              title="Return to Launchpad"
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 255, 65, 0.1)', border: '1px solid #00FF41', padding: '6px', borderRadius: '4px' }}>
-                <LayoutGrid size={20} color="#00FF41" strokeWidth={2.5} />
-              </div>
-            </button>
-          )}
-          <div className={styles.logo} onClick={() => router.push("/games")} style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-            <div style={{ background: 'rgba(0, 255, 65, 0.1)', border: '1px solid #00FF41', padding: '6px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Cpu size={18} color="#00FF41" strokeWidth={2.5} />
-            </div>
-            ARCADE_COMMAND
-          </div>
-        </div>
-        
-        <nav className={styles.links}>
+    <nav className={styles.nav}>
+      <div 
+        className={styles.navBrand} 
+        onClick={() => router.push("/games")}
+      >
+        <div className={styles.navBrandIcon}>⊞</div>
+        ARCADE_COMMAND
+      </div>
+      
+      <ul className={styles.navLinks}>
+        <li>
           <button 
-            className={`${styles.navLink} ${pathname.startsWith("/games") || pathname === "/fix-it" ? styles.active : ""}`}
+            className={`${styles.navLink} ${isArcade ? styles.active : ""}`}
+            style={isArcade ? ({ "--accent": "var(--orange)" } as React.CSSProperties) : {}}
             onClick={() => router.push("/games")}
           >
-            ARCADE
+            Arcade
           </button>
+        </li>
+        <li>
           <button 
-            className={`${styles.navLink} ${pathname === "/teams" ? styles.active : ""}`}
+            className={`${styles.navLink} ${isTeams ? styles.active : ""}`}
+            style={isTeams ? ({ "--accent": "var(--cyan)" } as React.CSSProperties) : {}}
             onClick={() => router.push("/teams")}
           >
-            TEAMS & ROSTER
+            Teams & Roster
           </button>
+        </li>
+        <li>
           <button 
-            className={`${styles.navLink} ${pathname === "/dashboard" ? styles.active : ""}`}
+            className={`${styles.navLink} ${isAnalytics ? styles.active : ""}`}
+            style={isAnalytics ? ({ "--accent": "var(--purple)" } as React.CSSProperties) : {}}
             onClick={() => router.push("/dashboard")}
           >
-            ANALYTICS
+            Analytics
           </button>
-        </nav>
+        </li>
+      </ul>
 
-        <button 
-          onClick={() => setSoundEnabled(!soundEnabled)}
-          className={styles.muteBtn}
-          title={soundEnabled ? "Mute Sounds" : "Unmute Sounds"}
-          style={{ width: 'auto', padding: '0 1rem', fontFamily: 'monospace', gap: '0.5rem', fontWeight: 700 }}
-        >
-          {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-          {soundEnabled ? "SOUND: ON" : "SOUND: OFF"}
-        </button>
-      </header>
-      <div className={styles.neonDivider}></div>
-    </div>
+      <button 
+        className={styles.navRight}
+        onClick={() => setSoundEnabled(!soundEnabled)}
+      >
+        <div className={soundEnabled ? styles.soundDot : styles.soundDotOff}></div>
+        {soundEnabled ? "SOUND: ON" : "SOUND: OFF"}
+      </button>
+    </nav>
   );
 }

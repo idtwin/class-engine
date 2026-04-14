@@ -3,15 +3,17 @@
 import { useState, useEffect, useRef } from "react";
 import { FolderHeart, X, Search, Trash2, Calendar, Gamepad2, ChevronRight, BookOpen } from "lucide-react";
 import { useClassroomStore, SavedBoard } from "../store/useClassroomStore";
+import styles from "./BoardLibrary.module.css";
 
 interface BoardLibraryProps {
   onLoadBoard: (board: SavedBoard) => void;
   currentGameType?: string;
   triggerOpen?: boolean;
   onClose?: () => void;
+  hideTriggerButton?: boolean;
 }
 
-export default function BoardLibrary({ onLoadBoard, currentGameType, triggerOpen, onClose }: BoardLibraryProps) {
+export default function BoardLibrary({ onLoadBoard, currentGameType, triggerOpen, onClose, hideTriggerButton }: BoardLibraryProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const { savedBoards, deleteBoard } = useClassroomStore();
@@ -44,144 +46,120 @@ export default function BoardLibrary({ onLoadBoard, currentGameType, triggerOpen
   };
 
   const getGameIcon = (type: string) => {
-    // Basic mapping for visual flair
     switch(type) {
-      case 'jeopardy': return <Gamepad2 size={16} color="#FFD700" />;
-      case 'oddoneout': return <BookOpen size={16} color="#9370DB" />;
-      default: return <Gamepad2 size={16} color="#2dd4bf" />;
+      case 'jeopardy': return <Gamepad2 size={12} color="#ffc843" />;
+      case 'oddoneout': return <BookOpen size={12} color="#b06eff" />;
+      default: return <Gamepad2 size={12} color="#00c8f0" />;
     }
+  };
+
+  const gameColors: Record<string, string> = {
+    jeopardy: '#ffc843',
+    oddoneout: '#b06eff',
+    'rapid-fire': '#00c8f0',
+    'fix-it': '#ffc843',
+    'reveal': '#00c8f0',
+    'wyr': '#ff4d8f',
+    'story': '#00e87a',
+    'chain-reaction': '#00e87a'
   };
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        style={{
-          background: "rgba(45, 212, 191, 0.1)",
-          border: "1px solid rgba(45, 212, 191, 0.2)",
-          borderRadius: "10px",
-          padding: "0.5rem 1rem",
-          color: "#2dd4bf",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem",
-          fontSize: "0.9rem",
-          fontWeight: 600,
-          transition: "all 0.2s",
-        }}
-      >
-        <FolderHeart size={18} />
-        <span>Library</span>
-      </button>
+      {!hideTriggerButton && (
+        <button
+          onClick={() => setOpen(true)}
+          className="btn btnGhost"
+        >
+          <FolderHeart size={14} />
+          <span>Library</span>
+        </button>
+      )}
 
       {/* Backdrop */}
-      {open && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-          background: "rgba(0,0,0,0.6)", backdropFilter: "blur(5px)", zIndex: 1000
-        }} />
-      )}
+      {open && <div className={styles.backdrop} onClick={() => { setOpen(false); if (onClose) onClose(); }} />}
 
       {/* Drawer */}
       <div
         ref={drawerRef}
-        style={{
-          position: "fixed", top: 0, right: open ? 0 : "-450px",
-          width: "400px", height: "100vh", background: "#0f172a",
-          borderLeft: "1px solid rgba(255,255,255,0.1)",
-          boxShadow: "-10px 0 30px rgba(0,0,0,0.5)",
-          transition: "right 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-          zIndex: 1001, display: "flex", flexDirection: "column"
-        }}
+        className={styles.drawer}
+        style={{ transform: open ? 'translateX(0)' : 'translateX(100%)' }}
       >
         {/* Header */}
-        <div style={{ padding: "1.5rem", borderBottom: "1px solid rgba(255,255,255,0.1)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            <h2 style={{ margin: 0, color: "white", fontSize: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <FolderHeart size={22} color="#2dd4bf" />
-              Saved Library
+        <div className={styles.header}>
+          <div className={styles.headerTitleWrap}>
+            <h2>
+              <FolderHeart size={20} color="#00e87a" />
+              Neural Library
             </h2>
-            <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.8rem", color: "rgba(255,255,255,0.5)" }}>
-              {currentGameType ? `Showing saved ${currentGameType} boards` : "Browse all saved game content"}
+            <p className={styles.headerSubtitle}>
+              {currentGameType ? `ACTIVE_FILTER: ${currentGameType}` : "BROWSING_COMMAND_HISTORY"}
             </p>
           </div>
-          <button onClick={() => { setOpen(false); if (onClose) onClose(); }} style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.5)", cursor: "pointer" }}>
-            <X size={24} />
+          <button 
+            className={styles.closeBtn}
+            onClick={() => { setOpen(false); if (onClose) onClose(); }}
+          >
+            <X size={18} />
           </button>
         </div>
 
         {/* Search */}
-        <div style={{ padding: "1rem 1.5rem" }}>
-          <div style={{ position: "relative" }}>
-            <Search size={16} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.3)" }} />
+        <div className={styles.searchArea}>
+          <div className={styles.searchInner}>
+            <Search size={14} className={styles.searchIcon} />
             <input
               type="text"
-              placeholder="Search topics or titles..."
+              placeholder="Filter topics or titles..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              style={{
-                width: "100%", padding: "0.6rem 0.6rem 0.6rem 2.5rem", borderRadius: "8px",
-                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-                color: "white", fontSize: "0.9rem", outline: "none"
-              }}
+              className={styles.searchInput}
             />
           </div>
         </div>
 
         {/* Content list */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "0 1.5rem 1.5rem 1.5rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        <div className={styles.contentList}>
           {filteredBoards.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "3rem 1rem", color: "rgba(255,255,255,0.2)" }}>
-              <BookOpen size={48} style={{ marginBottom: "1rem", opacity: 0.2 }} />
-              <p>No saved boards found.</p>
+            <div className={styles.emptyState}>
+              <BookOpen size={48} className={styles.emptyIcon} />
+              <div style={{ fontFamily: 'JetBrains Mono', fontSize: '11px', textTransform: 'uppercase' }}>No matching records found</div>
             </div>
           ) : (
             filteredBoards.map(board => (
-              <div
-                key={board.id}
-                style={{
-                  background: "rgba(255,255,255,0.03)", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.08)",
-                  padding: "1rem", transition: "all 0.2s", cursor: "default", position: "relative"
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.7rem", color: "#2dd4bf", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <div key={board.id} className={styles.boardCard}>
+                <div className={styles.cardGlow} style={{ background: gameColors[board.gameType] || '#00c8f0' }}></div>
+                <div className={styles.cardTop}>
+                  <div className={styles.gameTypeTag} style={{ color: gameColors[board.gameType] || '#00c8f0' }}>
                     {getGameIcon(board.gameType)}
                     {board.gameType}
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}>
-                    <Calendar size={12} />
+                  <div className={styles.timestamp}>
+                    <Calendar size={10} />
                     {formatDate(board.timestamp)}
                   </div>
                 </div>
 
-                <h3 style={{ margin: 0, color: "white", fontSize: "1rem", fontWeight: 700 }}>{board.title}</h3>
-                <p style={{ margin: "0.2rem 0 1rem 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.6)" }}>
+                <h3 className={styles.boardTitle}>{board.title}</h3>
+                <p className={styles.boardTopic}>
                   Topic: {board.topic}
                 </p>
 
-                <div style={{ display: "flex", gap: "0.5rem" }}>
+                <div className={styles.cardActions}>
                   <button
+                    className={styles.loadBtn}
                     onClick={() => {
                         onLoadBoard(board);
-                        setOpen(false);
-                        if (onClose) onClose();
-                    }}
-                    style={{
-                      flex: 1, background: "#2dd4bf", color: "#0f172a", border: "none", borderRadius: "8px",
-                      padding: "0.5rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer",
-                      display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem"
+                        setOpen(true); // Don't close immediately to show selection?
+                        // Actually, better to stay open if user is browsing
                     }}
                   >
-                    Load Board <ChevronRight size={16} />
+                    Load Neural Map <ChevronRight size={14} />
                   </button>
                   <button
-                    onClick={() => { if(confirm("Delete this saved board?")) deleteBoard(board.id); }}
-                    style={{
-                      background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.2)",
-                      borderRadius: "8px", padding: "0.5rem", cursor: "pointer", display: "flex", alignItems: "center"
-                    }}
+                    className={styles.deleteBtn}
+                    onClick={() => { if(confirm("Purge this record from history?")) deleteBoard(board.id); }}
+                    title="Delete record"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -192,8 +170,8 @@ export default function BoardLibrary({ onLoadBoard, currentGameType, triggerOpen
         </div>
 
         {/* Footer */}
-        <div style={{ padding: "1rem 1.5rem", borderTop: "1px solid rgba(255,255,255,0.1)", fontSize: "0.8rem", color: "rgba(255,255,255,0.3)", textAlign: "center" }}>
-          Saved boards are stored locally in this browser.
+        <div className={styles.footer}>
+          Local encryption active // {savedBoards.length} Records found
         </div>
       </div>
     </>

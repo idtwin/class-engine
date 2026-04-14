@@ -1,0 +1,17 @@
+- [x] **Phase 1: Foundations**
+    - [x] Update `globals.css` with ARCADE_COMMAND tokens and fonts
+    - [x] Update `layout.tsx` with Google Fonts (Syne, JetBrains Mono, Nunito)
+- [x] **Phase 2: Navigation**
+    - [x] Rebuild `TopNav.tsx` structure
+    - [x] Implement U-shaped active link highlight in `TopNav.module.css`
+- [x] **Phase 3: Arcade selections**
+    - [x] Rebuild `/games` page (Arcade Selection)
+    - [x] Implement category-based color coding
+- [x] **Phase 4: Teams & Roster**
+    - [x] Rebuild `/teams` with Three-State Stepper
+    - [x] Implement Team Builder balance visualization
+- [x] **Phase 5: Analytics**
+    - [x] Rebuild `/dashboard` (Analytics) with AI Summary and Sparklines
+- [x] **Phase 6: Verification**
+    - [x] Verify layout against HTML mockups
+    - [x] Check responsive behavior on mobile/projector view
