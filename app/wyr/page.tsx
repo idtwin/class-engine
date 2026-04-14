@@ -10,7 +10,7 @@ import ScoreboardOverlay from "../components/ScoreboardOverlay";
 
 export default function WouldYouRatherMode() {
   const [mounted, setMounted] = useState(false);
-  const { triggerTwist, geminiKey, mistralKey, mistralModel, llmProvider, activeRoomCode } = useClassroomStore();
+  const { triggerTwist, getActiveApiKey, mistralModel, llmProvider, activeRoomCode } = useClassroomStore();
   
   const [topic, setTopic] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -63,7 +63,7 @@ export default function WouldYouRatherMode() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          apiKey: llmProvider === 'gemini' ? geminiKey : mistralKey, 
+          apiKey: getActiveApiKey(), 
           mistralModel, 
           provider: llmProvider, 
           topic, 

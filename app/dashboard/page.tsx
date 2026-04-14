@@ -11,19 +11,31 @@ const MOCK_TIME_RANGES = [
 ];
 
 export default function Dashboard() {
-  const { 
+  const {
     classes,
     sessionHistory,
-    llmProvider, 
+    llmProvider,
     mistralModel,
-    mistralKey,
-    setLlmProvider, 
-    setMistralModel, 
-    setMistralKey,
+    geminiKey, setGeminiKey,
+    mistralKey, setMistralKey,
+    groqKey,    setGroqKey,
+    setLlmProvider,
+    setMistralModel,
     seedDemoData,
     purgeDemoData,
     removeClass
   } = useClassroomStore();
+
+  // Derived: which key/setter to show based on selected provider
+  const activeKeyLabel = llmProvider === "gemini" ? "Gemini API Key"
+    : llmProvider === "groq" ? "Groq API Key"
+    : "Mistral API Key";
+  const activeKeyValue = llmProvider === "gemini" ? geminiKey
+    : llmProvider === "groq" ? groqKey
+    : mistralKey;
+  const activeKeySetter = llmProvider === "gemini" ? setGeminiKey
+    : llmProvider === "groq" ? setGroqKey
+    : setMistralKey;
 
   const [activeDrillId, setActiveDrillId] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState("month");
@@ -329,16 +341,21 @@ export default function Dashboard() {
               </div>
 
               <div>
-                <label style={{ display: "block", fontSize: "10px", color: "var(--muted)", textTransform: "uppercase", marginBottom: "8px" }}>Secure Key</label>
-                <input 
-                  type="password" 
-                  className={styles.timeSelect} 
-                  style={{ width: "100%", fontSize: "14px" }} 
-                  placeholder="ENC_KEY_..." 
-                  value={mistralKey}
-                  onChange={e => setMistralKey(e.target.value)}
+                <label style={{ display: "block", fontSize: "10px", color: "var(--muted)", textTransform: "uppercase", marginBottom: "8px" }}>{activeKeyLabel}</label>
+                <input
+                  type="password"
+                  className={styles.timeSelect}
+                  style={{ width: "100%", fontSize: "14px" }}
+                  placeholder={llmProvider === "gemini" ? "AIza..." : llmProvider === "groq" ? "gsk_..." : "ENC_KEY_..."}
+                  value={activeKeyValue}
+                  onChange={e => activeKeySetter(e.target.value)}
                 />
               </div>
+              {llmProvider === "lmstudio" && (
+                <div style={{ fontSize: "12px", color: "var(--muted)", padding: "10px", background: "rgba(0,232,122,0.06)", border: "1px solid rgba(0,232,122,0.15)", borderRadius: "8px" }}>
+                  LM Studio runs locally — no API key needed. Make sure the server is running on port 1234.
+                </div>
+              )}
             </div>
 
             <div style={{ marginTop: "40px", display: "flex", justifyContent: "flex-end" }}>

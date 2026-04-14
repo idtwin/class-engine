@@ -11,7 +11,7 @@ import GameSettingsDrawer from "../components/GameSettingsDrawer";
 
 export default function HotSeatMode() {
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, triggerTwist, geminiKey, mistralKey, mistralModel, llmProvider } = useClassroomStore();
+  const { currentTeams, updateTeamScore, triggerTwist, getActiveApiKey, mistralModel, llmProvider } = useClassroomStore();
   
   const [topic, setTopic] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -54,7 +54,7 @@ export default function HotSeatMode() {
   if (!mounted) return null;
 
   const handleGenerate = async () => {
-    if (llmProvider === 'gemini' && !geminiKey) return alert("Please set your Gemini API key in Dashboard Settings!");
+    
     if (!topic) return alert("Please enter a topic!");
     
     setIsGenerating(true);
@@ -66,7 +66,7 @@ export default function HotSeatMode() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          apiKey: llmProvider === 'gemini' ? geminiKey : mistralKey, 
+          apiKey: getActiveApiKey(), 
           mistralModel, 
           provider: llmProvider, 
           topic, 
