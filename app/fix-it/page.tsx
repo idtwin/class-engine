@@ -92,12 +92,7 @@ export default function FixIt() {
     return () => clearInterval(id);
   }, [timerActive, timeLeft]);
 
-  if (!mounted) return null;
-
-  const currentQ = questions[qIndex];
-  const lockedCount = roomStudents.filter(s => s.answered).length;
-
-  // ── Helpers ─────────────────────────────────────────
+  // ── Helpers — must be before any early return ────────
   const startTimer = useCallback(() => {
     if (timerDur === 0) return;
     setTimeLeft(timerDur);
@@ -129,6 +124,8 @@ export default function FixIt() {
       body: JSON.stringify({ code: activeRoomCode, action: "clear_answers", payload: {} })
     }).catch(() => {});
   }, [activeRoomCode]);
+
+  if (!mounted) return null;
 
   // ── Generate ─────────────────────────────────────────
   const handleGenerate = async () => {
