@@ -14,32 +14,11 @@ export default function Dashboard() {
   const {
     classes,
     sessionHistory,
-    llmProvider,
-    mistralModel,
-    geminiKey, setGeminiKey,
-    mistralKey, setMistralKey,
-    groqKey,    setGroqKey,
-    setLlmProvider,
-    setMistralModel,
-    seedDemoData,
-    purgeDemoData,
     removeClass
   } = useClassroomStore();
 
-  // Derived: which key/setter to show based on selected provider
-  const activeKeyLabel = llmProvider === "gemini" ? "Gemini API Key"
-    : llmProvider === "groq" ? "Groq API Key"
-    : "Mistral API Key";
-  const activeKeyValue = llmProvider === "gemini" ? geminiKey
-    : llmProvider === "groq" ? groqKey
-    : mistralKey;
-  const activeKeySetter = llmProvider === "gemini" ? setGeminiKey
-    : llmProvider === "groq" ? setGroqKey
-    : setMistralKey;
-
   const [activeDrillId, setActiveDrillId] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState("month");
-  const [showSettings, setShowSettings] = useState(false);
 
   // --- Selectors ---
   
@@ -113,18 +92,6 @@ export default function Dashboard() {
     })).sort((a,b) => b.acc - a.acc);
   }, [activeClass, filteredHistory]);
 
-  // --- Handlers ---
-  
-  const handleSeed = () => {
-    seedDemoData();
-    setShowSettings(false);
-  };
-
-  const handlePurge = () => {
-    purgeDemoData();
-    setShowSettings(false);
-  };
-
   return (
     <div className={styles.page}>
       {/* Header */}
@@ -144,7 +111,6 @@ export default function Dashboard() {
             ))}
           </select>
           <button className={`${styles.btn} ${styles.btnGhost}`} onClick={() => window.print()}>↓ Report</button>
-          <button className={`${styles.btn} ${styles.btnPurple}`} onClick={() => setShowSettings(true)}>⚙ Config</button>
         </div>
       </div>
 
@@ -299,71 +265,6 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Settings Modal */}
-      {showSettings && (
-        <div className={styles.modalOverlay} onClick={() => setShowSettings(false)}>
-          <div className={styles.modal} onClick={e => e.stopPropagation()}>
-            <h2 style={{ fontSize: "24px", marginBottom: "24px", color: "var(--purple)" }}>Commander Config</h2>
-            
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                <button className={styles.btnPrimary} style={{ width: "100%", background: "var(--green)" }} onClick={handleSeed}>
-                  Seed Neural Data (30 Days)
-                </button>
-                <button className={styles.btnDanger} style={{ width: "100%" }} onClick={handlePurge}>
-                  Wipe Data History
-                </button>
-              </div>
-
-              <div>
-                <label style={{ display: "block", fontSize: "10px", color: "var(--muted)", textTransform: "uppercase", marginBottom: "8px" }}>AI Engine</label>
-                <select 
-                  className={styles.timeSelect} 
-                  style={{ width: "100%", fontSize: "14px" }}
-                  value={llmProvider}
-                  onChange={e => setLlmProvider(e.target.value as any)}
-                >
-                  <option value="gemini">Google Gemini 1.5</option>
-                  <option value="mistral">Mistral Small 3</option>
-                  <option value="groq">Groq v8</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ display: "block", fontSize: "10px", color: "var(--muted)", textTransform: "uppercase", marginBottom: "8px" }}>Primary Model</label>
-                <input 
-                  type="text" 
-                  className={styles.timeSelect} 
-                  style={{ width: "100%", fontSize: "14px" }} 
-                  value={mistralModel}
-                  onChange={e => setMistralModel(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: "block", fontSize: "10px", color: "var(--muted)", textTransform: "uppercase", marginBottom: "8px" }}>{activeKeyLabel}</label>
-                <input
-                  type="password"
-                  className={styles.timeSelect}
-                  style={{ width: "100%", fontSize: "14px" }}
-                  placeholder={llmProvider === "gemini" ? "AIza..." : llmProvider === "groq" ? "gsk_..." : "ENC_KEY_..."}
-                  value={activeKeyValue}
-                  onChange={e => activeKeySetter(e.target.value)}
-                />
-              </div>
-              {llmProvider === "lmstudio" && (
-                <div style={{ fontSize: "12px", color: "var(--muted)", padding: "10px", background: "rgba(0,232,122,0.06)", border: "1px solid rgba(0,232,122,0.15)", borderRadius: "8px" }}>
-                  LM Studio runs locally — no API key needed. Make sure the server is running on port 1234.
-                </div>
-              )}
-            </div>
-
-            <div style={{ marginTop: "40px", display: "flex", justifyContent: "flex-end" }}>
-              <button className={`${styles.btn} ${styles.btnGhost}`} onClick={() => setShowSettings(false)}>Terminate Signal</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

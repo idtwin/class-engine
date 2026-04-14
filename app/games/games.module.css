@@ -555,3 +555,28 @@
 .tagPhone       { background: rgba(0,232,122,0.1); color: var(--green); border: 1px solid rgba(0,232,122,0.25); }
 .tagNoPhone    { background: rgba(74,99,125,0.1); color: var(--muted); border: 1px solid var(--border); }
 .tagSkill       { background: rgba(176,110,255,0.1); color: var(--purple); border: 1px solid rgba(176,110,255,0.25); }
+
+/* ── Modal ─────────────────────────────────────────── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(8px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  width: 560px;
+  max-width: 92vw;
+  padding: 40px;
+  position: relative;
+}
+
+.btnPurple { background: rgba(176,110,255,0.15); border: 1px solid rgba(176,110,255,0.35); color: var(--purple); }
+.btnPurple:hover { background: rgba(176,110,255,0.25); }
