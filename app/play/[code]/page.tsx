@@ -1,28 +1,65 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import styles from "../play.module.css";
-import React from "react";
 import { useParams } from "next/navigation";
+
+// Team colour tokens matching design system
+const TEAM_COLORS = [
+  "#00e87a", "#00c8f0", "#ffc843",
+  "#ff4d8f", "#b06eff", "#ff7d3b", "#e2e8f0",
+];
+
+const GAME_LABELS: Record<string, { emoji: string; label: string; badgeColor: string; badgeBg: string }> = {
+  fixit:      { emoji: "🟡", label: "Fix It",        badgeColor: "#ffc843", badgeBg: "rgba(255,200,67,0.12)" },
+  oddoneout:  { emoji: "🔮", label: "Odd One Out",   badgeColor: "#b06eff", badgeBg: "rgba(176,110,255,0.12)" },
+  rapidfire:  { emoji: "⚡", label: "Rapid Fire",    badgeColor: "#ff4d8f", badgeBg: "rgba(255,77,143,0.12)" },
+  jeopardy:   { emoji: "⊞",  label: "Jeopardy",      badgeColor: "#00c8f0", badgeBg: "rgba(0,200,240,0.12)" },
+  reveal:     { emoji: "🖼️", label: "Pic Reveal",    badgeColor: "#ff7d3b", badgeBg: "rgba(255,125,59,0.12)" },
+  wyr:        { emoji: "💬", label: "Would U Rather", badgeColor: "#00e87a", badgeBg: "rgba(0,232,122,0.12)" },
+  hotseat:    { emoji: "🔥", label: "Hot Seat",      badgeColor: "#ff7d3b", badgeBg: "rgba(255,125,59,0.12)" },
+  story:      { emoji: "📖", label: "Story Chain",   badgeColor: "#00e87a", badgeBg: "rgba(0,232,122,0.12)" },
+  chainreaction:{ emoji:"🔗", label:"Chain Reaction", badgeColor: "#b06eff", badgeBg: "rgba(176,110,255,0.12)" },
+};
 
 export default function PlayPage() {
   const params = useParams();
   const code = params.code as string;
 
+  // ── Core room state ──────────────────────────────
   const [room, setRoom] = useState<any>(null);
   const [error, setError] = useState("");
   const [studentId, setStudentId] = useState("");
   const [studentName, setStudentName] = useState("");
-  const [myTeamInfo, setMyTeamInfo] = useState<{name: string, color: string, activeCount: number} | null>(null);
-  
-  const [textInput, setTextInput] = useState("");
-  const [hasBuzzed, setHasBuzzed] = useState(false);
-  const [hasVoted, setHasVoted] = useState(false);
+  const [myTeamInfo, setMyTeamInfo] = useState<{
+    id: string; name: string; color: string; score: number
+  } | null>(null);
+
+  // ── Per-question interaction state ───────────────
+  const [textInput, setTextInput]   = useState("");
+  const [hasBuzzed, setHasBuzzed]   = useState(false);
+  const [hasVoted, setHasVoted]     = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [lastQuestionId, setLastQuestionId] = useState("");
   const [teammateBlocked, setTeammateBlocked] = useState<string | null>(null);
 
+  // ── Personal stats (tracked locally) ────────────
+  const [streak, setStreak]               = useState(0);
+  const [personalScore, setPersonalScore] = useState(0);
+  const [totalAnswered, setTotalAnswered] = useState(0);
+  const [correctAnswered, setCorrectAnswered] = useState(0);
+
+  // ── Post-submit feedback ─────────────────────────
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackCorrect, setFeedbackCorrect] = useState<boolean | null>(null); // null = locked/unknown
+  const [feedbackText, setFeedbackText] = useState("");
+
+  // ── Timer display ────────────────────────────────
+  const [timerDisplay, setTimerDisplay] = useState<string>("");
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // ── Initialise from localStorage + start polling ─
   useEffect(() => {
     const stored = localStorage.getItem(`studentId_${code}`);
     const storedName = localStorage.getItem(`studentName_${code}`);
@@ -33,7 +70,6 @@ export default function PlayPage() {
     setStudentId(stored);
     setStudentName(storedName || "Player");
 
-    // Poll every 1.5s
     const poll = async () => {
       try {
         const res = await fetch(`/api/room/get?code=${code}`);
@@ -44,78 +80,109 @@ export default function PlayPage() {
           const err = await res.json();
           setError(err.error || "Room not found");
         }
-      } catch (e) {
-        console.error("Polling error", e);
+      } catch {
+        // silent polling error — keep trying
       }
     };
 
     poll();
-    const intervalId = setInterval(poll, 1500);
-    return () => clearInterval(intervalId);
+    const id = setInterval(poll, 1500);
+    return () => clearInterval(id);
   }, [code]);
 
-  // Reset local buzz/vote state when the question changes
+  // ── Derive team info ─────────────────────────────
   useEffect(() => {
-    if (room?.currentQuestion) {
-      const qId = room.currentQuestion.brokenSentence || room.currentQuestion.text || room.currentQuestion.optionA || JSON.stringify(room.currentQuestion);
-      if (qId !== lastQuestionId) {
-        setLastQuestionId(qId);
-        setHasBuzzed(false);
-        setHasVoted(false);
-        setHasSubmitted(false);
-        setSelectedWord(null);
-        setTextInput("");
-        setTeammateBlocked(null);
-      }
-    }
-  }, [room?.currentQuestion]);
-
-  // Derive Team Info
-  useEffect(() => {
-    if (room && room.teams && studentName) {
-      // Find team either by matching student name inside the team, or if the studentName is identically the team name
-      const team = room.teams.find((t: any) => t.name === studentName || t.students.some((s: any) => s.name === studentName));
-      if (team) {
-        // Count how many from this team are actually connected in room.students
-        const activeCount = room.students.filter((connectedStudent: any) => 
-          connectedStudent.name === team.name || team.students.some((s: any) => s.name === connectedStudent.name)
-        ).length;
-        
-        setMyTeamInfo({
-          name: team.name,
-          color: team.color || '#2dd4bf',
-          activeCount
-        });
-      }
+    if (!room?.teams || !studentName) return;
+    const team = room.teams.find((t: any) =>
+      t.name === studentName ||
+      t.students?.some((s: any) => s.name === studentName)
+    );
+    if (team) {
+      const tIdx = room.teams.indexOf(team);
+      setMyTeamInfo({
+        id: team.id,
+        name: team.name,
+        color: team.color || TEAM_COLORS[tIdx % TEAM_COLORS.length],
+        score: team.score || 0,
+      });
     }
   }, [room, studentName]);
 
+  // ── Reset per-question state when question changes
+  useEffect(() => {
+    if (!room?.currentQuestion) return;
+    const qId =
+      room.currentQuestion.brokenSentence ||
+      room.currentQuestion.text ||
+      room.currentQuestion.optionA ||
+      JSON.stringify(room.currentQuestion);
+
+    if (qId !== lastQuestionId) {
+      setLastQuestionId(qId);
+      setHasBuzzed(false);
+      setHasVoted(false);
+      setHasSubmitted(false);
+      setSelectedWord(null);
+      setTextInput("");
+      setTeammateBlocked(null);
+      setShowFeedback(false);
+      setFeedbackCorrect(null);
+      setFeedbackText("");
+    }
+  }, [room?.currentQuestion, lastQuestionId]);
+
+  // ── Countdown timer from room.questionStartTime ──
+  useEffect(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (!room?.questionStartTime || !room?.questionDuration) {
+      setTimerDisplay("");
+      return;
+    }
+    const tick = () => {
+      const elapsed = (Date.now() - room.questionStartTime) / 1000;
+      const remaining = Math.max(0, room.questionDuration - elapsed);
+      setTimerDisplay(remaining > 0 ? Math.ceil(remaining).toString() : "0");
+    };
+    tick();
+    timerRef.current = setInterval(tick, 500);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [room?.questionStartTime, room?.questionDuration]);
+
+  // ── Action helper ────────────────────────────────
   const sendAction = useCallback(async (action: string, payload: any) => {
     try {
-      const res = await fetch(`/api/room/action`, {
+      const res = await fetch("/api/room/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, action, payload })
+        body: JSON.stringify({ code, action, payload }),
       });
       return await res.json();
-    } catch (e: any) {
-      console.error(e);
+    } catch {
       return null;
     }
   }, [code]);
 
+  // ── Record a result locally ──────────────────────
+  const recordResult = useCallback((correct: boolean, feedbackMsg: string) => {
+    const newStreak = correct ? streak + 1 : 0;
+    const points    = correct ? 100 + streak * 10 : 0;
+    setStreak(newStreak);
+    setPersonalScore(prev => prev + points);
+    setTotalAnswered(prev => prev + 1);
+    if (correct) setCorrectAnswered(prev => prev + 1);
+    setFeedbackCorrect(correct);
+    setFeedbackText(feedbackMsg);
+    setShowFeedback(true);
+  }, [streak]);
+
+  // ── Handlers (game logic unchanged) ─────────────
   const handleBuzz = async () => {
     if (hasBuzzed) return;
-    // Check if a teammate already buzzed by reading room state
     if (room?.buzzes && myTeamInfo) {
       const myStudent = room.students?.find((s: any) => s.id === studentId);
-      const myTeamId = myStudent?.teamId;
-      if (myTeamId) {
-        const teamBuzz = room.buzzes.find((b: any) => b.teamId === myTeamId);
-        if (teamBuzz) {
-          setTeammateBlocked(teamBuzz.name);
-          return;
-        }
+      if (myStudent?.teamId) {
+        const teamBuzz = room.buzzes.find((b: any) => b.teamId === myStudent.teamId);
+        if (teamBuzz) { setTeammateBlocked(teamBuzz.name); return; }
       }
     }
     setHasBuzzed(true);
@@ -136,410 +203,741 @@ export default function PlayPage() {
       return;
     }
     setHasSubmitted(true);
+    // Evaluate Fix It immediately (we have the correct answer)
+    if (room?.gameMode === "fixit" && room?.currentQuestion?.correctedSentence) {
+      const correct =
+        textInput.trim().toLowerCase() ===
+        room.currentQuestion.correctedSentence.toLowerCase();
+      const concept = room.currentQuestion.grammarConcept || "";
+      const hint    = room.currentQuestion.hint || "";
+      recordResult(
+        correct,
+        correct
+          ? `Great! ${concept ? `This tests your knowledge of ${concept}.` : "Your correction is spot-on."}`
+          : hint || "Check the grammar structure carefully and try again next round."
+      );
+    } else {
+      // Locked in — waiting for teacher to reveal
+      setShowFeedback(true);
+      setFeedbackCorrect(null);
+      setFeedbackText("Locked in! Waiting for the teacher to reveal the answer...");
+    }
   };
 
   const handleTapWord = async (word: string) => {
-    if (selectedWord) return; // already tapped
+    if (selectedWord) return;
     const result = await sendAction("student_answer", { studentId, answer: word });
     if (result?.error === "teammate_answered") {
       setTeammateBlocked(result.answeredBy);
       return;
     }
     setSelectedWord(word);
+    setShowFeedback(true);
+    setFeedbackCorrect(null);
+    setFeedbackText("Answer locked! Waiting for the teacher...");
   };
 
-  // Reusable teammate blocked banner
-  const renderTeammateBlocked = () => {
-    if (!teammateBlocked) return null;
-    return (
-      <div style={{
-        padding: '1.2rem',
-        borderRadius: '16px',
-        border: '2px solid rgba(251,191,36,0.4)',
-        background: 'rgba(251,191,36,0.1)',
-        textAlign: 'center',
-        width: '90%',
-        maxWidth: '400px'
-      }}>
-        <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fbbf24', margin: '0 0 0.3rem 0' }}>🤝 Teammate Already Answered</p>
-        <p style={{ fontSize: '0.95rem', opacity: 0.7, margin: 0 }}>{teammateBlocked} locked in for your team</p>
+  // Rapid fire: evaluate when answerRevealed flips
+  useEffect(() => {
+    if (
+      room?.gameMode === "rapidfire" &&
+      room?.answerRevealed &&
+      selectedWord &&
+      showFeedback &&
+      feedbackCorrect === null
+    ) {
+      const correct = selectedWord === room.currentQuestion?.correctLetter;
+      const explanation = correct
+        ? "Correct choice! Well done."
+        : `The correct answer was ${room.currentQuestion?.correctLetter}. ${room.currentQuestion?.options?.[room.currentQuestion.correctLetter] || ""}`;
+      setFeedbackCorrect(correct);
+      setFeedbackText(explanation);
+      setStreak(prev => correct ? prev + 1 : 0);
+      setPersonalScore(prev => prev + (correct ? 100 + streak * 10 : 0));
+      setTotalAnswered(prev => prev + 1);
+      if (correct) setCorrectAnswered(prev => prev + 1);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room?.answerRevealed]);
+
+  // ════════════════════════════════════════════════
+  // RENDER HELPERS
+  // ════════════════════════════════════════════════
+
+  const teamColor = myTeamInfo?.color || "#00c8f0";
+  const gameInfo  = GAME_LABELS[room?.gameMode] || { emoji: "🎮", label: "Game", badgeColor: "#00c8f0", badgeBg: "rgba(0,200,240,0.12)" };
+
+  // ── Team strip + game header (shared top chrome) ─
+  const renderGameChrome = () => (
+    <>
+      <div className={styles.teamStrip} style={{ background: teamColor }} />
+      <div className={styles.gameHeader}>
+        <div
+          className={styles.gameBadge}
+          style={{ color: gameInfo.badgeColor, background: gameInfo.badgeBg }}
+        >
+          <div className={styles.gameBadgeDot} style={{ background: gameInfo.badgeColor }} />
+          {gameInfo.label}
+        </div>
+        {timerDisplay && (
+          <div className={styles.gameTimer}>{timerDisplay}</div>
+        )}
       </div>
-    );
-  };
-
-  if (error) return <div className={styles.screen}><h1>Disconnected</h1><p>{error}</p></div>;
-  
-  if (!room) return (
-    <div className={styles.screen}>
-      <div className={styles.loadingPulse} />
-      <p style={{ opacity: 0.5 }}>Connecting to session...</p>
-    </div>
+    </>
   );
 
-  // === RENDER HELPERS === //
-  const teamColorStyle = myTeamInfo ? { color: myTeamInfo.color } : {};
-  const teamBgStyle = myTeamInfo ? { background: `radial-gradient(circle at center, ${myTeamInfo.color}22 0%, transparent 70%)` } : {};
-  
-  const renderTeamBanner = () => {
-    if (!myTeamInfo) return null;
+  // ── Teammate blocked notice ───────────────────────
+  const renderTeammateBlock = () =>
+    teammateBlocked ? (
+      <div className={styles.teammateBlock}>
+        <div className={styles.teammateBlockTitle}>🤝 Teammate Already Answered</div>
+        <div className={styles.teammateBlockSub}>{teammateBlocked} locked in for your team</div>
+      </div>
+    ) : null;
+
+  // ── Post-submit feedback screen ───────────────────
+  const renderFeedback = () => {
+    const isCorrect = feedbackCorrect === true;
+    const isWrong   = feedbackCorrect === false;
+    const isLocked  = feedbackCorrect === null;
+    const pts = isCorrect ? 100 + (streak > 0 ? (streak - 1) * 10 : 0) : 0;
+
     return (
-      <div className={styles.banner} style={{ borderBottomColor: `${myTeamInfo.color}66` }}>
-        <span style={{ color: myTeamInfo.color }}>{myTeamInfo.name}</span>
-        <span style={{ opacity: 0.8 }}>PLAYER 1</span>
+      <div className={styles.feedbackScreen}>
+        {/* Background glow */}
+        <div
+          className={`${styles.feedbackBg} ${
+            isCorrect ? styles.feedbackBgCorrect :
+            isWrong   ? styles.feedbackBgWrong   : ""
+          }`}
+        />
+
+        <div className={styles.feedbackContent}>
+          {/* Icon */}
+          <div
+            className={`${styles.feedbackIcon} ${
+              isCorrect ? styles.feedbackIconCorrect :
+              isWrong   ? styles.feedbackIconWrong   :
+              styles.feedbackIconLocked
+            }`}
+          >
+            {isCorrect ? "✓" : isWrong ? "✗" : "🔒"}
+          </div>
+
+          {/* Result headline */}
+          <div
+            className={`${styles.feedbackResult} ${
+              isCorrect ? styles.feedbackResultCorrect :
+              isWrong   ? styles.feedbackResultWrong   :
+              styles.feedbackResultLocked
+            }`}
+          >
+            {isCorrect ? "Correct!" : isWrong ? "Not Quite" : "Locked In"}
+          </div>
+
+          {/* AI Feedback card */}
+          {feedbackText && (
+            <div className={styles.feedbackAiCard}>
+              <div className={styles.feedbackAiLabel}>
+                ⚡ AI FEEDBACK
+              </div>
+              <div className={styles.feedbackAiText}>{feedbackText}</div>
+            </div>
+          )}
+
+          {/* Score row */}
+          {(isCorrect || isWrong) && (
+            <div className={styles.feedbackScoreRow}>
+              <div className={styles.feedbackScoreCard}>
+                <div
+                  className={styles.feedbackScoreVal}
+                  style={{ color: isCorrect ? "#00e87a" : "#4a637d" }}
+                >
+                  {isCorrect ? `+${pts}` : "+0"}
+                </div>
+                <div className={styles.feedbackScoreLabel}>This Round</div>
+              </div>
+              <div className={styles.feedbackScoreCard}>
+                <div className={styles.feedbackScoreVal} style={{ color: "#00e87a" }}>
+                  {personalScore}
+                </div>
+                <div className={styles.feedbackScoreLabel}>My Total</div>
+              </div>
+              <div className={styles.feedbackScoreCard}>
+                <div className={styles.feedbackScoreVal} style={{ color: "#b06eff" }}>
+                  {totalAnswered > 0
+                    ? `${Math.round((correctAnswered / totalAnswered) * 100)}%`
+                    : "—"}
+                </div>
+                <div className={styles.feedbackScoreLabel}>Accuracy</div>
+              </div>
+            </div>
+          )}
+
+          {/* Streak badge */}
+          {isCorrect && streak >= 2 && (
+            <div className={styles.streakBadge}>
+              🔥 {streak} in a row!
+            </div>
+          )}
+          {isWrong && streak === 0 && totalAnswered > 1 && (
+            <div className={styles.streakBadge} style={{
+              background: "rgba(255,68,68,0.08)",
+              borderColor: "rgba(255,68,68,0.2)",
+              color: "#ff6060"
+            }}>
+              💔 Streak lost
+            </div>
+          )}
+
+          {/* Waiting indicator */}
+          <div className={styles.feedbackWaiting}>
+            <div className={styles.waitDots}>
+              <div className={styles.waitDot} />
+              <div className={styles.waitDot} />
+              <div className={styles.waitDot} />
+            </div>
+            <div className={styles.feedbackWaitingText}>Waiting for class...</div>
+          </div>
+        </div>
       </div>
     );
   };
 
-  if (room.status === "ended") {
-    return <div className={styles.screen} style={teamBgStyle}>{renderTeamBanner()}<h2>Session Ended</h2><p style={{ opacity: 0.5 }}>The host closed this session.</p></div>;
-  }
-
-  if (room.status === "waiting") {
-    return <div className={styles.screen} style={teamBgStyle}>{renderTeamBanner()}<h2>You&apos;re In! ✅</h2><p style={{ opacity: 0.5 }}>Waiting for the teacher to start the game...</p><p style={{ fontSize: '3rem' }}>📱</p></div>;
-  }
-
-  // Active Phase
-  const me = room.students?.find((s: any) => s.id === studentId);
-
-  // === UNIVERSAL WAITING STATE: No question loaded yet ===
-  // Skip for passive games (hotseat, story) which don't need a question
-  const isPassiveGame = room.gameMode === "hotseat" || room.gameMode === "story";
-  if (!room.currentQuestion && !isPassiveGame) {
-    const gameModeLabels: Record<string, { emoji: string; label: string }> = {
-      fixit: { emoji: "🔧", label: "Fix It" },
-      oddoneout: { emoji: "🎯", label: "Odd One Out" },
-      rapidfire: { emoji: "⚡", label: "Rapid Fire" },
-      jeopardy: { emoji: "🏆", label: "Jeopardy" },
-      reveal: { emoji: "🖼️", label: "Picture Reveal" },
-      wyr: { emoji: "🤔", label: "Would You Rather" },
-    };
-    const modeInfo = gameModeLabels[room.gameMode] || { emoji: "🎮", label: "Game" };
+  // ── Lobby screen ──────────────────────────────────
+  const renderLobby = () => {
+    const teams: any[] = room?.teams || [];
+    const accuracy = totalAnswered > 0
+      ? Math.round((correctAnswered / totalAnswered) * 100)
+      : 0;
 
     return (
-      <div className={styles.screen} style={teamBgStyle}>
-        {renderTeamBanner()}
-        <div style={{ fontSize: '4rem', marginTop: myTeamInfo ? '3rem' : '0' }}>{modeInfo.emoji}</div>
-        <h2 style={{ marginBottom: '0.5rem' }}>{modeInfo.label}</h2>
-        <div className={styles.loadingPulse} />
-        <p style={{ opacity: 0.5, maxWidth: '80%', textAlign: 'center' }}>
-          Waiting for the teacher to load the next question...
-        </p>
-        <p style={{ opacity: 0.3, fontSize: '0.9rem' }}>Stay on this screen!</p>
+      <div className={styles.lobbyScreen}>
+        {/* Team banner */}
+        {myTeamInfo && (
+          <div
+            className={styles.lobbyBanner}
+            style={{
+              background: `${myTeamInfo.color}12`,
+              border: `1.5px solid ${myTeamInfo.color}30`,
+            }}
+          >
+            <div
+              className={styles.lobbyBannerGlow}
+              style={{ background: myTeamInfo.color }}
+            />
+            <div className={styles.lobbyGreeting}>Welcome back,</div>
+            <div className={styles.lobbyName}>{studentName} 👋</div>
+            <div
+              className={styles.lobbyTeamPill}
+              style={{ color: myTeamInfo.color }}
+            >
+              <div
+                className={styles.lobbyTeamPillDot}
+                style={{ background: myTeamInfo.color }}
+              />
+              {myTeamInfo.name.toUpperCase()}
+            </div>
+          </div>
+        )}
+
+        {/* Personal stats */}
+        <div className={styles.lobbyStats}>
+          <div className={styles.lobbyStat}>
+            <div className={styles.lobbyStatVal} style={{ color: "#ffc843" }}>
+              {streak}
+            </div>
+            <div className={styles.lobbyStatLabel}>Streak</div>
+          </div>
+          <div className={styles.lobbyStat}>
+            <div className={styles.lobbyStatVal} style={{ color: "#00e87a" }}>
+              {personalScore}
+            </div>
+            <div className={styles.lobbyStatLabel}>My Score</div>
+          </div>
+          <div className={styles.lobbyStat}>
+            <div className={styles.lobbyStatVal} style={{ color: "#b06eff" }}>
+              {totalAnswered > 0 ? `${accuracy}%` : "—"}
+            </div>
+            <div className={styles.lobbyStatLabel}>Accuracy</div>
+          </div>
+        </div>
+
+        {/* Team standings */}
+        {teams.length > 0 && (
+          <>
+            <div className={styles.lobbyStandingsTitle}>// Team Standings</div>
+            {[...teams]
+              .sort((a, b) => (b.score || 0) - (a.score || 0))
+              .map((team, i) => {
+                const tIdx = room.teams.indexOf(team);
+                const color = team.color || TEAM_COLORS[tIdx % TEAM_COLORS.length];
+                const isMe  = myTeamInfo?.id === team.id;
+                return (
+                  <div
+                    key={team.id}
+                    className={`${styles.lobbyScoreRow} ${isMe ? styles.lobbyScoreRowMe : ""}`}
+                  >
+                    <div
+                      className={styles.lobbyScoreDot}
+                      style={{ background: color, boxShadow: `0 0 6px ${color}80` }}
+                    />
+                    <div className={styles.lobbyScoreName}>
+                      {i === 0 ? "👑 " : ""}{team.name}
+                    </div>
+                    {isMe && (
+                      <div className={styles.lobbyScoreYou}>← YOU</div>
+                    )}
+                    <div className={styles.lobbyScorePts} style={{ color }}>
+                      {(team.score || 0).toLocaleString()}
+                    </div>
+                  </div>
+                );
+              })}
+          </>
+        )}
+
+        {/* Waiting indicator */}
+        <div className={styles.lobbyWaiting}>
+          <div className={styles.waitDots}>
+            <div className={styles.waitDot} />
+            <div className={styles.waitDot} />
+            <div className={styles.waitDot} />
+          </div>
+          <div className={styles.waitText}>Waiting for teacher to start...</div>
+        </div>
+      </div>
+    );
+  };
+
+  // ════════════════════════════════════════════════
+  // STATE ROUTING
+  // ════════════════════════════════════════════════
+
+  // Loading
+  if (!room && !error) {
+    return (
+      <div className={styles.endScreen}>
+        <div className={styles.spinner} />
+        <div className={styles.endSub}>Connecting to session...</div>
       </div>
     );
   }
 
-  // === RAPID FIRE: MC Mode ===
+  // Error
+  if (error) {
+    return (
+      <div className={styles.endScreen}>
+        <div style={{ fontSize: 48 }}>📡</div>
+        <div className={styles.endTitle}>Disconnected</div>
+        <div className={styles.endSub}>{error}</div>
+      </div>
+    );
+  }
+
+  // Session ended
+  if (room.status === "ended") {
+    return (
+      <div className={styles.endScreen}>
+        <div style={{ fontSize: 56 }}>🏁</div>
+        <div className={styles.endTitle}>Session Over!</div>
+        <div className={styles.endSub}>Final score: {personalScore} pts · {totalAnswered > 0 ? `${Math.round((correctAnswered / totalAnswered) * 100)}%` : "0%"} accuracy</div>
+        <div className={styles.endSub} style={{ marginTop: 4, fontSize: 13 }}>The host has closed this session.</div>
+      </div>
+    );
+  }
+
+  // Lobby (waiting)
+  if (room.status === "waiting") {
+    return renderLobby();
+  }
+
+  // ── Active game ──────────────────────────────────
+  const me = room.students?.find((s: any) => s.id === studentId);
+  const isPassive = room.gameMode === "hotseat" || room.gameMode === "story";
+
+  // Show feedback after submit
+  if (showFeedback) {
+    return renderFeedback();
+  }
+
+  // Waiting for question to load
+  if (!room.currentQuestion && !isPassive) {
+    return (
+      <div className={styles.screen}>
+        {renderGameChrome()}
+        <div className={styles.loadingState}>
+          <div className={styles.loadingEmoji}>{gameInfo.emoji}</div>
+          <div className={styles.loadingTitle}>{gameInfo.label}</div>
+          <div className={styles.spinner} />
+          <div className={styles.loadingMuted}>Waiting for the teacher to load the next question...</div>
+          <div className={styles.loadingSmall}>Stay on this screen!</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Passive games (hot seat, story)
+  if (isPassive) {
+    return (
+      <div className={styles.screen}>
+        {renderGameChrome()}
+        <div className={styles.loadingState}>
+          <div className={styles.loadingEmoji}>{gameInfo.emoji}</div>
+          <div className={styles.loadingTitle}>Watch the Projector!</div>
+          <div className={styles.loadingMuted}>
+            This game is played live in the classroom. Follow along on the big screen!
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── RAPID FIRE: Multiple Choice ──────────────────
   if (room.gameMode === "rapidfire" && room.currentQuestion?.options) {
-    const isRevealed = room.answerRevealed;
-    const sInfo = room.students?.find((s: any) => s.id === studentId);
-    const myPick = sInfo?.lastAnswer || selectedWord;
+    const isRevealed  = room.answerRevealed;
+    const sInfo       = room.students?.find((s: any) => s.id === studentId);
+    const myPick      = sInfo?.lastAnswer || selectedWord;
     const correctLetter = room.currentQuestion.correctLetter;
 
-    return (
-      <div className={styles.screen} style={teamBgStyle}>
-        {renderTeamBanner()}
-        <h2 style={{ marginBottom: '0.5rem', marginTop: myTeamInfo ? '3rem' : '0', fontSize: '1.1rem', opacity: 0.7 }}>
-          {room.currentQuestion.type}
-        </h2>
-        <p style={{ fontSize: '1.2rem', fontWeight: 700, textAlign: 'center', maxWidth: '90%', marginBottom: '1.5rem' }}>
-          {room.currentQuestion.text}
-        </p>
+    if (isRevealed && myPick && !showFeedback) {
+      // Trigger feedback evaluation (handled by useEffect above)
+    }
 
-        {!isRevealed ? (
-          <div className={styles.grid2x2}>
-            {(["A", "B", "C", "D"] as const).map((letter, idx) => {
-              const colors = [styles.btnBlue, styles.btnRed, styles.btnGreen, styles.btnYellow];
-              const picked = myPick === letter;
-              const anyPicked = !!myPick;
-              return (
-                <button
-                  key={letter}
-                  onClick={async () => {
-                    if (myPick || teammateBlocked) return;
-                    const result = await sendAction("student_answer", { studentId, answer: letter });
-                    if (result?.error === "teammate_answered") {
-                      setTeammateBlocked(result.answeredBy);
-                      return;
-                    }
-                    setSelectedWord(letter);
-                  }}
-                  disabled={anyPicked || !!teammateBlocked}
-                  className={`${styles.optionBtn} ${colors[idx]} ${picked ? styles.btnSelected : ''} ${anyPicked && !picked ? styles.btnDisabled : ''}`}
-                >
-                  <div style={{ fontSize: '2.5rem', opacity: 0.9 }}>{letter}</div>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{room.currentQuestion.options[letter]}</div>
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <div style={{ width: '90%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{
-              padding: '1.5rem',
-              borderRadius: '16px',
-              border: `2px solid ${myPick === correctLetter ? '#22c55e' : '#ef4444'}`,
-              background: myPick === correctLetter ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-              textAlign: 'center'
-            }}>
-              <h3 style={{ fontSize: '1.8rem', margin: '0 0 0.5rem 0' }}>
-                {myPick === correctLetter ? '✅ Correct!' : '❌ Incorrect'}
-              </h3>
-              {myPick && <p style={{ opacity: 0.7, margin: 0 }}>You picked: <strong>{myPick}</strong></p>}
+    return (
+      <div className={styles.screen}>
+        {renderGameChrome()}
+        <div className={styles.gameBody}>
+          {/* Question */}
+          <div className={styles.questionCard}>
+            <div style={{ fontSize: 11, color: "#4a637d", marginBottom: 6, fontFamily: "var(--font-mono,'JetBrains Mono',monospace)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              {room.currentQuestion.type}
             </div>
-            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
-              <p style={{ opacity: 0.5, fontSize: '0.9rem', margin: '0 0 0.3rem 0' }}>Correct Answer:</p>
-              <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#22c55e', margin: 0 }}>
-                {correctLetter}. {room.currentQuestion.options[correctLetter]}
-              </p>
-            </div>
+            {room.currentQuestion.text}
           </div>
-        )}
-        {myPick && !isRevealed && <p style={{ marginTop: '1rem', color: 'var(--accent)' }}>Answer locked! ✅</p>}
-        {renderTeammateBlocked()}
+
+          {!isRevealed ? (
+            <div className={styles.optionsGrid}>
+              {(["A", "B", "C", "D"] as const).map((letter) => {
+                const picked   = myPick === letter;
+                const anyPicked= !!myPick;
+                return (
+                  <button
+                    key={letter}
+                    className={`${styles.optionBtn} ${picked ? styles.optionSelected : ""} ${anyPicked && !picked ? styles.optionDisabled : ""}`}
+                    onClick={async () => {
+                      if (myPick || teammateBlocked) return;
+                      const result = await sendAction("student_answer", { studentId, answer: letter });
+                      if (result?.error === "teammate_answered") {
+                        setTeammateBlocked(result.answeredBy);
+                        return;
+                      }
+                      setSelectedWord(letter);
+                    }}
+                    disabled={!!myPick || !!teammateBlocked}
+                  >
+                    <div style={{ fontFamily: "var(--font-mono,'JetBrains Mono',monospace)", fontSize: 22, fontWeight: 700, opacity: 0.8, marginBottom: 4 }}>{letter}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>{room.currentQuestion.options[letter]}</div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{
+                padding: "20px",
+                borderRadius: 18,
+                border: `2px solid ${myPick === correctLetter ? "rgba(0,232,122,0.4)" : "rgba(255,68,68,0.35)"}`,
+                background: myPick === correctLetter ? "rgba(0,232,122,0.08)" : "rgba(255,68,68,0.08)",
+                textAlign: "center"
+              }}>
+                <div style={{ fontSize: 28, marginBottom: 6, fontWeight: 900 }}>
+                  {myPick === correctLetter ? "✓ Correct!" : "✗ Incorrect"}
+                </div>
+                {myPick && <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>You picked: <strong>{myPick}</strong></div>}
+              </div>
+              <div style={{ background: "#0e1520", padding: "16px", borderRadius: 16, textAlign: "center" }}>
+                <div style={{ fontSize: 11, color: "#4a637d", marginBottom: 4, fontFamily: "var(--font-mono,'JetBrains Mono',monospace)", letterSpacing: "0.08em", textTransform: "uppercase" }}>Correct Answer</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#00e87a" }}>
+                  {correctLetter}. {room.currentQuestion.options[correctLetter]}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {myPick && !isRevealed && (
+            <div style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: "#00c8f0" }}>
+              Answer locked ✓ · Waiting for reveal...
+            </div>
+          )}
+          {renderTeammateBlock()}
+        </div>
       </div>
     );
   }
 
-
-
-  // === BUZZER GAMES: Jeopardy, Rapid Fire (buzzer mode), Picture Reveal ===
+  // ── BUZZER GAMES: Jeopardy, Rapid Fire (buzz), Picture Reveal ──
   if (room.gameMode === "jeopardy" || room.gameMode === "rapidfire" || room.gameMode === "reveal") {
     return (
-      <div className={styles.screen} style={teamBgStyle}>
-        {renderTeamBanner()}
-        {room.currentQuestion && (
-          <div style={{ marginBottom: '2rem', textAlign: 'center', maxWidth: '90%', marginTop: myTeamInfo ? '3rem' : '0' }}>
-            <p style={{ fontSize: '1.1rem', opacity: 0.7 }}>
-              {room.currentQuestion.category && `${room.currentQuestion.category} • `}
-              {room.currentQuestion.points && `${room.currentQuestion.points} pts`}
-            </p>
-            <p style={{ fontSize: '1.3rem', fontWeight: 700 }}>{room.currentQuestion.text}</p>
-          </div>
-        )}
-        
-        {teammateBlocked ? (
-          renderTeammateBlocked()
-        ) : !hasBuzzed ? (
-          <button 
-            className={`${styles.giantBuzzer} ${hasBuzzed ? styles.buzzerPressed : ''}`}
-            onClick={handleBuzz}
-          >
-            PUSH
-          </button>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', width: '90%', maxWidth: '400px' }}>
-            <p style={{ color: 'var(--accent)', fontWeight: 800, fontSize: '1.2rem' }}>🔔 BUZZED IN!</p>
-            
-            {room.gameMode === "jeopardy" && !hasSubmitted && (
-              <>
-                <textarea 
-                  className={styles.textArea} 
-                  value={textInput} 
-                  onChange={e => setTextInput(e.target.value)}
-                  placeholder="Type your answer..."
-                  style={{ width: '100%', minHeight: '80px' }}
-                />
-                <button 
-                  className={styles.submitBtn} 
-                  onClick={() => {
-                    if (!textInput.trim()) return;
-                    setHasSubmitted(true);
-                    sendAction("student_answer", { studentId, answer: textInput.trim() });
-                  }}
-                  disabled={!textInput.trim()}
-                >
-                  LOCK IN ANSWER 🔒
-                </button>
-              </>
-            )}
-            
-            {hasSubmitted && <p style={{ color: 'var(--accent)' }}>Answer locked! ✅ Waiting for teacher...</p>}
-            {!hasSubmitted && room.gameMode !== "jeopardy" && <p style={{ opacity: 0.5 }}>Waiting for teacher...</p>}
-          </div>
-        )}
+      <div className={styles.screen}>
+        {renderGameChrome()}
+        <div className={styles.buzzBody}>
+          {room.currentQuestion && (
+            <div style={{ textAlign: "center", maxWidth: 280 }}>
+              {room.currentQuestion.category && (
+                <div style={{ fontSize: 11, color: "#4a637d", fontFamily: "var(--font-mono,'JetBrains Mono',monospace)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
+                  {room.currentQuestion.category}{room.currentQuestion.points ? ` · ${room.currentQuestion.points} pts` : ""}
+                </div>
+              )}
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f6ff" }}>
+                {room.currentQuestion.text}
+              </div>
+            </div>
+          )}
+
+          {teammateBlocked ? (
+            renderTeammateBlock()
+          ) : !hasBuzzed ? (
+            <>
+              <div className={styles.buzzLabel}>Know the answer?</div>
+              <button className={styles.buzzBtn} onClick={handleBuzz}>
+                BUZZ
+              </button>
+              <div className={styles.buzzTeamScore}>
+                {myTeamInfo?.name} · {(myTeamInfo?.score || 0).toLocaleString()} pts
+              </div>
+            </>
+          ) : (
+            <div className={styles.buzzedIn}>
+              <div className={styles.buzzedInLabel}>🔔 BUZZED IN!</div>
+              {room.gameMode === "jeopardy" && !hasSubmitted && (
+                <>
+                  <textarea
+                    className={styles.buzzAnswer}
+                    value={textInput}
+                    onChange={e => setTextInput(e.target.value)}
+                    placeholder="Type your answer..."
+                  />
+                  <button
+                    className={styles.buzzSubmit}
+                    onClick={() => {
+                      if (!textInput.trim()) return;
+                      setHasSubmitted(true);
+                      sendAction("student_answer", { studentId, answer: textInput.trim() });
+                      setShowFeedback(true);
+                      setFeedbackCorrect(null);
+                      setFeedbackText("Answer locked! The teacher will judge your response.");
+                    }}
+                    disabled={!textInput.trim()}
+                  >
+                    Lock In Answer 🔒
+                  </button>
+                </>
+              )}
+              {(hasSubmitted || room.gameMode !== "jeopardy") && !hasSubmitted && (
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#4a637d" }}>Waiting for teacher...</div>
+              )}
+              {hasSubmitted && room.gameMode === "jeopardy" && (
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#00c8f0" }}>Locked in ✓</div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     );
   }
 
-  // === ODD ONE OUT: 2x2 Grid ===
+  // ── ODD ONE OUT ──────────────────────────────────
   if (room.gameMode === "oddoneout") {
-    const words = room.currentQuestion?.words || ["...", "...", "...", "..."];
+    const words: string[] = room.currentQuestion?.words || ["...", "...", "...", "..."];
     return (
-      <div className={styles.screen} style={teamBgStyle}>
-        {renderTeamBanner()}
-        <h2 style={{ marginBottom: '1.5rem', marginTop: myTeamInfo ? '3rem' : '0' }}>Tap the Outlier</h2>
-        <div className={styles.grid2x2}>
-          {words.map((w: string, idx: number) => {
-            const colors = [styles.btnRed, styles.btnBlue, styles.btnYellow, styles.btnGreen];
-            return (
-              <button 
-                key={idx} 
-                className={`${styles.optionBtn} ${colors[idx % 4]} ${selectedWord === w ? styles.btnSelected : ''} ${selectedWord && selectedWord !== w ? styles.btnDisabled : ''}`}
+      <div className={styles.screen}>
+        {renderGameChrome()}
+        <div className={styles.gameBody}>
+          <div className={styles.questionCard}>
+            Tap the word that doesn&apos;t belong
+          </div>
+          <div className={styles.optionsGrid}>
+            {words.map((w: string, idx: number) => (
+              <button
+                key={idx}
+                className={`${styles.optionBtn} ${selectedWord === w ? styles.optionSelected : ""} ${selectedWord && selectedWord !== w ? styles.optionDisabled : ""}`}
                 onClick={() => handleTapWord(w)}
                 disabled={!!selectedWord || !!teammateBlocked}
               >
                 {w}
               </button>
-            );
-          })}
+            ))}
+          </div>
+          {selectedWord && (
+            <div style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: "#00c8f0" }}>
+              &ldquo;{selectedWord}&rdquo; locked ✓
+            </div>
+          )}
+          {renderTeammateBlock()}
         </div>
-        {selectedWord && <p style={{ marginTop: '1rem', color: 'var(--accent)' }}>Answer locked! ✅</p>}
-        {renderTeammateBlocked()}
       </div>
     );
   }
 
-  // === FIX IT: Text input ===
+  // ── FIX IT ───────────────────────────────────────
   if (room.gameMode === "fixit") {
-    const isRevealed = room.answerRevealed;
-    const sInfo = room.students?.find((s:any) => s.id === studentId);
-    
-    const myAnswer = sInfo?.lastAnswer || textInput;
+    const isRevealed  = room.answerRevealed;
+    const sInfo       = room.students?.find((s: any) => s.id === studentId);
+    const myAnswer    = sInfo?.lastAnswer || textInput;
     const correctAnswer = room.currentQuestion?.correctedSentence;
-    const isCorrect = myAnswer && correctAnswer && myAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
-    
-    const timeSeconds = (sInfo?.answerTime && room.questionStartTime) ? ((sInfo.answerTime - room.questionStartTime) / 1000).toFixed(1) + 's' : '';
+    const isCorrect   = myAnswer && correctAnswer &&
+      myAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
+    const timeMs      = sInfo?.answerTime && room.questionStartTime
+      ? ((sInfo.answerTime - room.questionStartTime) / 1000).toFixed(1) + "s"
+      : "";
 
     return (
-      <div className={styles.screen} style={teamBgStyle}>
-        {renderTeamBanner()}
-        <h2 style={{ marginBottom: '0.5rem', marginTop: myTeamInfo ? '3rem' : '0' }}>Correct the Sentence</h2>
-        {room.currentQuestion?.brokenSentence && !isRevealed && (
-          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '12px', marginBottom: '1rem', maxWidth: '90%', textAlign: 'center', fontSize: '1.1rem', border: '1px solid rgba(255,255,255,0.1)' }}>
-            &ldquo;{room.currentQuestion.brokenSentence}&rdquo;
-          </div>
-        )}
-        
-        {!isRevealed ? (
-          <>
-            {teammateBlocked ? (
-              renderTeammateBlocked()
-            ) : (
+      <div className={styles.screen}>
+        {renderGameChrome()}
+        <div className={styles.gameBody}>
+          <div className={styles.fixitPromptLabel}>Find &amp; fix the error</div>
+
+          {/* Sentence */}
+          {room.currentQuestion?.brokenSentence && !isRevealed && (
+            <div className={styles.fixitSentence}>
+              &ldquo;{room.currentQuestion.brokenSentence}&rdquo;
+            </div>
+          )}
+
+          {/* Hint */}
+          {room.currentQuestion?.hint && !isRevealed && !hasSubmitted && (
+            <div className={styles.fixitHint}>
+              💡 <span>{room.currentQuestion.hint}</span>
+            </div>
+          )}
+
+          {!isRevealed ? (
             <>
-            <textarea 
-              className={styles.textArea} 
-              value={textInput} 
-              onChange={e => setTextInput(e.target.value)}
-              disabled={hasSubmitted}
-              placeholder="Type the corrected sentence..."
-            />
-            <button 
-              className={styles.submitBtn} 
-              onClick={handleSubmitAnswer}
-              disabled={hasSubmitted || !textInput.trim()}
-            >
-              {hasSubmitted ? "Locked In ✅" : "LOCK IN ANSWER 🔒"}
-            </button>
+              {teammateBlocked ? renderTeammateBlock() : (
+                <>
+                  <textarea
+                    className={styles.fixitInput}
+                    value={textInput}
+                    onChange={e => setTextInput(e.target.value)}
+                    disabled={hasSubmitted}
+                    placeholder="Type the corrected sentence..."
+                  />
+                  <button
+                    className={styles.fixitSubmit}
+                    onClick={handleSubmitAnswer}
+                    disabled={hasSubmitted || !textInput.trim()}
+                  >
+                    {hasSubmitted ? "Locked In ✓" : <>Submit Answer ✓</>}
+                  </button>
+                </>
+              )}
             </>
-            )}
-          </>
-        ) : (
-          <div style={{ marginTop: '1rem', width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{
-              padding: '1.5rem',
-              borderRadius: '16px',
-              border: `2px solid ${isCorrect ? '#22c55e' : '#ef4444'}`,
-              background: isCorrect ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-              textAlign: 'center'
-            }}>
-              <h3 style={{ fontSize: '1.8rem', margin: '0 0 0.5rem 0' }}>{isCorrect ? '✅ You got it!' : '❌ Incorrect'}</h3>
-              {timeSeconds && <p style={{ opacity: 0.8, fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>Locked in at: {timeSeconds}</p>}
-            </div>
-            
-            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px' }}>
-              <p style={{ opacity: 0.5, fontSize: '0.9rem', margin: '0 0 0.5rem 0' }}>Your Answer:</p>
-              <p style={{ fontSize: '1.1rem', fontWeight: 600, color: isCorrect ? '#22c55e' : '#ef4444', margin: 0 }}>&ldquo;{myAnswer}&rdquo;</p>
-            </div>
-            
-            {!isCorrect && (
-              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px' }}>
-                <p style={{ opacity: 0.5, fontSize: '0.9rem', margin: '0 0 0.5rem 0' }}>Correct Answer:</p>
-                <p style={{ fontSize: '1.1rem', fontWeight: 600, color: '#2dd4bf', margin: 0 }}>&ldquo;{correctAnswer}&rdquo;</p>
+          ) : (
+            /* Answer revealed by teacher */
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{
+                padding: 20,
+                borderRadius: 18,
+                border: `2px solid ${isCorrect ? "rgba(0,232,122,0.4)" : "rgba(255,68,68,0.35)"}`,
+                background: isCorrect ? "rgba(0,232,122,0.08)" : "rgba(255,68,68,0.08)",
+                textAlign: "center"
+              }}>
+                <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 4 }}>
+                  {isCorrect ? "✓ You got it!" : "✗ Incorrect"}
+                </div>
+                {timeMs && (
+                  <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>Locked in at {timeMs}</div>
+                )}
               </div>
-            )}
-            
-            <p style={{ opacity: 0.5, textAlign: 'center', marginTop: '1rem' }}>Waiting for next round...</p>
-          </div>
-        )}
+              <div style={{ background: "#0e1520", padding: 16, borderRadius: 16 }}>
+                <div style={{ fontSize: 11, color: "#4a637d", fontFamily: "var(--font-mono,'JetBrains Mono',monospace)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Your Answer</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: isCorrect ? "#00e87a" : "#ff6060" }}>&ldquo;{myAnswer}&rdquo;</div>
+              </div>
+              {!isCorrect && (
+                <div style={{ background: "#0e1520", padding: 16, borderRadius: 16 }}>
+                  <div style={{ fontSize: 11, color: "#4a637d", fontFamily: "var(--font-mono,'JetBrains Mono',monospace)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Correct Answer</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "#00c8f0" }}>&ldquo;{correctAnswer}&rdquo;</div>
+                </div>
+              )}
+              <div style={{ textAlign: "center", fontSize: 13, fontWeight: 600, color: "#4a637d" }}>
+                Waiting for next round...
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
 
-  // === WOULD YOU RATHER: A/B Vote ===
+  // ── WOULD YOU RATHER ─────────────────────────────
   if (room.gameMode === "wyr") {
     const votedStudents = room.students?.filter((s: any) => s.answered) || [];
-    const votersA = votedStudents.filter((s: any) => s.lastAnswer === 'A');
-    const votersB = votedStudents.filter((s: any) => s.lastAnswer === 'B');
-    const total = votersA.length + votersB.length;
-    const pctA = total > 0 ? Math.round((votersA.length / total) * 100) : 0;
-    const pctB = total > 0 ? Math.round((votersB.length / total) * 100) : 0;
+    const votersA = votedStudents.filter((s: any) => s.lastAnswer === "A");
+    const votersB = votedStudents.filter((s: any) => s.lastAnswer === "B");
+    const total   = votersA.length + votersB.length;
+    const pctA    = total > 0 ? Math.round((votersA.length / total) * 100) : 0;
+    const pctB    = total > 0 ? Math.round((votersB.length / total) * 100) : 0;
 
     return (
-      <div className={styles.screen} style={teamBgStyle}>
-        {renderTeamBanner()}
-        <h2 style={{ marginBottom: '1.5rem', marginTop: myTeamInfo ? '3rem' : '0' }}>Would You Rather?</h2>
-        {room.currentQuestion && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '90%', maxWidth: '400px' }}>
-            <button 
-              className={styles.submitBtn}
-              onClick={() => handleVote('A')}
-              disabled={hasVoted}
-              style={{ background: hasVoted && me?.lastAnswer === 'A' ? '#ff4d4d' : hasVoted ? '#333' : '#ff4d4d', padding: '2rem', fontSize: '1.1rem', fontWeight: 700 }}
-            >
-              {room.currentQuestion.optionA}
-            </button>
-            <div style={{ textAlign: 'center', fontWeight: 900, fontSize: '1.5rem', opacity: 0.3 }}>VS</div>
-            <button 
-              className={styles.submitBtn}
-              onClick={() => handleVote('B')}
-              disabled={hasVoted}
-              style={{ background: hasVoted && me?.lastAnswer === 'B' ? '#4d9fff' : hasVoted ? '#333' : '#4d9fff', padding: '2rem', fontSize: '1.1rem', fontWeight: 700 }}
-            >
-              {room.currentQuestion.optionB}
-            </button>
+      <div className={styles.screen}>
+        {renderGameChrome()}
+        <div className={styles.gameBody}>
+          {room.currentQuestion ? (
+            <>
+              <div className={styles.questionCard} style={{ fontSize: 14 }}>
+                Would you rather...?
+              </div>
+              <div className={styles.wyrGrid}>
+                <button
+                  className={`${styles.wyrOption} ${styles.wyrOptionA}`}
+                  onClick={() => handleVote("A")}
+                  disabled={hasVoted}
+                  style={hasVoted && me?.lastAnswer === "A" ? { outline: "3px solid rgba(255,255,255,0.4)" } : {}}
+                >
+                  {room.currentQuestion.optionA}
+                </button>
+                <div className={styles.wyrVsLabel}>VS</div>
+                <button
+                  className={`${styles.wyrOption} ${styles.wyrOptionB}`}
+                  onClick={() => handleVote("B")}
+                  disabled={hasVoted}
+                  style={hasVoted && me?.lastAnswer === "B" ? { outline: "3px solid rgba(255,255,255,0.4)" } : {}}
+                >
+                  {room.currentQuestion.optionB}
+                </button>
+              </div>
 
-            {/* Percentage Bar: visible after voting or if already voted */}
-            <div style={{ 
-              marginTop: '1.5rem', 
-              padding: '1.5rem', 
-              background: 'rgba(255,255,255,0.05)', 
-              borderRadius: '20px',
-              border: '1px solid rgba(255,255,255,0.1)',
-              animation: 'fadeIn 0.5s ease'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
-                <span style={{ color: '#ff4d4d', fontWeight: 900, fontSize: '1.5rem' }}>{pctA}%</span>
-                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase' }}>
-                  {total} Vote{total !== 1 ? 's' : ''}
-                </span>
-                <span style={{ color: '#4d9fff', fontWeight: 900, fontSize: '1.5rem' }}>{pctB}%</span>
+              {/* Vote bar */}
+              <div className={styles.wyrBar}>
+                <div className={styles.wyrBarHeader}>
+                  <span className={styles.wyrBarPctA}>{pctA}%</span>
+                  <span className={styles.wyrBarCount}>{total} vote{total !== 1 ? "s" : ""}</span>
+                  <span className={styles.wyrBarPctB}>{pctB}%</span>
+                </div>
+                <div className={styles.wyrBarTrack}>
+                  <div className={styles.wyrBarFillA} style={{ width: `${pctA}%` }} />
+                  <div className={styles.wyrBarFillB} style={{ width: `${pctB}%` }} />
+                </div>
+                {hasVoted && <div className={styles.wyrVotedLabel}>VOTE RECORDED ✓</div>}
               </div>
-              <div style={{ display: 'flex', height: '12px', borderRadius: '6px', overflow: 'hidden', background: 'rgba(255,255,255,0.1)' }}>
-                <div style={{ width: `${pctA}%`, background: '#ff4d4d', transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }} />
-                <div style={{ width: `${pctB}%`, background: '#4d9fff', transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }} />
-              </div>
-              {hasVoted && <p style={{ marginTop: '1rem', color: 'var(--accent)', fontWeight: 800, fontSize: '0.9rem' }}>VOTE RECORDED ✅</p>}
+            </>
+          ) : (
+            <div className={styles.loadingState}>
+              <div className={styles.loadingEmoji}>💬</div>
+              <div className={styles.loadingMuted}>Waiting for next scenario...</div>
             </div>
-          </div>
-        )}
-        {!room.currentQuestion && <p style={{ opacity: 0.5 }}>Waiting for next scenario...</p>}
+          )}
+        </div>
       </div>
     );
   }
 
-  // === PASSIVE GAMES: Hot Seat, Story Chain ===
-  if (room.gameMode === "hotseat" || room.gameMode === "story") {
-    return (
-      <div className={styles.screen} style={teamBgStyle}>
-        {renderTeamBanner()}
-        <h2 style={{ marginTop: myTeamInfo ? '3rem' : '0' }}>🎬 Watch the Projector!</h2>
-        <p style={{ opacity: 0.5, maxWidth: '80%', textAlign: 'center' }}>This game is played live in the classroom. Watch the projector and follow along!</p>
-        <div style={{ fontSize: '4rem', marginTop: '1rem' }}>{room.gameMode === "hotseat" ? "🪑" : "📖"}</div>
-      </div>
-    );
-  }
-
-  // Fallback
-  return <div className={styles.screen}><p style={{ opacity: 0.5 }}>Waiting for game to begin...</p></div>;
+  // ── FALLBACK ─────────────────────────────────────
+  return (
+    <div className={styles.endScreen}>
+      <div className={styles.loadingEmoji} style={{ fontSize: 48 }}>🎮</div>
+      <div className={styles.endSub}>Waiting for game to begin...</div>
+    </div>
+  );
 }
