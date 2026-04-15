@@ -53,6 +53,75 @@ export default function OddOneOut() {
   const [roomStudents, setRoomStudents] = useState<any[]>([]);
   const [roomData, setRoomData] = useState<any>(null);
 
+  const currentQ = questions?.[currentIndex];
+
+  const scoreStudents = useCallback((students: any[], data: any) => {
+    const answeredStudents = students.filter((s: any) => s.answered && s.lastAnswer);
+    const correctAnswers: any[] = [];
+    const wrongAnswers: any[] = [];
+
+    answeredStudents.forEach((s: any) => {
+      const isCorrect = currentQ && s.lastAnswer === currentQ.answer;
+      if (isCorrect) correctAnswers.push(s);
+      else wrongAnswers.push(s);
+    });
+
+    correctAnswers.sort((a: any, b: any) => (a.answerTime || 0) - (b.answerTime || 0));
+
+    const newPointsEarned: Record<string, number> = {};
+
+    correctAnswers.forEach((s: any, idx: number) => {
+      let pts = 100;
+      if (idx === 0) pts = 500;
+      else if (idx === 1) pts = 400;
+      else if (idx === 2) pts = 300;
+      else if (idx === 3) pts = 200;
+
+      newPointsEarned[s.id] = pts;
+      const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
+      if (team) updateTeamScore(team.id, pts);
+    });
+
+    if (penalizeWrong) {
+      wrongAnswers.forEach((s: any) => {
+        newPointsEarned[s.id] = -100;
+        const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
+        if (team) updateTeamScore(team.id, -100);
+      });
+    }
+
+    setPointsEarned(newPointsEarned);
+  }, [currentQ, currentTeams, updateTeamScore, penalizeWrong]);
+
+  const handleReveal = useCallback(async () => {
+    setTimerActive(false);
+    setShowTimesUp(false);
+    setShowAnswer(true);
+
+    if (activeRoomCode) {
+      await fetch("/api/room/action", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: { answer: currentQ?.answer, explanation: currentQ?.hint } })
+      }).catch(() => {});
+
+      // Fetch fresh data for accurate scoring
+      try {
+        const res = await fetch(`/api/room/get?code=${activeRoomCode}`);
+        if (res.ok) {
+          const freshData = await res.json();
+          const freshStudents = freshData.students || [];
+          setRoomStudents(freshStudents);
+          setRoomData(freshData);
+          scoreStudents(freshStudents, freshData);
+        }
+      } catch (e) {
+        console.error("Failed to fetch fresh data for scoring", e);
+        scoreStudents(roomStudents, roomData);
+      }
+    } else {
+      scoreStudents(roomStudents, roomData);
+    }
+  }, [activeRoomCode, currentQ, roomStudents, roomData, scoreStudents]);
 
   // Poll for student responses
   useEffect(() => {
@@ -90,7 +159,6 @@ export default function OddOneOut() {
       handleReveal();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // @ts-ignore — handleReveal is declared after early return but is in scope at runtime
   }, [roomStudents, showAnswer, handleReveal]);
 
   // Timer countdown — show TIME'S UP but do NOT auto-reveal
@@ -109,8 +177,6 @@ export default function OddOneOut() {
   useEffect(() => setMounted(true), []);
 
   if (!mounted) return null;
-
-  const currentQ = questions?.[currentIndex];
 
   const handleGenerate = async () => {
     
@@ -198,74 +264,6 @@ export default function OddOneOut() {
     setTimeLeft(timerDuration);
     setTimerActive(true);
     setPhase("PLAYING");
-  };
-
-  const handleReveal = useCallback(async () => {
-    setTimerActive(false);
-    setShowTimesUp(false);
-    setShowAnswer(true);
-
-    if (activeRoomCode) {
-      await fetch("/api/room/action", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: { answer: currentQ?.answer, explanation: currentQ?.hint } })
-      }).catch(() => {});
-
-      // Fetch fresh data for accurate scoring
-      try {
-        const res = await fetch(`/api/room/get?code=${activeRoomCode}`);
-        if (res.ok) {
-          const freshData = await res.json();
-          const freshStudents = freshData.students || [];
-          setRoomStudents(freshStudents);
-          setRoomData(freshData);
-          scoreStudents(freshStudents, freshData);
-        }
-      } catch (e) {
-        console.error("Failed to fetch fresh data for scoring", e);
-        scoreStudents(roomStudents, roomData);
-      }
-    } else {
-      scoreStudents(roomStudents, roomData);
-    }
-  }, [activeRoomCode, currentQ, roomStudents, roomData, currentTeams, updateTeamScore, penalizeWrong]);
-
-  const scoreStudents = (students: any[], data: any) => {
-    const answeredStudents = students.filter((s: any) => s.answered && s.lastAnswer);
-    const correctAnswers: any[] = [];
-    const wrongAnswers: any[] = [];
-    
-    answeredStudents.forEach((s: any) => {
-      const isCorrect = currentQ && s.lastAnswer === currentQ.answer;
-      if (isCorrect) correctAnswers.push(s);
-      else wrongAnswers.push(s);
-    });
-    
-    correctAnswers.sort((a: any, b: any) => (a.answerTime || 0) - (b.answerTime || 0));
-    
-    const newPointsEarned: Record<string, number> = {};
-    
-    correctAnswers.forEach((s: any, idx: number) => {
-      let pts = 100;
-      if (idx === 0) pts = 500;
-      else if (idx === 1) pts = 400;
-      else if (idx === 2) pts = 300;
-      else if (idx === 3) pts = 200;
-      
-      newPointsEarned[s.id] = pts;
-      const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
-      if (team) updateTeamScore(team.id, pts);
-    });
-    
-    if (penalizeWrong) {
-      wrongAnswers.forEach((s: any) => {
-        newPointsEarned[s.id] = -100;
-        const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
-        if (team) updateTeamScore(team.id, -100);
-      });
-    }
-    
-    setPointsEarned(newPointsEarned);
   };
 
   const nextQuestion = async () => {
