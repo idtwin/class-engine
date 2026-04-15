@@ -268,6 +268,21 @@ export default function PlayPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room?.answerRevealed]);
 
+  // Odd One Out: evaluate when answerRevealed flips
+  useEffect(() => {
+    if (room?.gameMode !== "oddoneout") return;
+    if (!room?.answerRevealed || feedbackCorrect !== null) return;
+    if (!selectedWord) return; // student didn't tap — edge case handled in render
+    const correct = selectedWord === room.revealedAnswer;
+    recordResult(
+      correct,
+      correct
+        ? `Correct! ${room.revealedExplanation || "Well spotted!"}`
+        : `The odd one out was "${room.revealedAnswer}". ${room.revealedExplanation || "Keep it up!"}`
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room?.answerRevealed]);
+
   // ════════════════════════════════════════════════
   // RENDER HELPERS
   // ════════════════════════════════════════════════
