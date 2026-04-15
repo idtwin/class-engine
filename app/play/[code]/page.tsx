@@ -915,34 +915,94 @@ export default function PlayPage() {
     );
   }
 
-  // ── ODD ONE OUT ──────────────────────────────────
-  if (room.gameMode === "oddoneout") {
-    const words: string[] = room.currentQuestion?.words || ["...", "...", "...", "..."];
+  // ── ODD ONE OUT ─────────────────────────────────
+  if (room.gameMode === "oddoneout" && room.currentQuestion) {
+    const q = room.currentQuestion;
+    const isRevealed = !!room.answerRevealed;
+    const anyPicked  = !!selectedWord;
+
+    // Sub-state 2: tapped but not yet revealed → locked-in screen
+    if (anyPicked && !isRevealed && !showFeedback) {
+      return (
+        <div className={styles.screen}>
+          {renderGameChrome()}
+          <div className={styles.gameBody}>
+            <div className={styles.lockedScreen}>
+              <div className={styles.lockedIcon}>🔒</div>
+              <div className={styles.lockedTitle}>Locked In!</div>
+              <div className={styles.lockedWord}>{selectedWord}</div>
+              <div className={styles.lockedWaiting}>
+                <div className={styles.waitDots}>
+                  <div className={styles.waitDot} />
+                  <div className={styles.waitDot} />
+                  <div className={styles.waitDot} />
+                </div>
+                <div className={styles.lockedWaitingText}>Waiting for class...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Edge case: teacher revealed but student never tapped → show grid with answer highlighted
+    if (isRevealed && !anyPicked && !showFeedback) {
+      return (
+        <div className={styles.screen}>
+          {renderGameChrome()}
+          <div className={styles.gameBody}>
+            <div className={styles.fixitPromptLabel}>Which word doesn't belong?</div>
+            <div className={styles.ooGrid}>
+              {(q.words as string[]).map((word: string) => {
+                const isAnswer = word === room.revealedAnswer;
+                return (
+                  <div
+                    key={word}
+                    className={`${styles.ooBtn} ${isAnswer ? styles.ooBtnRevealed : styles.ooBtnDisabled}`}
+                  >
+                    {word}
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ textAlign: "center", fontSize: 13, color: "var(--muted)", marginTop: 12 }}>
+              The odd one out was{" "}
+              <strong style={{ color: "#00e87a" }}>{room.revealedAnswer}</strong>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Sub-state 1: word grid (default — nothing tapped yet)
     return (
       <div className={styles.screen}>
         {renderGameChrome()}
         <div className={styles.gameBody}>
-          <div className={styles.questionCard}>
-            Tap the word that doesn&apos;t belong
-          </div>
-          <div className={styles.optionsGrid}>
-            {words.map((w: string, idx: number) => (
-              <button
-                key={idx}
-                className={`${styles.optionBtn} ${selectedWord === w ? styles.optionSelected : ""} ${selectedWord && selectedWord !== w ? styles.optionDisabled : ""}`}
-                onClick={() => handleTapWord(w)}
-                disabled={!!selectedWord || !!teammateBlocked}
-              >
-                {w}
-              </button>
-            ))}
-          </div>
-          {selectedWord && (
-            <div style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: "#00c8f0" }}>
-              &ldquo;{selectedWord}&rdquo; locked ✓
+          <div className={styles.fixitPromptLabel}>Which word doesn't belong?</div>
+          {renderTeammateBlock()}
+          {!teammateBlocked && (
+            <div className={styles.ooGrid}>
+              {(q.words as string[]).map((word: string) => (
+                <button
+                  key={word}
+                  className={styles.ooBtn}
+                  onClick={async () => {
+                    if (selectedWord || teammateBlocked) return;
+                    const result = await sendAction("student_answer", { studentId, answer: word });
+                    if (result?.error === "teammate_answered") {
+                      setTeammateBlocked(result.answeredBy);
+                      return;
+                    }
+                    setSelectedWord(word);
+                  }}
+                  disabled={!!selectedWord || !!teammateBlocked}
+                >
+                  {word}
+                </button>
+              ))}
             </div>
           )}
-          {renderTeammateBlock()}
         </div>
       </div>
     );
