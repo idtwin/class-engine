@@ -210,19 +210,6 @@ export default function PlayPage() {
     setFeedbackText("Locked in! Waiting for the teacher to reveal the answer...");
   };
 
-  const handleTapWord = async (word: string) => {
-    if (selectedWord) return;
-    const result = await sendAction("student_answer", { studentId, answer: word });
-    if (result?.error === "teammate_answered") {
-      setTeammateBlocked(result.answeredBy);
-      return;
-    }
-    setSelectedWord(word);
-    setShowFeedback(true);
-    setFeedbackCorrect(null);
-    setFeedbackText("Answer locked! Waiting for the teacher...");
-  };
-
   // Rapid fire: evaluate when answerRevealed flips
   useEffect(() => {
     if (
