@@ -1,6 +1,6 @@
 {
-  "name": "tmp_app",
-  "version": "0.1.0",
+  "name": "class-engine",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
