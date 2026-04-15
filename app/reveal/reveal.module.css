@@ -399,3 +399,81 @@
   border-color: #a855f7;
   outline: none;
 }
+
+/* ── New layout shell (Fix It pattern) ── */
+.page {
+  position: fixed;
+  top: var(--nav-h, 60px); left: 0; right: 0;
+  bottom: var(--scoreboard-h, 88px);
+  display: grid; grid-template-rows: 64px 1fr;
+  overflow: hidden; background: var(--bg, #07090f);
+}
+.gameHeader {
+  display: flex; align-items: center; gap: 20px;
+  padding: 0 40px;
+  border-bottom: 1px solid var(--border, #1c2a40);
+  background: var(--surface, #0e1420); flex-shrink: 0;
+}
+.gameTitle {
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  font-size: 13px; font-weight: 700; letter-spacing: 0.2em;
+  color: #00c8f0; text-transform: uppercase;
+}
+.headerDivider { width: 1px; height: 20px; background: var(--border2, #243347); }
+.qCounter { font-family: var(--font-mono, 'JetBrains Mono'), monospace; font-size: 12px; color: var(--muted, #4a637d); letter-spacing: 0.1em; }
+.qCounterNum { color: var(--text, #dce8f5); font-weight: 700; }
+.headerSpacer { flex: 1; }
+.gameContent {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 32px 60px; gap: 28px; overflow: auto;
+}
+.setupOverlay {
+  position: fixed; inset: 0; background: rgba(7,9,15,0.92);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100; padding: 20px;
+}
+.setupModal {
+  background: var(--surface, #0e1420); border: 1px solid var(--border2, #243347);
+  border-radius: 20px; padding: 36px 40px;
+  width: 100%; max-width: 600px;
+  display: flex; flex-direction: column; gap: 24px;
+}
+.setupTitleRow { display: flex; align-items: center; gap: 16px; }
+.setupTitleIcon { font-size: 32px; line-height: 1; }
+.setupTitleText { font-size: 22px; font-weight: 800; color: var(--text, #dce8f5); letter-spacing: -0.01em; }
+.setupTitleSub {
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  font-size: 11px; color: var(--muted, #4a637d);
+  letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px;
+}
+.setupField { display: flex; flex-direction: column; gap: 8px; }
+.setupLabel {
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted, #4a637d);
+}
+.setupInput {
+  background: var(--surface2, #131b2b); border: 1px solid var(--border2, #243347);
+  border-radius: 10px; padding: 12px 16px; font-size: 15px; color: var(--text, #dce8f5);
+  outline: none; font-family: inherit; transition: border-color 0.15s; width: 100%; box-sizing: border-box;
+}
+.setupInput:focus { border-color: #00c8f0; }
+.setupInput::placeholder { color: var(--muted, #4a637d); }
+.btnGenerate {
+  background: #00c8f0; color: #000; border: none; border-radius: 10px; padding: 14px 24px;
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer; transition: opacity 0.15s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btnGenerate:disabled { opacity: 0.4; cursor: default; }
+.generatingState { display: flex; align-items: center; gap: 14px; padding: 8px 0; }
+.spinner {
+  width: 20px; height: 20px; border: 2px solid var(--border2, #243347);
+  border-top-color: #00c8f0; border-radius: 50%; animation: spinNew 0.8s linear infinite; flex-shrink: 0;
+}
+@keyframes spinNew { to { transform: rotate(360deg); } }
+.generatingText {
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  font-size: 13px; color: var(--muted, #4a637d); letter-spacing: 0.1em;
+}

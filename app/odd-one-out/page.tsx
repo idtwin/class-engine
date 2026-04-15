@@ -3,11 +3,9 @@
 import { useState, useEffect } from "react";
 import styles from "./odd.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
-import Link from "next/link";
-import { ArrowLeft, Sparkles, Lightbulb, ChevronRight, Ban } from "lucide-react";
+import { Sparkles, Lightbulb, ChevronRight, Ban } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
 import GameTimer from "../components/GameTimer";
-import GameSettingsDrawer from "../components/GameSettingsDrawer";
 import BoardLibrary from "../components/BoardLibrary";
 import { SavedBoard } from "../store/useClassroomStore";
 
@@ -26,7 +24,7 @@ function shuffleArray<T>(arr: T[]): T[] {
 
 export default function OddOneOut() {
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, getActiveApiKey, getActiveModel, llmProvider, activeRoomCode, saveBoard } = useClassroomStore();
+  const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider, activeRoomCode, saveBoard } = useClassroomStore();
   
   const handleLoadBoard = (saved: SavedBoard) => {
     setQuestions(saved.content);
@@ -156,7 +154,7 @@ export default function OddOneOut() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           apiKey: getActiveApiKey(), 
-          mistralModel: getActiveModel(), 
+          mistralModel, 
           provider: llmProvider, 
           topic, 
           level: levelFilter 
@@ -305,255 +303,314 @@ export default function OddOneOut() {
 
   const currentQ = questions?.[currentIndex];
 
+  const timerDur = timerDuration;
+  const timerPct = timerDur > 0 ? (timeLeft / timerDur) * 100 : 100;
+  const timerUrgent = timeLeft <= 5 && timerDur > 0 && timerActive;
+
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <Link href="/games" style={{ textDecoration: 'none' }}>
-             <button className={styles.iconBtn}><ArrowLeft color="#BC13FE" /></button>
-          </Link>
-          <h1 style={{ margin: 0, color: '#BC13FE', letterSpacing: '0.1em' }}>Odd One Out Generator</h1>
-        </div>
-           
-           <div className={styles.aiControls} style={{ marginLeft: '1rem' }}>
-             <MultiplayerHost gameMode="oddoneout" />
-             <input 
-               placeholder="Topic (e.g. Planets)" 
-               value={topic}
-               onChange={e => setTopic(e.target.value)}
-               className={styles.topicInput}
-               onKeyDown={e => e.key === "Enter" && !isGenerating && handleGenerate()}
-             />
-             <button onClick={handleGenerate} disabled={isGenerating} className={styles.genBtn}>
-               <Sparkles size={20} /> Generate Sets
-             </button>
-             <BoardLibrary currentGameType="oddoneout" onLoadBoard={handleLoadBoard} />
-             <GameSettingsDrawer settings={[
-               { label: "Game Mode", type: "select", value: activeMode, onChange: (v: Mode) => { setActiveMode(v); if (v !== "Elimination") setEliminatedTeams(new Set()); }, options: [
-                 { value: "Classic", label: "Classic" },
-                 { value: "Debate", label: "Debate" },
-                 { value: "Elimination", label: "Elimination" },
-               ]},
-               { label: "Save Current Set", type: "checkbox", value: false, onChange: () => {
-                 const title = prompt("Name this word set:", topic);
-                 if (title) {
-                   saveBoard({ title, topic, gameType: 'oddoneout', content: questions! });
-                   alert("Set saved to library!");
-                 }
-               }, description: "Click to save current generated sets" },
-               { label: "Difficulty Level", type: "select", value: levelFilter, onChange: setLevelFilter, options: [
-                 { value: "Mixed Level", label: "Mixed Level" },
-                 { value: "Low", label: "Low (A1)" },
-                 { value: "Mid", label: "Mid (Intermediate)" },
-                 { value: "High", label: "High (Advanced)" },
-               ]},
-               { label: "Timer per Question", type: "select", value: String(timerDuration), onChange: (v: string) => setTimerDuration(Number(v)), options: [
-                 { value: "10", label: "10 seconds" },
-                 { value: "15", label: "15 seconds" },
-                 { value: "20", label: "20 seconds" },
-                 { value: "30", label: "30 seconds" },
-                 { value: "45", label: "45 seconds" },
-                 { value: "60", label: "60 seconds" },
-               ]},
-               { label: "Penalty for Wrong Answers", type: "checkbox", value: penalizeWrong, onChange: setPenalizeWrong, description: "Teams lose points for incorrect guesses" },
-             ]} />
-           </div>
-      </header>
+    <>
+      {/* Setup overlay — shown when no questions yet */}
+      {(!questions || isGenerating) && (
+        <div className={styles.setupOverlay}>
+          <div className={styles.setupModal}>
+            <div className={styles.setupTitleRow}>
+              <div className={styles.setupTitleIcon}>🔮</div>
+              <div>
+                <div className={styles.setupTitleText}>Odd One Out</div>
+                <div className={styles.setupTitleSub}>Word Pattern Recognition</div>
+              </div>
+              <div style={{ marginLeft: 'auto' }}>
+                <MultiplayerHost gameMode="oddoneout" />
+              </div>
+            </div>
 
-      {isGenerating ? (
-        <div className={styles.loadingState}>
-          <Sparkles size={100} className={styles.spinIcon} />
-          <span>Generating Pattern Exceptions...</span>
-        </div>
-      ) : !questions ? (
-        <div className={styles.emptyState}>
-          <span>SYSTEM IDLE<br/><br/>Enter a semantic set topic to generate pattern violations.</span>
-        </div>
-      ) : (
-        <div className={styles.canvasLeft}>
-           <div className={styles.gameSplit}>
-             {/* Left Column: Primary Game Area */}
-             <div className={styles.leftCol}>
-               <div className={styles.leftDecor}>
-                 LAT: 40.7128° N<br/>LNG: 74.0060° W<br/>STREAM: ENCRYPTED
-               </div>
-
-               <div className={styles.seqLabel}>
-                  SEQUENCE_0{currentIndex + 1} // {currentQ?.level.toUpperCase()}
-               </div>
-               
-               <div className={styles.questionTimerRow}>
-                 <h2 className={styles.mainSentence}>
-                    {activeMode === "Classic" && "ISOLATE THE ANOMALY."}
-                    {activeMode === "Debate" && "DEBATE PROTOCOL ACTIVE."}
-                    {activeMode === "Elimination" && "ELIMINATION PROTOCOL ACTIVE."}
-                 </h2>
-                 <GameTimer 
-                   timeLeft={timeLeft} 
-                   totalTime={timerDuration} 
-                   variant="circle" 
-                   showTimesUp={showTimesUp}
-                   className={styles.timerBig}
-                 />
-               </div>
-
-               <div className={styles.wordsGrid}>
-                 {currentQ?.words.map((w, i) => {
-                   const isSelected = selectedWord === w || (showAnswer && w === currentQ.answer);
-                   const isCorrectAnswer = w === currentQ.answer;
-
-                   let cardClass = styles.wordCard;
-                   if (isSelected) {
-                     if (isCorrectAnswer) cardClass += ` ${styles.wordCorrect}`;
-                     else cardClass += ` ${styles.wordWrong}`;
-                   } else if (showAnswer && !isCorrectAnswer) {
-                     cardClass += ` opacity-50`;
-                   }
-
-                   return (
-                     <div 
-                       key={i} 
-                       className={cardClass} 
-                       style={showAnswer && !isCorrectAnswer ? { opacity: 0.3 } : {}} 
-                       onClick={() => {
-                         if (showAnswer) return;
-                         setSelectedWord(w);
-                         if (w === currentQ.answer) {
-                           handleReveal();
-                         }
-                       }}
-                     >
-                       {w}
-                     </div>
-                   );
-                 })}
-               </div>
-
-               <div className={styles.techControls}>
-                 {!showAnswer ? (
-                    <button className={styles.btnSolidMagenta} onClick={handleReveal}>
-                      <Sparkles size={18} /> INITIATE REVEAL
-                    </button>
-                 ) : (
-                    <button className={styles.btnOutlineMagenta} onClick={nextQuestion} disabled={currentIndex === questions.length - 1}>
-                      NEXT SEQUENCE <ChevronRight size={18} />
-                    </button>
-                 )}
-                 
-                 <button className={styles.btnOutlineMagenta} style={{ borderStyle: 'dashed' }} onClick={() => setShowHint(true)} disabled={showHint || showAnswer}>
-                   <Lightbulb size={18} /> DEPLOY HINT
-                 </button>
-               </div>
-             </div>
-
-             {/* Right Column: Sidebar (Logs, Elimination, responses) */}
-             <div className={styles.rightCol}>
-               <div className={styles.systemLog}>
-                  <div className={styles.logHeader}>SYSTEM_LOG_v4.2</div>
-                  <div className={styles.logBody}>
-                    <span style={{ color: '#BC13FE' }}>[INIT]</span> Sequence array generated.<br/>
-                    {">"} Awaiting anomaly detection...<br/>
-                    {showHint && <><span style={{color: 'white'}}>{">"} SYSTEM_HINT: {currentQ?.hint}</span><br/></>}
-                    
-                    {roomStudents.filter((s:any) => s.answered).map((s:any, idx:number) => (
-                       <div key={idx} style={{ color: 'var(--accent-cyan)' }}>
-                         {">"} [SIGNAL LOCKED] {s.name} response registered.
-                       </div>
-                    ))}
-
-                    {showAnswer && <><span style={{color: '#BC13FE'}}>{">"} [ISOLATED] '{currentQ?.answer}' confirmed.</span><br/></>}
-
-                    {showAnswer && Object.entries(pointsEarned).map(([studentId, pts]) => {
-                       const studentName = roomStudents.find((s:any) => s.id === studentId)?.name || 'Unknown Node';
-                       return (
-                         <div key={studentId} style={{ color: pts > 0 ? '#BC13FE' : '#ef4444' }}>
-                            {">"} [SCORE] {studentName} {pts > 0 ? `+${pts}` : pts} pts.
-                         </div>
-                       );
-                    })}
-                    <br/>
-                    <span style={{ opacity: 0.5 }}>{">"} COMMAND_PROMPT_WAITING_</span>
+            {isGenerating ? (
+              <div className={styles.generatingState}>
+                <div className={styles.spinner} />
+                <div className={styles.generatingText}>Generating word sets...</div>
+              </div>
+            ) : (
+              <>
+                <div className={styles.setupField}>
+                  <div className={styles.setupLabel}>Topic / Theme</div>
+                  <input
+                    className={styles.setupInput}
+                    placeholder="e.g. Planets, Animals, Sports..."
+                    value={topic}
+                    onChange={e => setTopic(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && !isGenerating && handleGenerate()}
+                    autoFocus
+                  />
+                </div>
+                <div className={styles.setupRow}>
+                  <div className={styles.setupField}>
+                    <div className={styles.setupLabel}>Difficulty</div>
+                    <select className={styles.setupSelect} value={levelFilter} onChange={e => setLevelFilter(e.target.value)}>
+                      <option value="Mixed Level">Mixed Level</option>
+                      <option value="Low">Low (A1)</option>
+                      <option value="Mid">Mid (A2)</option>
+                      <option value="High">High (B1)</option>
+                    </select>
                   </div>
-               </div>
-
-               {/* Elimination Module (Sideline) */}
-               {activeMode === "Elimination" && currentTeams.length > 0 && (
-                 <div style={{ padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                   <h3 style={{ marginBottom: '1rem', color: '#ff4444', textTransform: 'uppercase', fontSize: '0.7rem', fontFamily: 'monospace' }}>// ELIMINATION_TRACKER</h3>
-                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                     {currentTeams.map(t => {
-                       const eliminated = eliminatedTeams.has(t.id);
-                       return (
-                         <button 
-                           key={t.id} 
-                           onClick={() => toggleElimination(t.id)}
-                           style={{ 
-                             padding: '0.6rem', 
-                             borderRadius: '6px', 
-                             border: '1px solid',
-                             borderColor: eliminated ? '#ff4444' : 'rgba(255,255,255,0.1)',
-                             background: eliminated ? 'rgba(239, 68, 68, 0.1)' : 'rgba(0,0,0,0.3)',
-                             color: eliminated ? '#ff4444' : 'white',
-                             fontWeight: 'bold',
-                             fontSize: '0.8rem',
-                             cursor: 'pointer',
-                             display: 'flex',
-                             alignItems: 'center',
-                             justifyContent: 'space-between',
-                             transition: 'all 0.2s'
-                           }}
-                         >
-                           {t.name} {eliminated && <Ban size={14} />}
-                         </button>
-                       )
-                     })}
-                   </div>
-                 </div>
-               )}
-
-               {/* Pre-reveal Lock-in Status */}
-               {!showAnswer && activeRoomCode && roomStudents.length > 0 && (
-                 <div style={{ padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                   <h3 style={{ marginBottom: '1rem', color: '#BC13FE', fontFamily: 'monospace', fontSize: '0.7rem' }}>// NETWORK_STATUS: {roomStudents.filter((s:any) => s.answered).length} LOCKED</h3>
-                   <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                     {roomStudents.map((s: any, i: number) => (
-                       <div key={i} style={{
-                         padding: '0.3rem 0.6rem',
-                         borderRadius: '4px',
-                         fontSize: '0.75rem',
-                         background: s.answered ? 'rgba(188, 19, 254, 0.1)' : 'rgba(255,255,255,0.02)',
-                         border: `1px solid ${s.answered ? '#BC13FE' : 'rgba(255,255,255,0.05)'}`,
-                         opacity: s.answered ? 1 : 0.4,
-                         color: s.answered ? '#BC13FE' : 'white'
-                       }}>
-                         {s.name}
-                       </div>
-                     ))}
-                   </div>
-                 </div>
-               )}
-
-               {/* Post-reveal Responses */}
-               {showAnswer && activeRoomCode && roomStudents.filter((s: any) => s.answered).length > 0 && (
-                 <div style={{ padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                   <h3 style={{ marginBottom: '1rem', color: '#BC13FE', fontFamily: 'monospace', fontSize: '0.7rem' }}>// NETWORK_RESPONSES</h3>
-                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                     {roomStudents.filter((s: any) => s.answered).map((s: any, i: number) => {
-                       const isCorrect = currentQ && s.lastAnswer === currentQ.answer;
-                       return (
-                         <div key={i} style={{ padding: '0.6rem 0.8rem', background: 'rgba(0,0,0,0.3)', border: `1px solid ${isCorrect ? '#BC13FE' : 'rgba(255,0,0,0.3)'}`, borderRadius: '4px' }}>
-                           <div style={{ fontWeight: 800, color: isCorrect ? 'white' : 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>{s.name}</div>
-                           <div style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)' }}>{s.lastAnswer}</div>
-                         </div>
-                       );
-                     })}
-                   </div>
-                 </div>
-               )}
-             </div>
-           </div>
+                  <div className={styles.setupField}>
+                    <div className={styles.setupLabel}>Game Mode</div>
+                    <select className={styles.setupSelect} value={activeMode} onChange={e => setActiveMode(e.target.value as Mode)}>
+                      <option value="Classic">Classic</option>
+                      <option value="Debate">Debate</option>
+                      <option value="Elimination">Elimination</option>
+                    </select>
+                  </div>
+                </div>
+                <div className={styles.setupRow}>
+                  <div className={styles.setupField}>
+                    <div className={styles.setupLabel}>Timer per Question</div>
+                    <select className={styles.setupSelect} value={timerDuration} onChange={e => setTimerDuration(Number(e.target.value))}>
+                      <option value={10}>10 seconds</option>
+                      <option value={15}>15 seconds</option>
+                      <option value={20}>20 seconds</option>
+                      <option value={30}>30 seconds</option>
+                      <option value={45}>45 seconds</option>
+                    </select>
+                  </div>
+                  <div className={styles.setupField}>
+                    <div className={styles.setupLabel}>Penalty for Wrong</div>
+                    <select className={styles.setupSelect} value={String(penalizeWrong)} onChange={e => setPenalizeWrong(e.target.value === 'true')}>
+                      <option value="false">No penalty</option>
+                      <option value="true">Deduct points</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <button className={styles.btnGenerate} onClick={handleGenerate} disabled={!topic.trim()}>
+                    <Sparkles size={16} /> Generate Sets
+                  </button>
+                  <BoardLibrary currentGameType="oddoneout" onLoadBoard={handleLoadBoard} />
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
-    </div>
+
+      {/* Game view */}
+      {questions && !isGenerating && (
+        <div className={styles.page}>
+          <div className={styles.gameHeader}>
+            <div className={styles.gameTitle}>Odd One Out</div>
+            <div className={styles.headerDivider} />
+            <div className={styles.qCounter}>
+              Q <span className={styles.qCounterNum}>{currentIndex + 1}</span> / {questions.length}
+            </div>
+            <div className={styles.headerDivider} />
+            <div className={styles.qCounter}>{activeMode}</div>
+            <div className={styles.headerSpacer} />
+            {timerDur > 0 && (
+              <div className={styles.timerWrap}>
+                <div className={`${styles.timerNum} ${timerUrgent ? styles.timerNumUrgent : ''}`}>
+                  {timeLeft}
+                </div>
+                <div className={styles.timerBar}>
+                  <div
+                    className={`${styles.timerBarFill} ${timerUrgent ? styles.timerBarFillUrgent : ''}`}
+                    style={{ width: `${timerPct}%` }}
+                  />
+                </div>
+              </div>
+            )}
+            <button
+              style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 8, padding: '6px 14px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer' }}
+              onClick={() => { setQuestions(null); setCurrentIndex(0); }}
+            >
+              ← New Game
+            </button>
+          </div>
+          <div className={styles.gameContent}>
+            <div className={styles.canvasLeft}>
+              <div className={styles.gameSplit}>
+                {/* Left Column: Primary Game Area */}
+                <div className={styles.leftCol}>
+                  <div className={styles.leftDecor}>
+                    LAT: 40.7128° N<br/>LNG: 74.0060° W<br/>STREAM: ENCRYPTED
+                  </div>
+
+                  <div className={styles.seqLabel}>
+                    SEQUENCE_0{currentIndex + 1} // {currentQ?.level.toUpperCase()}
+                  </div>
+
+                  <div className={styles.questionTimerRow}>
+                    <h2 className={styles.mainSentence}>
+                      {activeMode === "Classic" && "ISOLATE THE ANOMALY."}
+                      {activeMode === "Debate" && "DEBATE PROTOCOL ACTIVE."}
+                      {activeMode === "Elimination" && "ELIMINATION PROTOCOL ACTIVE."}
+                    </h2>
+                    <GameTimer
+                      timeLeft={timeLeft}
+                      totalTime={timerDuration}
+                      variant="circle"
+                      showTimesUp={showTimesUp}
+                      className={styles.timerBig}
+                    />
+                  </div>
+
+                  <div className={styles.wordsGrid}>
+                    {currentQ?.words.map((w, i) => {
+                      const isSelected = selectedWord === w || (showAnswer && w === currentQ.answer);
+                      const isCorrectAnswer = w === currentQ.answer;
+
+                      let cardClass = styles.wordCard;
+                      if (isSelected) {
+                        if (isCorrectAnswer) cardClass += ` ${styles.wordCorrect}`;
+                        else cardClass += ` ${styles.wordWrong}`;
+                      } else if (showAnswer && !isCorrectAnswer) {
+                        cardClass += ` opacity-50`;
+                      }
+
+                      return (
+                        <div
+                          key={i}
+                          className={cardClass}
+                          style={showAnswer && !isCorrectAnswer ? { opacity: 0.3 } : {}}
+                          onClick={() => {
+                            if (showAnswer) return;
+                            setSelectedWord(w);
+                            if (w === currentQ.answer) {
+                              handleReveal();
+                            }
+                          }}
+                        >
+                          {w}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className={styles.techControls}>
+                    {!showAnswer ? (
+                      <button className={styles.btnSolidMagenta} onClick={handleReveal}>
+                        <Sparkles size={18} /> INITIATE REVEAL
+                      </button>
+                    ) : (
+                      <button className={styles.btnOutlineMagenta} onClick={nextQuestion} disabled={currentIndex === questions.length - 1}>
+                        NEXT SEQUENCE <ChevronRight size={18} />
+                      </button>
+                    )}
+
+                    <button className={styles.btnOutlineMagenta} style={{ borderStyle: 'dashed' }} onClick={() => setShowHint(true)} disabled={showHint || showAnswer}>
+                      <Lightbulb size={18} /> DEPLOY HINT
+                    </button>
+                  </div>
+                </div>
+
+                {/* Right Column: Sidebar (Logs, Elimination, responses) */}
+                <div className={styles.rightCol}>
+                  <div className={styles.systemLog}>
+                    <div className={styles.logHeader}>SYSTEM_LOG_v4.2</div>
+                    <div className={styles.logBody}>
+                      <span style={{ color: '#BC13FE' }}>[INIT]</span> Sequence array generated.<br/>
+                      {">"} Awaiting anomaly detection...<br/>
+                      {showHint && <><span style={{color: 'white'}}>{">"} SYSTEM_HINT: {currentQ?.hint}</span><br/></>}
+
+                      {roomStudents.filter((s:any) => s.answered).map((s:any, idx:number) => (
+                        <div key={idx} style={{ color: 'var(--accent-cyan)' }}>
+                          {">"} [SIGNAL LOCKED] {s.name} response registered.
+                        </div>
+                      ))}
+
+                      {showAnswer && <><span style={{color: '#BC13FE'}}>{">"} [ISOLATED] '{currentQ?.answer}' confirmed.</span><br/></>}
+
+                      {showAnswer && Object.entries(pointsEarned).map(([studentId, pts]) => {
+                        const studentName = roomStudents.find((s:any) => s.id === studentId)?.name || 'Unknown Node';
+                        return (
+                          <div key={studentId} style={{ color: pts > 0 ? '#BC13FE' : '#ef4444' }}>
+                            {">"} [SCORE] {studentName} {pts > 0 ? `+${pts}` : pts} pts.
+                          </div>
+                        );
+                      })}
+                      <br/>
+                      <span style={{ opacity: 0.5 }}>{">"} COMMAND_PROMPT_WAITING_</span>
+                    </div>
+                  </div>
+
+                  {/* Elimination Module (Sideline) */}
+                  {activeMode === "Elimination" && currentTeams.length > 0 && (
+                    <div style={{ padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                      <h3 style={{ marginBottom: '1rem', color: '#ff4444', textTransform: 'uppercase', fontSize: '0.7rem', fontFamily: 'monospace' }}>// ELIMINATION_TRACKER</h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {currentTeams.map(t => {
+                          const eliminated = eliminatedTeams.has(t.id);
+                          return (
+                            <button
+                              key={t.id}
+                              onClick={() => toggleElimination(t.id)}
+                              style={{
+                                padding: '0.6rem',
+                                borderRadius: '6px',
+                                border: '1px solid',
+                                borderColor: eliminated ? '#ff4444' : 'rgba(255,255,255,0.1)',
+                                background: eliminated ? 'rgba(239, 68, 68, 0.1)' : 'rgba(0,0,0,0.3)',
+                                color: eliminated ? '#ff4444' : 'white',
+                                fontWeight: 'bold',
+                                fontSize: '0.8rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              {t.name} {eliminated && <Ban size={14} />}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Pre-reveal Lock-in Status */}
+                  {!showAnswer && activeRoomCode && roomStudents.length > 0 && (
+                    <div style={{ padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                      <h3 style={{ marginBottom: '1rem', color: '#BC13FE', fontFamily: 'monospace', fontSize: '0.7rem' }}>// NETWORK_STATUS: {roomStudents.filter((s:any) => s.answered).length} LOCKED</h3>
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        {roomStudents.map((s: any, i: number) => (
+                          <div key={i} style={{
+                            padding: '0.3rem 0.6rem',
+                            borderRadius: '4px',
+                            fontSize: '0.75rem',
+                            background: s.answered ? 'rgba(188, 19, 254, 0.1)' : 'rgba(255,255,255,0.02)',
+                            border: `1px solid ${s.answered ? '#BC13FE' : 'rgba(255,255,255,0.05)'}`,
+                            opacity: s.answered ? 1 : 0.4,
+                            color: s.answered ? '#BC13FE' : 'white'
+                          }}>
+                            {s.name}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Post-reveal Responses */}
+                  {showAnswer && activeRoomCode && roomStudents.filter((s: any) => s.answered).length > 0 && (
+                    <div style={{ padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                      <h3 style={{ marginBottom: '1rem', color: '#BC13FE', fontFamily: 'monospace', fontSize: '0.7rem' }}>// NETWORK_RESPONSES</h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {roomStudents.filter((s: any) => s.answered).map((s: any, i: number) => {
+                          const isCorrect = currentQ && s.lastAnswer === currentQ.answer;
+                          return (
+                            <div key={i} style={{ padding: '0.6rem 0.8rem', background: 'rgba(0,0,0,0.3)', border: `1px solid ${isCorrect ? '#BC13FE' : 'rgba(255,0,0,0.3)'}`, borderRadius: '4px' }}>
+                              <div style={{ fontWeight: 800, color: isCorrect ? 'white' : 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>{s.name}</div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)' }}>{s.lastAnswer}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

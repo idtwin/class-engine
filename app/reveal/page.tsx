@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import styles from "./reveal.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
-import Link from "next/link";
-import { ArrowLeft, Sparkles, ImageOff, Loader } from "lucide-react";
+import { Sparkles, ImageOff, Loader } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
 import ScoreboardOverlay from "../components/ScoreboardOverlay";
 import GameTimer from "../components/GameTimer";
@@ -19,7 +18,7 @@ function buildImageUrl(answer: string, prompt: string) {
 
 export default function PictureRevealMode() {
   const [mounted, setMounted] = useState(false);
-  const { getActiveApiKey, getActiveModel, llmProvider, setActiveAwardAmount } = useClassroomStore();
+  const { getActiveApiKey, mistralModel, llmProvider, setActiveAwardAmount } = useClassroomStore();
 
   const [topic, setTopic] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -73,12 +72,12 @@ export default function PictureRevealMode() {
       const res = await fetch("/api/generate-reveal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          apiKey: getActiveApiKey(), 
-          mistralModel: getActiveModel(), 
-          provider: llmProvider, 
-          topic, 
-          level: "Mixed Level" 
+        body: JSON.stringify({
+          apiKey: getActiveApiKey(),
+          mistralModel,
+          provider: llmProvider,
+          topic,
+          level: "Mixed Level"
         }),
       });
       const data = await res.json();
@@ -117,38 +116,50 @@ export default function PictureRevealMode() {
   };
 
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <Link href="/games" style={{ textDecoration: "none" }}>
-            <button className={styles.iconBtn}>
-              <ArrowLeft color="#a855f7" size={24} />
-            </button>
-          </Link>
-          <h1 style={{ margin: 0, color: "#a855f7", letterSpacing: "0.1em", fontFamily: "monospace" }}>PICTURE_REVEAL_MATRIX</h1>
-
-          <div className={styles.aiControls}>
-            <input
-              placeholder="Lexicon Topic (e.g. Landmarks)"
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              className={styles.topicInput}
-              onKeyDown={(e) => e.key === "Enter" && !isGenerating && handleGenerate()}
-            />
-            <button onClick={handleGenerate} disabled={isGenerating} className={styles.genBtn}>
-              <Sparkles size={18} /> {isGenerating ? "SYNTHESIZING..." : "GENERATE PUZZLE"}
-            </button>
-            <MultiplayerHost gameMode="reveal" />
+    <>
+      {/* Setup / Loading overlay */}
+      {(!gameData || isGenerating) && (
+        <div className={styles.setupOverlay}>
+          <div className={styles.setupModal}>
+            <div className={styles.setupTitleRow}>
+              <div className={styles.setupTitleIcon}>🖼️</div>
+              <div>
+                <div className={styles.setupTitleText}>Picture Reveal</div>
+                <div className={styles.setupTitleSub}>Image Tile Reveal Game</div>
+              </div>
+              <div style={{ marginLeft: 'auto' }}>
+                <MultiplayerHost gameMode="reveal" />
+              </div>
+            </div>
+            {isGenerating ? (
+              <div className={styles.generatingState}>
+                <div className={styles.spinner} />
+                <div className={styles.generatingText}>Generating puzzle...</div>
+              </div>
+            ) : (
+              <>
+                <div className={styles.setupField}>
+                  <div className={styles.setupLabel}>Topic / Theme</div>
+                  <input
+                    className={styles.setupInput}
+                    placeholder="e.g. Landmarks, Animals, Famous People..."
+                    value={topic}
+                    onChange={e => setTopic(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && !isGenerating && handleGenerate()}
+                    autoFocus
+                  />
+                </div>
+                <button className={styles.btnGenerate} onClick={handleGenerate} disabled={!topic.trim()}>
+                  <Sparkles size={16} /> Generate Puzzle
+                </button>
+              </>
+            )}
           </div>
         </div>
-      </header>
+      )}
 
-      {isGenerating ? (
-        <div className={styles.loadingState}>
-          <Sparkles size={80} className={styles.spinIcon} />
-          <h2 style={{ letterSpacing: "0.1em" }}>INITIALIZING DATA CORE...</h2>
-        </div>
-      ) : reviewMode && gameData ? (
+      {/* Review mode — existing full-page reviewContainer layout unchanged */}
+      {gameData && reviewMode && (
         <div className={styles.reviewContainer}>
           <div
             style={{
@@ -162,7 +173,7 @@ export default function PictureRevealMode() {
           >
             <h2 style={{ color: "#a855f7", margin: 0, fontFamily: "monospace", letterSpacing: "0.1em" }}>REVIEW MATRIX DATA</h2>
             <button onClick={() => setReviewMode(false)} className={styles.genBtn}>
-              APPROVE BOARD & HIDE IMAGE
+              APPROVE BOARD &amp; HIDE IMAGE
             </button>
           </div>
           <div className={styles.reviewScroll}>
@@ -283,100 +294,118 @@ export default function PictureRevealMode() {
             ))}
           </div>
         </div>
-      ) : !gameData ? (
-        <div className={styles.emptyState}>
-          <p>SYSTEM IDLE // AWAITING TOPIC INPUT_</p>
-        </div>
-      ) : (
-        <div className={styles.gameArea}>
-          <GameTimer timerActive={false} variant="bar" onTimeUp={() => { }} />
-          <div className={styles.revealBoard}>
-            {/* Background image behind tiles */}
-            {imageUrl ? (
-              <>
-                {imageLoading && (
-                  <div className={styles.imagePlaceholder}>
-                    <Loader size={48} className={styles.spinIcon} />
-                    <p style={{ fontFamily: "monospace", color: "#a855f7", marginTop: "0.5rem", fontSize: "0.9rem" }}>LOADING IMAGE...</p>
-                  </div>
-                )}
-                {imageError && (
-                  <div className={styles.imagePlaceholder}>
-                    <ImageOff size={48} color="#a855f7" />
-                    <p style={{ fontFamily: "monospace", color: "#a855f7", marginTop: "0.5rem", fontSize: "0.9rem" }}>IMAGE UNAVAILABLE</p>
-                  </div>
-                )}
-                <img
-                  key={imageUrl}
-                  src={imageUrl}
-                  alt="Hidden Image"
-                  className={styles.hiddenImage}
-                  style={{ opacity: (imageLoading || imageError || !imageUrl) ? 0 : 1, transition: "opacity 0.8s ease" }}
-                  onLoad={() => setImageLoading(false)}
-                  onError={() => {
-                    console.error("Image reveal failed to load:", imageUrl);
-                    setImageLoading(false);
-                    setImageError(true);
-                  }}
-                />
-              </>
-            ) : (
-              <div className={styles.imagePlaceholder}>
-                <ImageOff size={48} color="#a855f7" />
-                <p style={{ fontFamily: "monospace", color: "#a855f7", marginTop: "0.5rem", fontSize: "0.9rem" }}>NO IMAGE</p>
-              </div>
-            )}
+      )}
 
-            <div className={styles.gridOverlay}>
-              {Array.from({ length: 16 }).map((_, i) => (
-                <button
-                  key={i}
-                  className={`${styles.tile} ${revealedTiles[i] ? styles.tileHidden : ""}`}
-                  onClick={() => handleTileClick(i)}
-                >
-                  {i + 1}
-                </button>
-              ))}
+      {/* Game view */}
+      {gameData && !reviewMode && !isGenerating && (
+        <div className={styles.page}>
+          <div className={styles.gameHeader}>
+            <div className={styles.gameTitle}>Picture Reveal</div>
+            <div className={styles.headerDivider} />
+            <div className={styles.qCounter}>
+              Tiles revealed: <span className={styles.qCounterNum}>{revealedTiles.filter(Boolean).length}</span> / 16
             </div>
-
+            <div className={styles.headerSpacer} />
             {boardRevealed && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  background: "rgba(0,0,0,0.85)",
-                  padding: "2rem 4rem",
-                  borderRadius: "24px",
-                  border: "4px solid var(--accent)",
-                  boxShadow: "0 0 40px rgba(0,0,0,0.8)",
-                  zIndex: 20,
-                  textAlign: "center",
-                  backdropFilter: "blur(8px)",
-                }}
-              >
-                <h2 style={{ fontSize: "3rem", color: "#fff", margin: 0, textShadow: "0 2px 10px rgba(0,0,0,0.5)" }}>
-                  {gameData?.imageAnswer ? gameData.imageAnswer.toUpperCase() : topic.toUpperCase()}
-                </h2>
-              </div>
+              <div className={styles.qCounter} style={{ color: '#00e87a' }}>✓ Board Revealed</div>
             )}
-          </div>
-
-          <div style={{ display: "flex", justifyContent: "center", width: "100%", maxWidth: "900px", margin: "0.5rem auto 0" }}>
             <button
-              className={styles.genBtn}
-              onClick={() => {
-                setRevealedTiles(Array(16).fill(true));
-                setBoardRevealed(true);
-              }}
-              style={{ width: "100%", padding: "1rem", fontSize: "1.2rem", display: "flex", justifyContent: "center", gap: "0.5rem", borderRadius: "16px" }}
+              style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 8, padding: '6px 14px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer' }}
+              onClick={() => { setGameData(null); setRevealedTiles(Array(16).fill(false)); setBoardRevealed(false); setActiveQuestion(null); }}
             >
-              <Sparkles /> INITIATE FULL REVEAL
+              ← New Game
             </button>
           </div>
+          <div className={styles.gameContent} style={{ padding: '20px 40px', alignItems: 'stretch', justifyContent: 'flex-start', overflow: 'auto' }}>
+            <GameTimer timerActive={false} variant="bar" onTimeUp={() => { }} />
+            <div className={styles.revealBoard}>
+              {/* Background image behind tiles */}
+              {imageUrl ? (
+                <>
+                  {imageLoading && (
+                    <div className={styles.imagePlaceholder}>
+                      <Loader size={48} className={styles.spinIcon} />
+                      <p style={{ fontFamily: "monospace", color: "#a855f7", marginTop: "0.5rem", fontSize: "0.9rem" }}>LOADING IMAGE...</p>
+                    </div>
+                  )}
+                  {imageError && (
+                    <div className={styles.imagePlaceholder}>
+                      <ImageOff size={48} color="#a855f7" />
+                      <p style={{ fontFamily: "monospace", color: "#a855f7", marginTop: "0.5rem", fontSize: "0.9rem" }}>IMAGE UNAVAILABLE</p>
+                    </div>
+                  )}
+                  <img
+                    key={imageUrl}
+                    src={imageUrl}
+                    alt="Hidden Image"
+                    className={styles.hiddenImage}
+                    style={{ opacity: (imageLoading || imageError || !imageUrl) ? 0 : 1, transition: "opacity 0.8s ease" }}
+                    onLoad={() => setImageLoading(false)}
+                    onError={() => {
+                      console.error("Image reveal failed to load:", imageUrl);
+                      setImageLoading(false);
+                      setImageError(true);
+                    }}
+                  />
+                </>
+              ) : (
+                <div className={styles.imagePlaceholder}>
+                  <ImageOff size={48} color="#a855f7" />
+                  <p style={{ fontFamily: "monospace", color: "#a855f7", marginTop: "0.5rem", fontSize: "0.9rem" }}>NO IMAGE</p>
+                </div>
+              )}
 
-          <ScoreboardOverlay />
+              <div className={styles.gridOverlay}>
+                {Array.from({ length: 16 }).map((_, i) => (
+                  <button
+                    key={i}
+                    className={`${styles.tile} ${revealedTiles[i] ? styles.tileHidden : ""}`}
+                    onClick={() => handleTileClick(i)}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+
+              {boardRevealed && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    background: "rgba(0,0,0,0.85)",
+                    padding: "2rem 4rem",
+                    borderRadius: "24px",
+                    border: "4px solid var(--accent)",
+                    boxShadow: "0 0 40px rgba(0,0,0,0.8)",
+                    zIndex: 20,
+                    textAlign: "center",
+                    backdropFilter: "blur(8px)",
+                  }}
+                >
+                  <h2 style={{ fontSize: "3rem", color: "#fff", margin: 0, textShadow: "0 2px 10px rgba(0,0,0,0.5)" }}>
+                    {gameData?.imageAnswer ? gameData.imageAnswer.toUpperCase() : topic.toUpperCase()}
+                  </h2>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "center", width: "100%", maxWidth: "900px", margin: "0.5rem auto 0" }}>
+              <button
+                className={styles.genBtn}
+                onClick={() => {
+                  setRevealedTiles(Array(16).fill(true));
+                  setBoardRevealed(true);
+                }}
+                style={{ width: "100%", padding: "1rem", fontSize: "1.2rem", display: "flex", justifyContent: "center", gap: "0.5rem", borderRadius: "16px" }}
+              >
+                <Sparkles /> INITIATE FULL REVEAL
+              </button>
+            </div>
+
+            <ScoreboardOverlay />
+          </div>
         </div>
       )}
 
@@ -398,7 +427,7 @@ export default function PictureRevealMode() {
 
             <div className={styles.modalActions}>
               {!showAnswer && <button onClick={() => setShowAnswer(true)}>DECRYPT ANSWER</button>}
-              <button onClick={() => handleClose(true)}>AWARD & CLEAR TILE</button>
+              <button onClick={() => handleClose(true)}>AWARD &amp; CLEAR TILE</button>
               <button className={styles.secondaryBtn} onClick={() => handleClose(false)}>
                 CANCEL
               </button>
@@ -406,6 +435,6 @@ export default function PictureRevealMode() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

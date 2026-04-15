@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useClassroomStore, SavedBoard } from "../store/useClassroomStore";
-import Link from "next/link";
-import { ArrowLeft, Play, Zap, FastForward, Loader2, Eye, ChevronRight, Sparkles } from "lucide-react";
+import { Play, Zap, FastForward, Eye, ChevronRight, Sparkles } from "lucide-react";
 import styles from "./rapid-fire.module.css";
 import MultiplayerHost from "../components/MultiplayerHost";
 import GameTimer from "../components/GameTimer";
@@ -23,13 +22,13 @@ type GameState = "SETUP" | "LOADING" | "READY" | "PLAYING" | "REVEALED" | "FINIS
 type RFMode = "buzzer" | "mc";
 
 export default function RapidFire() {
-  const { currentTeams, updateTeamScore, getActiveApiKey, getActiveModel, llmProvider, triggerTwist, activeRoomCode, saveBoard } = useClassroomStore();
+  const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider, triggerTwist, activeRoomCode, saveBoard } = useClassroomStore();
   const [mounted, setMounted] = useState(false);
   const [roomBuzzes, setRoomBuzzes] = useState<any[]>([]);
   const [roomStudents, setRoomStudents] = useState<any[]>([]);
   const [roomData, setRoomData] = useState<any>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  
+
   const [gameState, setGameState] = useState<GameState>("SETUP");
   const [rfMode, setRfMode] = useState<RFMode>("buzzer");
   const [topic, setTopic] = useState("");
@@ -37,7 +36,7 @@ export default function RapidFire() {
   const [questions, setQuestions] = useState<RapidFireQuestion[]>([]);
   const [cursor, setCursor] = useState(0);
   const [wrongSelections, setWrongSelections] = useState<Set<string>>(new Set());
-  
+
   const [timeLeft, setTimeLeft] = useState(15);
   const [timerActive, setTimerActive] = useState(false);
   const [timerDuration, setTimerDuration] = useState(15);
@@ -104,15 +103,16 @@ export default function RapidFire() {
 
   if (currentTeams.length === 0) {
     return (
-      <div className={styles.container}>
-        <header className={styles.header}>
-          <Link href="/dashboard" className={styles.homeBtn}><ArrowLeft size={20} /> Dashboard</Link>
-          <h2>Rapid Fire</h2>
-          <div style={{width: 100}}></div>
-        </header>
-        <div className={styles.setupContainer}>
-          <h1>No Teams Found</h1>
-          <p>You must generate teams in the Dashboard before playing.</p>
+      <div className={styles.setupOverlay}>
+        <div className={styles.setupModal}>
+          <div className={styles.setupTitleRow}>
+            <div className={styles.setupTitleIcon}>⚡</div>
+            <div>
+              <div className={styles.setupTitleText}>No Teams Found</div>
+              <div className={styles.setupTitleSub}>Setup Required</div>
+            </div>
+          </div>
+          <p style={{ color: 'var(--muted, #4a637d)', fontSize: 14 }}>You must generate teams in the Dashboard before playing.</p>
         </div>
       </div>
     );
@@ -120,29 +120,29 @@ export default function RapidFire() {
 
   const generateGame = async () => {
     if (!topic) return alert("Please enter a topic!");
-    
+
     if (!getActiveApiKey() && llmProvider !== 'lmstudio') return alert("Please set your API key in Dashboard → Config first!");
-    
+
     setIsGenerating(true);
     setGameState("LOADING");
-    
+
     try {
       const response = await fetch("/api/generate-rapid-fire", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          apiKey: getActiveApiKey(), 
-          mistralModel: getActiveModel(), 
-          provider: llmProvider, 
-          topic, 
-          level: targetLevel, 
-          mode: rfMode 
+        body: JSON.stringify({
+          apiKey: getActiveApiKey(),
+          mistralModel,
+          provider: llmProvider,
+          topic,
+          level: targetLevel,
+          mode: rfMode
         })
       });
       const data = await response.json();
-      
+
       if (data.error) throw new Error(data.error);
-      
+
       setQuestions(data.questions);
       setGameState("READY");
     } catch (err: any) {
@@ -160,7 +160,7 @@ export default function RapidFire() {
     setPointsEarned({});
     setWrongSelections(new Set());
     setRoomStudents(prev => prev.map(s => ({ ...s, answered: false, lastAnswer: null })));
-    
+
     if (activeRoomCode && questions.length > 0) {
       try {
         await fetch("/api/room/action", {
@@ -179,7 +179,7 @@ export default function RapidFire() {
         console.error("Game sync failed", e);
       }
     }
-    
+
     setGameState("PLAYING");
     startTimer();
   };
@@ -205,7 +205,7 @@ export default function RapidFire() {
       setRoomStudents(prev => prev.map(s => ({ ...s, answered: false, lastAnswer: null })));
 
       if (activeRoomCode) {
-        // We stay in current state or transition to a loading-like state if needed, 
+        // We stay in current state or transition to a loading-like state if needed,
         // essentially we wait for the network to clear before allowing PLAYING logic to re-run.
         try {
           await fetch("/api/room/action", {
@@ -224,7 +224,7 @@ export default function RapidFire() {
           console.error("Next question sync failed", e);
         }
       }
-      
+
       setGameState("PLAYING");
       startTimer();
     }
@@ -256,29 +256,29 @@ export default function RapidFire() {
             const answeredStudents = freshStudents.filter((s: any) => s.answered && s.lastAnswer);
             const correctAnswers: any[] = [];
             const wrongAnswers: any[] = [];
-            
+
             answeredStudents.forEach((s: any) => {
               const isCorrect = s.lastAnswer === currentQ.correctLetter;
               if (isCorrect) correctAnswers.push(s);
               else wrongAnswers.push(s);
             });
-            
+
             correctAnswers.sort((a: any, b: any) => (a.answerTime || 0) - (b.answerTime || 0));
-            
+
             const newPointsEarned: Record<string, number> = {};
-            
+
             correctAnswers.forEach((s: any, idx: number) => {
               let pts = 100;
               if (idx === 0) pts = 500;
               else if (idx === 1) pts = 400;
               else if (idx === 2) pts = 300;
               else if (idx === 3) pts = 200;
-              
+
               newPointsEarned[s.id] = pts;
               const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
               if (team) updateTeamScore(team.id, pts);
             });
-            
+
             if (penalizeWrong) {
               wrongAnswers.forEach((s: any) => {
                 newPointsEarned[s.id] = -100;
@@ -286,7 +286,7 @@ export default function RapidFire() {
                 if (team) updateTeamScore(team.id, -100);
               });
             }
-            
+
             setPointsEarned(newPointsEarned);
           }
         }
@@ -304,308 +304,327 @@ export default function RapidFire() {
   const currentQ = questions[cursor];
 
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <Link href="/games" style={{ textDecoration: 'none' }}>
-             <button className={styles.homeBtn} style={{ background: 'transparent', border: '1px solid rgba(255, 51, 102, 0.4)', padding: '0.5rem', color: '#ff3366' }}>
-               <ArrowLeft />
-             </button>
-          </Link>
-          <h1 style={{ margin: 0, color: '#ff3366', letterSpacing: '0.1em' }}>Rapid Fire Protocol</h1>
-        </div>
-        
-        <div className={styles.aiControls} style={{ marginLeft: '1rem' }}>
-           <MultiplayerHost gameMode="rapidfire" />
-
-        </div>
-      </header>
-
-      {gameState === "SETUP" && (
-        <div className={styles.canvasLeft}>
-          <div className={styles.leftDecor}>
-            SYS: RAPID_FIRE_GEN<br/>PORT: 8080<br/>AWAITING PARAMS
-          </div>
-          <div className={styles.accentLine} />
-          
-          <h2 className={styles.mainSentence} style={{ fontSize: '2rem', marginBottom: '2rem' }}>INITIALIZE FIREWALL PARAMETERS.</h2>
-          
-          <div style={{ display: 'flex', gap: '1rem', width: '100%', maxWidth: '600px', marginBottom: '2rem' }}>
-            <button
-              onClick={() => setRfMode("buzzer")}
-              className={rfMode === "buzzer" ? styles.btnSolid : styles.btnOutline}
-              style={{ flex: 1, padding: '1rem' }}
-            >
-              🔔 AUDIO BUZZ
-            </button>
-            <button
-              onClick={() => setRfMode("mc")}
-              className={rfMode === "mc" ? styles.btnSolid : styles.btnOutline}
-              style={{ flex: 1, padding: '1rem' }}
-            >
-              📝 MULTIPLE CHOICE
-            </button>
-          </div>
-          <span style={{ opacity: 0.5, fontFamily: 'monospace', marginBottom: '2rem' }}>
-            {">"} {rfMode === "buzzer" ? "AUDIO PROTOCOL: Host verbal confirmation required." : "MC PROTOCOL: Nodes autolock A-D arrays."}
-          </span>
-            
-          <div style={{ width: "100%", maxWidth: "600px" }}>
-            <span style={{ display: "block", marginBottom: "0.5rem", color: '#ff3366', fontFamily: 'monospace' }}>TARGET.LEXICON</span>
-            <input 
-              className={styles.topicInput} 
-              style={{ width: '100%', marginBottom: '2rem' }}
-              value={topic} 
-              onChange={(e) => setTopic(e.target.value)} 
-              onKeyDown={(e) => e.key === "Enter" && !isGenerating && generateGame()}
-              placeholder="e.g. Irregular Verbs..." 
-            />
-            
-            <div style={{ display: "flex", gap: "1rem" }}>
-              <button 
-                onClick={generateGame} 
-                disabled={isGenerating || (!getActiveApiKey() && llmProvider !== 'lmstudio')} 
-                className={styles.btnSolid} 
-                style={{ flex: 1, justifyContent: 'center' }}
-              >
-                <Sparkles size={20} /> SYNTHESIZE
-              </button>
-              <BoardLibrary currentGameType="rapid-fire" onLoadBoard={handleLoadBoard} />
-              <GameSettingsDrawer settings={[
-                { label: "Class Level", type: "select", value: targetLevel, onChange: setTargetLevel, options: [
-                  { value: "Low", label: "Low (Beginner)" },
-                  { value: "Mid", label: "Mid (Intermediate)" },
-                  { value: "High", label: "High (Advanced)" }
-                ]},
-                { label: "Timer per Question", type: "select", value: String(timerDuration), onChange: (v: string) => setTimerDuration(Number(v)), options: [
-                  { value: "10", label: "10 seconds" },
-                  { value: "15", label: "15 seconds" },
-                  { value: "20", label: "20 seconds" },
-                  { value: "30", label: "30 seconds" },
-                  { value: "45", label: "45 seconds" },
-                  { value: "60", label: "60 seconds" }
-                ]},
-                ...(rfMode === "mc" ? [{
-                  label: "Penalty for Wrong Answers",
-                  type: "checkbox" as const,
-                  value: penalizeWrong,
-                  onChange: setPenalizeWrong,
-                  description: "Teams lose 100 points for incorrect guesses"
-                }] : [])
-              ]} />
+    <>
+      {/* Setup / Loading overlay */}
+      {(gameState === "SETUP" || gameState === "LOADING" || gameState === "READY") && (
+        <div className={styles.setupOverlay}>
+          <div className={styles.setupModal}>
+            <div className={styles.setupTitleRow}>
+              <div className={styles.setupTitleIcon}>⚡</div>
+              <div>
+                <div className={styles.setupTitleText}>Rapid Fire</div>
+                <div className={styles.setupTitleSub}>Speed Answer Challenge</div>
+              </div>
+              <div style={{ marginLeft: 'auto' }}>
+                <MultiplayerHost gameMode="rapidfire" />
+              </div>
             </div>
+
+            {gameState === "LOADING" ? (
+              <div className={styles.generatingState}>
+                <div className={styles.spinner} />
+                <div className={styles.generatingText}>Generating questions...</div>
+              </div>
+            ) : gameState === "READY" ? (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ fontFamily: 'var(--font-mono, JetBrains Mono, monospace)', fontSize: 12, color: 'var(--muted, #4a637d)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                    Review Questions
+                  </div>
+                  <div style={{ display: "flex", gap: "0.75rem" }}>
+                    <button
+                      onClick={() => {
+                        const title = prompt("Name this question set:", topic);
+                        if (title) {
+                          saveBoard({ title, topic, gameType: 'rapid-fire', content: questions });
+                          alert("Set saved!");
+                        }
+                      }}
+                      style={{ background: 'var(--surface2, #131b2b)', border: '1px solid var(--border2, #243347)', borderRadius: 8, padding: '8px 14px', color: 'var(--text, #dce8f5)', fontFamily: 'var(--font-mono, monospace)', fontSize: 12, cursor: 'pointer' }}
+                    >
+                      Save Set
+                    </button>
+                    <button onClick={startGame} className={styles.btnGenerate}>
+                      Approve &amp; Start
+                    </button>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' }}>
+                  {questions.map((q, i) => (
+                    <div key={i} style={{ background: 'var(--surface2, #131b2b)', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border2, #243347)' }}>
+                      <div style={{ fontWeight: 700, color: 'var(--text, #dce8f5)', fontSize: 14 }}>{i + 1}. {q.text}</div>
+                      <div style={{ color: 'var(--muted, #4a637d)', fontSize: 12, marginTop: 4 }}>Answer: {q.answer}</div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className={styles.setupField}>
+                  <div className={styles.setupLabel}>Topic / Theme</div>
+                  <input
+                    className={styles.setupInput}
+                    placeholder="e.g. Sports, History, Science..."
+                    value={topic}
+                    onChange={e => setTopic(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && generateGame()}
+                    autoFocus
+                  />
+                </div>
+                <div className={styles.setupRow}>
+                  <div className={styles.setupField}>
+                    <div className={styles.setupLabel}>Level</div>
+                    <select className={styles.setupSelect} value={targetLevel} onChange={e => setTargetLevel(e.target.value)}>
+                      <option value="Low">Low (A1)</option>
+                      <option value="Mid">Mid (A2)</option>
+                      <option value="High">High (B1)</option>
+                      <option value="Mixed">Mixed Level</option>
+                    </select>
+                  </div>
+                  <div className={styles.setupField}>
+                    <div className={styles.setupLabel}>Mode</div>
+                    <select className={styles.setupSelect} value={rfMode} onChange={e => setRfMode(e.target.value as RFMode)}>
+                      <option value="buzzer">Buzzer</option>
+                      <option value="mc">Multiple Choice</option>
+                    </select>
+                  </div>
+                </div>
+                <div className={styles.setupRow}>
+                  <div className={styles.setupField}>
+                    <div className={styles.setupLabel}>Timer per Question</div>
+                    <select className={styles.setupSelect} value={timerDuration} onChange={e => setTimerDuration(Number(e.target.value))}>
+                      <option value={10}>10 seconds</option>
+                      <option value={15}>15 seconds</option>
+                      <option value={20}>20 seconds</option>
+                      <option value={30}>30 seconds</option>
+                    </select>
+                  </div>
+                  <div className={styles.setupField}>
+                    <div className={styles.setupLabel}>Penalty</div>
+                    <select className={styles.setupSelect} value={String(penalizeWrong)} onChange={e => setPenalizeWrong(e.target.value === 'true')}>
+                      <option value="false">No penalty</option>
+                      <option value="true">Deduct points</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <button className={styles.btnGenerate} onClick={generateGame} disabled={!topic.trim()}>
+                    <Sparkles size={16} /> Generate Questions
+                  </button>
+                  <BoardLibrary currentGameType="rapidfire" onLoadBoard={handleLoadBoard} />
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
 
-      {gameState === "LOADING" && (
-        <div className={styles.setupContainer}>
-          <Loader2 size={64} className={styles.spin} style={{ color: "var(--accent)" }} />
-          <h2>{rfMode === "mc" ? "Crafting Multiple Choice Questions..." : "Generating High-Speed Questions..."}</h2>
-        </div>
-      )}
-
-      {gameState === "READY" && (
-        <div className={styles.setupContainer}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-            <h2 style={{ color: "var(--accent)", margin: 0 }}>Review Questions</h2>
-            <div style={{ display: "flex", gap: "1rem" }}>
-              <button 
-                onClick={() => {
-                  const title = prompt("Name this question set:", topic);
-                  if (title) {
-                    saveBoard({ title, topic, gameType: 'rapid-fire', content: questions });
-                    alert("Set saved!");
-                  }
-                }}
-                className={styles.btn} 
-                style={{ padding: '0.6rem 1rem', background: 'rgba(255,255,255,0.05)', color: 'white' }}
-              >
-                💾 Save Set
-              </button>
-              <button onClick={startGame} className={styles.btn}>
-                Approve & Start Game
-              </button>
+      {/* Game view */}
+      {(gameState === "PLAYING" || gameState === "REVEALED" || gameState === "FINISHED") && (
+        <div className={styles.page}>
+          <div className={styles.gameHeader}>
+            <div className={styles.gameTitle}>Rapid Fire</div>
+            <div className={styles.headerDivider} />
+            <div className={styles.qCounter}>
+              Q <span className={styles.qCounterNum}>{cursor + 1}</span> / {questions.length}
             </div>
+            <div className={styles.headerDivider} />
+            <div className={styles.qCounter}>{rfMode === 'mc' ? 'Multiple Choice' : 'Buzzer'}</div>
+            <div className={styles.headerSpacer} />
+            {timerDuration > 0 && gameState !== "FINISHED" && (
+              <div className={styles.timerWrap}>
+                <div className={`${styles.timerNum} ${timeLeft <= 5 && timerActive ? styles.timerNumUrgent : ''}`}>
+                  {timeLeft}
+                </div>
+                <div className={styles.timerBar}>
+                  <div
+                    className={`${styles.timerBarFill} ${timeLeft <= 5 && timerActive ? styles.timerBarFillUrgent : ''}`}
+                    style={{ width: `${timerDuration > 0 ? (timeLeft / timerDuration) * 100 : 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
+            <button
+              style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 8, padding: '6px 14px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer' }}
+              onClick={() => setGameState("SETUP")}
+            >
+              ← New Game
+            </button>
           </div>
-          <div style={{ width: '100%', maxWidth: '800px' }}>
-            {questions.map((q, i) => (
-              <div key={i} style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', marginBottom: '0.5rem' }}>
-                <strong>{i + 1}. {q.text}</strong>
-                <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>Answer: {q.answer}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+          <div className={styles.gameContent} style={{ padding: 0, alignItems: 'stretch', justifyContent: 'flex-start', overflow: 'hidden' }}>
 
-      {(gameState === "PLAYING" || gameState === "REVEALED") && currentQ && (
-        <div className={styles.canvasLeft}>
-          <div className={styles.gameSplit}>
-            {/* Left Column: Question Area */}
-            <div className={styles.leftCol}>
-              <div className={styles.seqLabel}>
-                 QUESTION_0{cursor + 1} // {currentQ.level.toUpperCase()} Lvl — {currentQ.type.toUpperCase()}
+            {gameState === "FINISHED" ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 24 }}>
+                <h1 style={{ fontSize: "4rem", color: "#00c8f0", fontWeight: 900, margin: 0 }}>Game Over!</h1>
+                <button
+                  className={styles.btnGenerate}
+                  onClick={() => setGameState("SETUP")}
+                >
+                  New Game
+                </button>
               </div>
-              
-              <div className={styles.mainSentence}>
-                {currentQ.text}
-              </div>
+            ) : currentQ && (
+              <div className={styles.canvasLeft}>
+                <div className={styles.gameSplit}>
+                  {/* Left Column: Question Area */}
+                  <div className={styles.leftCol}>
+                    <div className={styles.seqLabel}>
+                       QUESTION_0{cursor + 1} // {currentQ.level.toUpperCase()} Lvl — {currentQ.type.toUpperCase()}
+                    </div>
 
-              {/* MC Mode: Show options on projector */}
-              {rfMode === "mc" && currentQ.options && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', width: '100%', maxWidth: '800px', marginTop: '1rem' }}>
-                  {(["A", "B", "C", "D"] as const).map(letter => {
-                    const isRevealed = gameState === "REVEALED";
-                    const isCorrect = currentQ.correctLetter === letter;
-                    return (
-                      <div 
-                        key={letter} 
-                        onClick={() => {
-                          if (gameState !== "PLAYING") return;
-                          if (letter === currentQ.correctLetter) {
-                            handleReveal();
-                          } else {
-                            setWrongSelections(prev => new Set(prev).add(letter));
-                          }
-                        }}
+                    <div className={styles.mainSentence}>
+                      {currentQ.text}
+                    </div>
+
+                    {/* MC Mode: Show options on projector */}
+                    {rfMode === "mc" && currentQ.options && (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', width: '100%', maxWidth: '800px', marginTop: '1rem' }}>
+                        {(["A", "B", "C", "D"] as const).map(letter => {
+                          const isRevealed = gameState === "REVEALED";
+                          const isCorrect = currentQ.correctLetter === letter;
+                          return (
+                            <div
+                              key={letter}
+                              onClick={() => {
+                                if (gameState !== "PLAYING") return;
+                                if (letter === currentQ.correctLetter) {
+                                  handleReveal();
+                                } else {
+                                  setWrongSelections(prev => new Set(prev).add(letter));
+                                }
+                              }}
+                              style={{
+                                padding: '1.5rem 2rem',
+                                borderRadius: '16px',
+                                fontSize: '1.5rem',
+                                fontWeight: 700,
+                                background: isRevealed && isCorrect ? 'rgba(34,197,94,0.2)' :
+                                           wrongSelections.has(letter) ? 'rgba(239, 68, 68, 0.2)' :
+                                           'rgba(255,255,255,0.05)',
+                                border: `2px solid ${isRevealed && isCorrect ? '#22c55e' :
+                                                  wrongSelections.has(letter) ? '#ef4444' :
+                                                  'rgba(255,255,255,0.1)'}`,
+                                color: isRevealed && isCorrect ? '#22c55e' :
+                                       wrongSelections.has(letter) ? '#ef4444' :
+                                       'white',
+                                opacity: isRevealed && !isCorrect ? 0.3 : 1,
+                                transition: 'all 0.3s',
+                                cursor: gameState === "PLAYING" ? 'pointer' : 'default'
+                              }}
+                            >
+                              <span style={{ fontWeight: 900, marginRight: '0.75rem', opacity: 0.5 }}>{letter}.</span>
+                              {currentQ.options![letter as keyof typeof currentQ.options]}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Buzzer Mode: Answer Box */}
+                    {rfMode === "buzzer" && (
+                      <div
+                        className={styles.answerText}
+                        onClick={() => { if (gameState === "PLAYING") handleReveal(); }}
                         style={{
-                          padding: '1.5rem 2rem',
-                          borderRadius: '16px',
-                          fontSize: '1.5rem',
-                          fontWeight: 700,
-                          background: isRevealed && isCorrect ? 'rgba(34,197,94,0.2)' : 
-                                     wrongSelections.has(letter) ? 'rgba(239, 68, 68, 0.2)' : 
-                                     'rgba(255,255,255,0.05)',
-                          border: `2px solid ${isRevealed && isCorrect ? '#22c55e' : 
-                                            wrongSelections.has(letter) ? '#ef4444' : 
-                                            'rgba(255,255,255,0.1)'}`,
-                          color: isRevealed && isCorrect ? '#22c55e' : 
-                                 wrongSelections.has(letter) ? '#ef4444' : 
-                                 'white',
-                          opacity: isRevealed && !isCorrect ? 0.3 : 1,
-                          transition: 'all 0.3s',
-                          cursor: gameState === "PLAYING" ? 'pointer' : 'default'
+                          cursor: gameState === "PLAYING" ? 'pointer' : 'default',
+                          opacity: gameState === "REVEALED" ? 1 : 0.05,
+                          transition: 'opacity 0.3s'
                         }}
                       >
-                        <span style={{ fontWeight: 900, marginRight: '0.75rem', opacity: 0.5 }}>{letter}.</span>
-                        {currentQ.options![letter as keyof typeof currentQ.options]}
+                        {gameState === "REVEALED" ? `ANSWER: ${currentQ.answer}` : `[HOST_TOOLTIP: ${currentQ.answer}]`}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-              
-              {/* Buzzer Mode: Answer Box */}
-              {rfMode === "buzzer" && (
-                <div 
-                  className={styles.answerText}
-                  onClick={() => { if (gameState === "PLAYING") handleReveal(); }}
-                  style={{ 
-                    cursor: gameState === "PLAYING" ? 'pointer' : 'default',
-                    opacity: gameState === "REVEALED" ? 1 : 0.05,
-                    transition: 'opacity 0.3s'
-                  }}
-                >
-                  {gameState === "REVEALED" ? `ANSWER: ${currentQ.answer}` : `[HOST_TOOLTIP: ${currentQ.answer}]`}
-                </div>
-              )}
-              
-              <div className={styles.techControls} style={{ marginTop: '2rem' }}>
-                 {gameState !== "REVEALED" ? (
-                   <button className={styles.btnSolid} onClick={handleReveal}>
-                     <Sparkles size={18} /> INITIATE REVEAL
-                   </button>
-                 ) : (
-                   <button className={styles.btnOutline} onClick={nextQuestion}>
-                     {cursor + 1 >= questions.length ? "FINISH SEQUENCE \u2714" : "NEXT SEQUENCE \u27A1"}
-                   </button>
-                 )}
-              </div>
-            </div>
+                    )}
 
-            {/* Right Column: Sidebar (Logs, Buzzes, Status) */}
-            <div className={styles.rightCol}>
-              <div className={styles.systemLog}>
-                 <div className={styles.logHeader}>SYSTEM_LOG_v4.2</div>
-                 <div className={styles.logBody}>
-                   <span style={{ color: '#ff3366' }}>[INIT]</span> Sequence activated.<br/>
-                   {">"} Awaiting network node responses...<br/>
-                   
-                   {rfMode === "buzzer" && roomBuzzes.map((b:any, idx:number) => {
-                      const studentName = roomStudents.find((s:any) => s.id === b.studentId)?.name || 'Unknown Node';
-                      return (
-                        <div key={idx} style={{ color: '#ff3366' }}>
-                          {">"} [BUZZ] {studentName} at {(b.timestamp - roomData?.questionStartTime)/1000}s!
+                    <div className={styles.techControls} style={{ marginTop: '2rem' }}>
+                       {gameState !== "REVEALED" ? (
+                         <button className={styles.btnSolid} onClick={handleReveal}>
+                           <Sparkles size={18} /> INITIATE REVEAL
+                         </button>
+                       ) : (
+                         <button className={styles.btnOutline} onClick={nextQuestion}>
+                           {cursor + 1 >= questions.length ? "FINISH SEQUENCE \u2714" : "NEXT SEQUENCE \u27A1"}
+                         </button>
+                       )}
+                    </div>
+                  </div>
+
+                  {/* Right Column: Sidebar (Logs, Buzzes, Status) */}
+                  <div className={styles.rightCol}>
+                    <div className={styles.systemLog}>
+                       <div className={styles.logHeader}>SYSTEM_LOG_v4.2</div>
+                       <div className={styles.logBody}>
+                         <span style={{ color: '#ff3366' }}>[INIT]</span> Sequence activated.<br/>
+                         {">"} Awaiting network node responses...<br/>
+
+                         {rfMode === "buzzer" && roomBuzzes.map((b:any, idx:number) => {
+                            const studentName = roomStudents.find((s:any) => s.id === b.studentId)?.name || 'Unknown Node';
+                            return (
+                              <div key={idx} style={{ color: '#ff3366' }}>
+                                {">"} [BUZZ] {studentName} at {(b.timestamp - roomData?.questionStartTime)/1000}s!
+                              </div>
+                            );
+                         })}
+
+                         {gameState === "REVEALED" && Object.entries(pointsEarned).map(([studentId, pts]) => {
+                            const studentName = roomStudents.find((s:any) => s.id === studentId)?.name || 'Unknown Node';
+                            return (
+                              <div key={studentId} style={{ color: pts > 0 ? '#ff3366' : '#ef4444' }}>
+                                 {">"} [SCORE] {studentName} {pts > 0 ? `+${pts}` : pts} pts.
+                              </div>
+                            );
+                         })}
+                         <br/>
+                         <span style={{ opacity: 0.5 }}>{">"} COMMAND_PROMPT_WAITING_</span>
+                       </div>
+                    </div>
+
+                    {/* Pre-reveal Status Cards */}
+                    {gameState !== "REVEALED" && rfMode === "mc" && activeRoomCode && roomStudents.length > 0 && (
+                      <div style={{ padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                        <h3 style={{ marginBottom: '1rem', color: '#ff3366', fontFamily: 'monospace', fontSize: '0.7rem' }}>// NETWORK_STATUS: {roomStudents.filter((s:any) => s.answered).length} LOCKED</h3>
+                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                          {roomStudents.map((s: any, i: number) => (
+                            <div key={i} style={{
+                              padding: '0.3rem 0.6rem',
+                              borderRadius: '4px',
+                              fontSize: '0.75rem',
+                              background: s.answered ? 'rgba(255, 51, 102, 0.1)' : 'rgba(255,255,255,0.02)',
+                              border: `1px solid ${s.answered ? '#ff3366' : 'rgba(255,255,255,0.05)'}`,
+                              opacity: s.answered ? 1 : 0.4,
+                              color: s.answered ? '#ff3366' : 'white'
+                            }}>
+                              {s.name}
+                            </div>
+                          ))}
                         </div>
-                      );
-                   })}
-
-                   {gameState === "REVEALED" && Object.entries(pointsEarned).map(([studentId, pts]) => {
-                      const studentName = roomStudents.find((s:any) => s.id === studentId)?.name || 'Unknown Node';
-                      return (
-                        <div key={studentId} style={{ color: pts > 0 ? '#ff3366' : '#ef4444' }}>
-                           {">"} [SCORE] {studentName} {pts > 0 ? `+${pts}` : pts} pts.
-                        </div>
-                      );
-                   })}
-                   <br/>
-                   <span style={{ opacity: 0.5 }}>{">"} COMMAND_PROMPT_WAITING_</span>
-                 </div>
-              </div>
-
-              {/* Pre-reveal Status Cards */}
-              {gameState !== "REVEALED" && rfMode === "mc" && activeRoomCode && roomStudents.length > 0 && (
-                <div style={{ padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                  <h3 style={{ marginBottom: '1rem', color: '#ff3366', fontFamily: 'monospace', fontSize: '0.7rem' }}>// NETWORK_STATUS: {roomStudents.filter((s:any) => s.answered).length} LOCKED</h3>
-                  <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                    {roomStudents.map((s: any, i: number) => (
-                      <div key={i} style={{
-                        padding: '0.3rem 0.6rem',
-                        borderRadius: '4px',
-                        fontSize: '0.75rem',
-                        background: s.answered ? 'rgba(255, 51, 102, 0.1)' : 'rgba(255,255,255,0.02)',
-                        border: `1px solid ${s.answered ? '#ff3366' : 'rgba(255,255,255,0.05)'}`,
-                        opacity: s.answered ? 1 : 0.4,
-                        color: s.answered ? '#ff3366' : 'white'
-                      }}>
-                        {s.name}
                       </div>
-                    ))}
+                    )}
+
+                    {/* Post-reveal Responses (MC only) */}
+                    {gameState === "REVEALED" && rfMode === "mc" && activeRoomCode && roomStudents.filter((s: any) => s.answered).length > 0 && (
+                      <div style={{ padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                        <h3 style={{ marginBottom: '1rem', color: '#ff3366', fontFamily: 'monospace', fontSize: '0.7rem' }}>// NETWORK_RESPONSES</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          {roomStudents.filter((s: any) => s.answered).map((s: any, i: number) => {
+                            const isCorrect = currentQ && s.lastAnswer === currentQ.correctLetter;
+                            return (
+                              <div key={i} style={{ padding: '0.6rem 0.8rem', background: 'rgba(0,0,0,0.3)', border: `1px solid ${isCorrect ? '#ff3366' : 'rgba(255,0,0,0.3)'}`, borderRadius: '4px' }}>
+                                <div style={{ fontWeight: 800, color: isCorrect ? 'white' : 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>{s.name}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)' }}>{s.lastAnswer}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Post-reveal Responses (MC only) */}
-              {gameState === "REVEALED" && rfMode === "mc" && activeRoomCode && roomStudents.filter((s: any) => s.answered).length > 0 && (
-                <div style={{ padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                  <h3 style={{ marginBottom: '1rem', color: '#ff3366', fontFamily: 'monospace', fontSize: '0.7rem' }}>// NETWORK_RESPONSES</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {roomStudents.filter((s: any) => s.answered).map((s: any, i: number) => {
-                      const isCorrect = currentQ && s.lastAnswer === currentQ.correctLetter;
-                      return (
-                        <div key={i} style={{ padding: '0.6rem 0.8rem', background: 'rgba(0,0,0,0.3)', border: `1px solid ${isCorrect ? '#ff3366' : 'rgba(255,0,0,0.3)'}`, borderRadius: '4px' }}>
-                          <div style={{ fontWeight: 800, color: isCorrect ? 'white' : 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>{s.name}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)' }}>{s.lastAnswer}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       )}
-
-      {gameState === "FINISHED" && (
-        <div className={styles.setupContainer}>
-          <h1 style={{ fontSize: "4rem", color: "var(--accent)" }}>Game Over!</h1>
-          <Link href="/dashboard" style={{ textDecoration: 'none' }}>
-             <button className={styles.btn} style={{ marginTop: "2rem" }}>Return to Dashboard</button>
-          </Link>
-        </div>
-      )}
-    </div>
+    </>
   );
 }

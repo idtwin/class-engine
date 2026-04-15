@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useClassroomStore } from "../store/useClassroomStore";
-import Link from "next/link";
-import { ArrowLeft, Sparkles, Loader2, Link2, SkipForward, Zap } from "lucide-react";
+import { Sparkles, Link2, SkipForward, Zap } from "lucide-react";
 import styles from "./chain.module.css";
 import MultiplayerHost from "../components/MultiplayerHost";
 import GameTimer from "../components/GameTimer";
@@ -35,7 +34,7 @@ interface ChainWord {
 
 export default function ChainReaction() {
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, getActiveApiKey, getActiveModel, llmProvider, triggerTwist } = useClassroomStore();
+  const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider, triggerTwist } = useClassroomStore();
 
   // Setup
   const [gameMode, setGameMode] = useState<GameMode>("puzzle");
@@ -98,14 +97,16 @@ export default function ChainReaction() {
 
   if (currentTeams.length === 0) {
     return (
-      <div className={styles.container}>
-        <header className={styles.header}>
-          <Link href="/games" className={styles.iconBtn}><ArrowLeft size={20} /></Link>
-          <h2>Chain Reaction</h2>
-        </header>
-        <div className={styles.setupContainer}>
-          <h1>No Teams Found</h1>
-          <p>Generate teams in the Dashboard before playing.</p>
+      <div className={styles.setupOverlay}>
+        <div className={styles.setupModal}>
+          <div className={styles.setupTitleRow}>
+            <div className={styles.setupTitleIcon}>🔗</div>
+            <div>
+              <div className={styles.setupTitleText}>Chain Reaction</div>
+              <div className={styles.setupTitleSub}>No Teams Found</div>
+            </div>
+          </div>
+          <p style={{ color: 'var(--muted, #4a637d)', fontSize: 14 }}>Generate teams in the Dashboard before playing.</p>
         </div>
       </div>
     );
@@ -135,7 +136,7 @@ const TEAM_COLORS = [
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           apiKey: getActiveApiKey(), 
-          mistralModel: getActiveModel(), 
+          mistralModel, 
           provider: llmProvider, 
           topic, 
           level: difficulty, 
@@ -467,251 +468,306 @@ const TEAM_COLORS = [
 
   // ── Render ──
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <Link href="/games" className={styles.iconBtn}>
-            <ArrowLeft size={20} color="#ff8c00" />
-          </Link>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <h1 style={{ margin: 0, color: '#ff8c00', fontSize: '1.2rem', letterSpacing: '0.1em', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Link2 size={20} /> CHAIN_REACTION_v2.1
-            </h1>
-            <span style={{ fontSize: '0.6rem', opacity: 0.5, fontFamily: 'monospace' }}>SECURE_CONNECTION: ENCRYPTED // LINK_STATUS: ACTIVE</span>
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-          <MultiplayerHost gameMode="chainreaction" />
-          <GameSettingsDrawer settings={settings} title="REACTION SETTINGS" />
-        </div>
-      </header>
-
-
-      {/* ── SETUP ── */}
-      {gameState === "SETUP" && (
-        <div className={styles.setupContainer}>
-          <div className={styles.setupPanel} style={{ maxWidth: '500px' }}>
-            <div style={{ marginBottom: '2rem' }}>
-              <h2 style={{ color: '#ff8c00', fontSize: '2rem', marginBottom: '0.5rem' }}>READY TO INITIALIZE?</h2>
-              <p style={{ opacity: 0.7 }}>Configure your chain settings in the sidebar, then type a topic below to start.</p>
+    <>
+      {/* Setup / Loading overlay */}
+      {(gameState === "SETUP" || gameState === "LOADING") && (
+        <div className={styles.setupOverlay}>
+          <div className={styles.setupModal}>
+            <div className={styles.setupTitleRow}>
+              <div className={styles.setupTitleIcon}>🔗</div>
+              <div>
+                <div className={styles.setupTitleText}>Chain Reaction</div>
+                <div className={styles.setupTitleSub}>Compound Word Chain Game</div>
+              </div>
+              <div style={{ marginLeft: 'auto' }}>
+                <MultiplayerHost gameMode="chainreaction" />
+              </div>
             </div>
-
-            <input
-              className={styles.input}
-              value={topic}
-              onChange={e => setTopic(e.target.value)}
-              placeholder="Enter Topic (e.g. Science, Travel, Space...)"
-              onKeyDown={e => e.key === "Enter" && handleGenerate()}
-              autoFocus
-            />
-
-            <button className={styles.btn} onClick={handleGenerate} disabled={!topic} style={{ marginTop: '1rem', background: topic ? '#ff8c00' : 'rgba(255,140,0,0.2)' }}>
-              <Sparkles size={20} style={{ marginRight: "0.5rem" }} /> {gameMode === 'puzzle' ? 'FORGE CHAINS' : 'IGNITE SPEED CHAIN'}
-            </button>
-            <p style={{ marginTop: '1rem', fontSize: '0.8rem', opacity: 0.4 }}>
-              Difficulty: {difficulty} | Rounds: {roundCount} | Length: {circlesPerChain}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* ── LOADING ── */}
-      {gameState === "LOADING" && (
-        <div className={styles.setupContainer}>
-          <Loader2 size={64} className={styles.spin} style={{ color: "#00CED1" }} />
-          <h2>{gameMode === "puzzle" ? "Forging compound word chains..." : "Building vocabulary categories..."}</h2>
-        </div>
-      )}
-
-      {/* ── PLAYING: Chain Puzzle ── */}
-      {gameState === "PLAYING" && gameMode === "puzzle" && currentChain && (
-        <div className={styles.chainArea}>
-          <div className={styles.chainMeta}>
-            Chain {chainIndex + 1} of {chains.length} • {currentChain.difficulty || difficulty} Level
-          </div>
-
-          <div className={styles.timerGiant}>
-            <GameTimer variant="circle" label="" timeLeft={timeLeft} totalTime={timerDuration} showTimesUp={false} />
-          </div>
-
-          {/* Chain nodes */}
-          <div className={styles.chainTrack}>
-            {currentChain.words.map((word, i) => {
-              const isRevealed = revealedWords[i];
-              const isActive = i === activeWordIdx;
-              const hints = hintLetters[i];
-              const blanks = getWordBlanks(word, hints);
-              const pts = getPointsForWord(hints);
-
-              // Connection label between nodes
-              const showConnection = isRevealed && i > 0 && revealedWords[i - 1] && currentChain.connections;
-              
-              return (
-                <div key={i} style={{ display: "flex", alignItems: "center" }}>
-                  {i > 0 && (
-                    <div className={`${styles.chainLink} ${revealedWords[i - 1] && isRevealed ? styles.chainLinkRevealed : ""}`}>
-                      {showConnection && currentChain.connections?.[i - 1] && (
-                        <span className={styles.connectionLabel}>{currentChain.connections[i - 1]}</span>
-                      )}
-                    </div>
-                  )}
-                  <div className={styles.chainNode}>
-                    <div className={`${styles.nodeCircle} ${isRevealed ? styles.nodeRevealed : ""} ${isActive ? styles.nodeActive : ""}`}>
-                      {isRevealed ? word.toUpperCase() : "?"}
-                    </div>
-                    {!isRevealed && (
-                      <div className={styles.letterBlanks}>
-                        {blanks.map((ch, j) => (
-                          <span key={j} className={ch !== "_" ? styles.letterRevealed : ""}>
-                            {ch}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    {!isRevealed && isActive && (
-                      <div className={styles.pointsBadge}>{pts} pts</div>
-                    )}
+            {gameState === "LOADING" ? (
+              <div className={styles.generatingState}>
+                <div className={styles.spinner} />
+                <div className={styles.generatingText}>
+                  {gameMode === "puzzle" ? "Forging compound word chains..." : "Building vocabulary categories..."}
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className={styles.setupField}>
+                  <div className={styles.setupLabel}>Topic / Theme</div>
+                  <input
+                    className={styles.setupInput}
+                    placeholder="e.g. Science, Travel, Space..."
+                    value={topic}
+                    onChange={e => setTopic(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && topic.trim() && handleGenerate()}
+                    autoFocus
+                  />
+                </div>
+                <div className={styles.setupRow}>
+                  <div className={styles.setupField}>
+                    <div className={styles.setupLabel}>Game Mode</div>
+                    <select className={styles.setupSelect} value={gameMode} onChange={e => setGameMode(e.target.value as GameMode)}>
+                      <option value="puzzle">Chain Puzzle</option>
+                      <option value="speed">Speed Chain</option>
+                    </select>
+                  </div>
+                  <div className={styles.setupField}>
+                    <div className={styles.setupLabel}>Difficulty</div>
+                    <select className={styles.setupSelect} value={difficulty} onChange={e => setDifficulty(e.target.value)}>
+                      <option value="Beginner">Beginner</option>
+                      <option value="Intermediate">Intermediate</option>
+                      <option value="Advanced">Advanced</option>
+                    </select>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-
-          {/* Turn + Input */}
-          <div className={styles.guessArea}>
-            <div className={styles.turnBadge} style={{ borderColor: currentColor, color: currentColor }}>
-              {currentTeam.name}&apos;s Turn
-            </div>
-            <div className={styles.guessRow}>
-              <input
-                ref={guessRef}
-                className={styles.guessInput}
-                value={guess}
-                onChange={e => setGuess(e.target.value)}
-                placeholder={`Type your guess...`}
-                onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                autoFocus
-              />
-              <button className={styles.checkBtn} onClick={handleSubmit}>CHECK</button>
-            </div>
-          </div>
-
-          {/* Controls */}
-          <div className={styles.controlRow}>
-            <button className={styles.controlBtn} onClick={skipChain}>
-              <SkipForward size={16} style={{ marginRight: "0.3rem" }} /> Skip Chain
-            </button>
-            <button className={styles.controlBtn} onClick={() => handlePuzzleWrong()}>
-              Pass Turn
-            </button>
+                <div className={styles.setupRow}>
+                  <div className={styles.setupField}>
+                    <div className={styles.setupLabel}>Rounds</div>
+                    <select className={styles.setupSelect} value={roundCount} onChange={e => setRoundCount(Number(e.target.value))}>
+                      {[3,4,5,6,7,8].map(n => <option key={n} value={n}>{n} rounds</option>)}
+                    </select>
+                  </div>
+                  <div className={styles.setupField}>
+                    <div className={styles.setupLabel}>Timer per Round</div>
+                    <select className={styles.setupSelect} value={timerDuration} onChange={e => setTimerDuration(Number(e.target.value))}>
+                      <option value={10}>10 seconds</option>
+                      <option value={15}>15 seconds</option>
+                      <option value={20}>20 seconds</option>
+                      <option value={30}>30 seconds</option>
+                    </select>
+                  </div>
+                </div>
+                <button className={styles.btnGenerate} onClick={handleGenerate} disabled={!topic.trim()}>
+                  <Sparkles size={16} /> {gameMode === 'puzzle' ? 'Forge Chains' : 'Ignite Speed Chain'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
 
-      {/* ── PLAYING: Speed Chain ── */}
-      {gameState === "PLAYING" && gameMode === "speed" && currentCategory && (
-        <div className={styles.speedArea}>
-          <div className={styles.categoryBadge}>
-            📂 {currentCategory.name}
-            <span style={{ fontSize: "0.8rem", opacity: 0.5, marginLeft: "0.75rem" }}>
-              Round {catIndex + 1} of {categories.length}
-            </span>
-          </div>
-
-          <div className={styles.timerGiant}>
-            <GameTimer variant="circle" label="" timeLeft={timeLeft} totalTime={timerDuration} showTimesUp={false} />
-          </div>
-
-          {/* Word chain */}
-          <div className={styles.wordChain}>
-            {chainWords.map((cw, i) => (
-              <div 
-                key={i} 
-                className={`${styles.wordBubble} ${i === chainWords.length - 1 ? styles.wordBubbleLatest : ""}`}
-                style={cw.teamColor ? { borderColor: cw.teamColor, color: cw.teamColor } : {}}
-              >
-                {cw.word}
-                {i === chainWords.length - 1 && (
-                  <span className={styles.lastLetter}>
-                    {cw.word[cw.word.length - 1].toUpperCase()}
-                  </span>
-                )}
+      {/* Game view */}
+      {(gameState === "PLAYING" || gameState === "FINISHED") && (
+        <div className={styles.page}>
+          <div className={styles.gameHeader}>
+            <div className={styles.gameTitle}>Chain Reaction</div>
+            <div className={styles.headerDivider} />
+            <div className={styles.qCounter}>
+              {gameMode === 'puzzle'
+                ? <><span>Chain </span><span className={styles.qCounterNum}>{chainIndex + 1}</span><span> / {chains.length}</span></>
+                : <><span>Category </span><span className={styles.qCounterNum}>{catIndex + 1}</span><span> / {categories.length}</span></>
+              }
+            </div>
+            <div className={styles.headerDivider} />
+            <div className={styles.qCounter}>{gameMode === 'puzzle' ? 'Chain Puzzle' : 'Speed Chain'}</div>
+            <div className={styles.headerSpacer} />
+            <div className={styles.timerWrap}>
+              <div className={`${styles.timerNum} ${timeLeft <= 5 ? styles.timerNumUrgent : ''}`}>
+                {timeLeft}
               </div>
-            ))}
+              <div className={styles.timerBar}>
+                <div
+                  className={`${styles.timerBarFill} ${timeLeft <= 5 ? styles.timerBarFillUrgent : ''}`}
+                  style={{ width: `${(timeLeft / timerDuration) * 100}%` }}
+                />
+              </div>
+            </div>
+            <button
+              style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 8, padding: '6px 14px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer' }}
+              onClick={() => setGameState("SETUP")}
+            >
+              ← New Game
+            </button>
           </div>
+          <div className={styles.gameContent} style={{ padding: '20px 40px', alignItems: 'stretch', justifyContent: 'flex-start', overflow: 'auto' }}>
 
-          <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#FFD700" }}>
-            Next word must start with: <span style={{ fontSize: "2.5rem" }}>{requiredLetter}</span>
-          </div>
+            {/* ── PLAYING: Chain Puzzle ── */}
+            {gameState === "PLAYING" && gameMode === "puzzle" && currentChain && (
+              <div className={styles.chainArea}>
+                <div className={styles.chainMeta}>
+                  Chain {chainIndex + 1} of {chains.length} • {currentChain.difficulty || difficulty} Level
+                </div>
 
-          {/* Strikes */}
-          <div className={styles.strikeRow}>
-            {currentTeams.map((t, i) => (
-              <div key={t.id} className={styles.strikeCard} style={{ borderColor: t.id === currentTeam.id ? TEAM_COLORS[i % TEAM_COLORS.length] : "var(--panel-border)" }}>
-                <div style={{ fontWeight: 700, color: TEAM_COLORS[i % TEAM_COLORS.length] }}>{t.name}</div>
-                <div className={styles.strikes}>
-                  {Array(3).fill(0).map((_, j) => (
-                    <span key={j} style={{ color: j < (strikes[t.id] || 0) ? "#ef4444" : "rgba(255,255,255,0.15)" }}>✕</span>
-                  ))}
+                <div className={styles.timerGiant}>
+                  <GameTimer variant="circle" label="" timeLeft={timeLeft} totalTime={timerDuration} showTimesUp={false} />
+                </div>
+
+                {/* Chain nodes */}
+                <div className={styles.chainTrack}>
+                  {currentChain.words.map((word, i) => {
+                    const isRevealed = revealedWords[i];
+                    const isActive = i === activeWordIdx;
+                    const hints = hintLetters[i];
+                    const blanks = getWordBlanks(word, hints);
+                    const pts = getPointsForWord(hints);
+
+                    // Connection label between nodes
+                    const showConnection = isRevealed && i > 0 && revealedWords[i - 1] && currentChain.connections;
+
+                    return (
+                      <div key={i} style={{ display: "flex", alignItems: "center" }}>
+                        {i > 0 && (
+                          <div className={`${styles.chainLink} ${revealedWords[i - 1] && isRevealed ? styles.chainLinkRevealed : ""}`}>
+                            {showConnection && currentChain.connections?.[i - 1] && (
+                              <span className={styles.connectionLabel}>{currentChain.connections[i - 1]}</span>
+                            )}
+                          </div>
+                        )}
+                        <div className={styles.chainNode}>
+                          <div className={`${styles.nodeCircle} ${isRevealed ? styles.nodeRevealed : ""} ${isActive ? styles.nodeActive : ""}`}>
+                            {isRevealed ? word.toUpperCase() : "?"}
+                          </div>
+                          {!isRevealed && (
+                            <div className={styles.letterBlanks}>
+                              {blanks.map((ch, j) => (
+                                <span key={j} className={ch !== "_" ? styles.letterRevealed : ""}>
+                                  {ch}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {!isRevealed && isActive && (
+                            <div className={styles.pointsBadge}>{pts} pts</div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Turn + Input */}
+                <div className={styles.guessArea}>
+                  <div className={styles.turnBadge} style={{ borderColor: currentColor, color: currentColor }}>
+                    {currentTeam.name}&apos;s Turn
+                  </div>
+                  <div className={styles.guessRow}>
+                    <input
+                      ref={guessRef}
+                      className={styles.guessInput}
+                      value={guess}
+                      onChange={e => setGuess(e.target.value)}
+                      placeholder={`Type your guess...`}
+                      onKeyDown={e => e.key === "Enter" && handleSubmit()}
+                      autoFocus
+                    />
+                    <button className={styles.checkBtn} onClick={handleSubmit}>CHECK</button>
+                  </div>
+                </div>
+
+                {/* Controls */}
+                <div className={styles.controlRow}>
+                  <button className={styles.controlBtn} onClick={skipChain}>
+                    <SkipForward size={16} style={{ marginRight: "0.3rem" }} /> Skip Chain
+                  </button>
+                  <button className={styles.controlBtn} onClick={() => handlePuzzleWrong()}>
+                    Pass Turn
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
+            )}
 
-          {/* Turn + Input */}
-          <div className={styles.guessArea}>
-            <div className={styles.turnBadge} style={{ borderColor: currentColor, color: currentColor }}>
-              {currentTeam.name}&apos;s Turn
-            </div>
-            <div className={styles.guessRow}>
-              <input
-                ref={guessRef}
-                className={styles.guessInput}
-                value={guess}
-                onChange={e => setGuess(e.target.value)}
-                placeholder={`Word starting with "${requiredLetter}"...`}
-                onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                autoFocus
-              />
-              <button className={styles.checkBtn} onClick={handleSubmit}>GO</button>
-            </div>
-            <button className={styles.controlBtn} onClick={() => { handleSpeedWrong(); }} style={{ marginTop: "0.5rem" }}>
-              Pass (Strike)
-            </button>
-          </div>
+            {/* ── PLAYING: Speed Chain ── */}
+            {gameState === "PLAYING" && gameMode === "speed" && currentCategory && (
+              <div className={styles.speedArea}>
+                <div className={styles.categoryBadge}>
+                  📂 {currentCategory.name}
+                  <span style={{ fontSize: "0.8rem", opacity: 0.5, marginLeft: "0.75rem" }}>
+                    Round {catIndex + 1} of {categories.length}
+                  </span>
+                </div>
 
-          {/* Controls */}
-          <div className={styles.controlRow}>
-            <button className={styles.controlBtn} onClick={skipCategory}>
-              <SkipForward size={16} style={{ marginRight: "0.3rem" }} /> Next Category
-            </button>
-          </div>
-        </div>
-      )}
+                <div className={styles.timerGiant}>
+                  <GameTimer variant="circle" label="" timeLeft={timeLeft} totalTime={timerDuration} showTimesUp={false} />
+                </div>
 
-      {/* ── FINISHED ── */}
-      {gameState === "FINISHED" && (
-        <div className={styles.setupContainer}>
-          <h1 style={{ fontSize: "3.5rem", color: "#00CED1" }}>🔗 Game Over!</h1>
-          <p style={{ fontSize: "1.3rem", opacity: 0.7 }}>
-            {gameMode === "puzzle" 
-              ? `${chains.length} chains completed!` 
-              : `${chainWords.length} words chained across ${catIndex + 1} categories!`}
-          </p>
-          <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-            <button className={styles.btn} onClick={() => {
-              setGameState("SETUP");
-              setChains([]);
-              setCategories([]);
-            }}>
-              Play Again
-            </button>
-            <Link href="/games" style={{ textDecoration: "none" }}>
-              <button className={styles.controlBtn} style={{ padding: "1rem 2rem", fontSize: "1.1rem" }}>
-                Back to Arcade
-              </button>
-            </Link>
+                {/* Word chain */}
+                <div className={styles.wordChain}>
+                  {chainWords.map((cw, i) => (
+                    <div
+                      key={i}
+                      className={`${styles.wordBubble} ${i === chainWords.length - 1 ? styles.wordBubbleLatest : ""}`}
+                      style={cw.teamColor ? { borderColor: cw.teamColor, color: cw.teamColor } : {}}
+                    >
+                      {cw.word}
+                      {i === chainWords.length - 1 && (
+                        <span className={styles.lastLetter}>
+                          {cw.word[cw.word.length - 1].toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#FFD700" }}>
+                  Next word must start with: <span style={{ fontSize: "2.5rem" }}>{requiredLetter}</span>
+                </div>
+
+                {/* Strikes */}
+                <div className={styles.strikeRow}>
+                  {currentTeams.map((t, i) => (
+                    <div key={t.id} className={styles.strikeCard} style={{ borderColor: t.id === currentTeam.id ? TEAM_COLORS[i % TEAM_COLORS.length] : "var(--panel-border)" }}>
+                      <div style={{ fontWeight: 700, color: TEAM_COLORS[i % TEAM_COLORS.length] }}>{t.name}</div>
+                      <div className={styles.strikes}>
+                        {Array(3).fill(0).map((_, j) => (
+                          <span key={j} style={{ color: j < (strikes[t.id] || 0) ? "#ef4444" : "rgba(255,255,255,0.15)" }}>✕</span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Turn + Input */}
+                <div className={styles.guessArea}>
+                  <div className={styles.turnBadge} style={{ borderColor: currentColor, color: currentColor }}>
+                    {currentTeam.name}&apos;s Turn
+                  </div>
+                  <div className={styles.guessRow}>
+                    <input
+                      ref={guessRef}
+                      className={styles.guessInput}
+                      value={guess}
+                      onChange={e => setGuess(e.target.value)}
+                      placeholder={`Word starting with "${requiredLetter}"...`}
+                      onKeyDown={e => e.key === "Enter" && handleSubmit()}
+                      autoFocus
+                    />
+                    <button className={styles.checkBtn} onClick={handleSubmit}>GO</button>
+                  </div>
+                  <button className={styles.controlBtn} onClick={() => { handleSpeedWrong(); }} style={{ marginTop: "0.5rem" }}>
+                    Pass (Strike)
+                  </button>
+                </div>
+
+                {/* Controls */}
+                <div className={styles.controlRow}>
+                  <button className={styles.controlBtn} onClick={skipCategory}>
+                    <SkipForward size={16} style={{ marginRight: "0.3rem" }} /> Next Category
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── FINISHED ── */}
+            {gameState === "FINISHED" && (
+              <div className={styles.setupContainer}>
+                <h1 style={{ fontSize: "3.5rem", color: "#00CED1" }}>🔗 Game Over!</h1>
+                <p style={{ fontSize: "1.3rem", opacity: 0.7 }}>
+                  {gameMode === "puzzle"
+                    ? `${chains.length} chains completed!`
+                    : `${chainWords.length} words chained across ${catIndex + 1} categories!`}
+                </p>
+                <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                  <button className={styles.btn} onClick={() => {
+                    setGameState("SETUP");
+                    setChains([]);
+                    setCategories([]);
+                  }}>
+                    Play Again
+                  </button>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       )}
@@ -726,6 +782,6 @@ const TEAM_COLORS = [
       {/* ── Overlays ── */}
       {showTimesUp && <GameTimer showTimesUp={true} />}
       <ScoreboardOverlay />
-    </div>
+    </>
   );
 }
