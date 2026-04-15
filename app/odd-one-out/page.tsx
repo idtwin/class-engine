@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import styles from "./odd.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
-import { Sparkles, Lightbulb, ChevronRight, Ban } from "lucide-react";
+import { Sparkles, Lightbulb, ChevronRight } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
 import GameTimer from "../components/GameTimer";
 import BoardLibrary from "../components/BoardLibrary";
 import { SavedBoard } from "../store/useClassroomStore";
 
-type Mode = "Classic" | "Debate" | "Elimination";
+type Phase = "SETUP" | "GENERATING" | "READY" | "PLAYING";
 type Question = { level: string, words: string[], answer: string, hint: string };
 
 // Fisher-Yates shuffle
@@ -24,7 +24,7 @@ function shuffleArray<T>(arr: T[]): T[] {
 
 export default function OddOneOut() {
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider, activeRoomCode, saveBoard } = useClassroomStore();
+  const { currentTeams, updateTeamScore, getActiveApiKey, getActiveModel, llmProvider, activeRoomCode, saveBoard } = useClassroomStore();
   
   const handleLoadBoard = (saved: SavedBoard) => {
     setQuestions(saved.content);
@@ -37,8 +37,8 @@ export default function OddOneOut() {
   const [levelFilter, setLevelFilter] = useState("Mixed Level");
   const [isGenerating, setIsGenerating] = useState(false);
   const [questions, setQuestions] = useState<Question[] | null>(null);
-  const [activeMode, setActiveMode] = useState<Mode>("Classic");
-  
+  const [phase, setPhase] = useState<Phase>("SETUP");
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [showHint, setShowHint] = useState(false);
@@ -53,25 +53,75 @@ export default function OddOneOut() {
   const [roomStudents, setRoomStudents] = useState<any[]>([]);
   const [roomData, setRoomData] = useState<any>(null);
 
-  // Elimination mode state tracks team IDs that are struck out
-  const [eliminatedTeams, setEliminatedTeams] = useState<Set<string>>(new Set());
+  const currentQ = questions?.[currentIndex];
 
-  // Push the first question when generated (shuffle words, strip answer for students)
-  useEffect(() => {
-    if (activeRoomCode && questions && currentIndex === 0) {
-       const q = questions[0];
-       const studentQ = { ...q, words: shuffleArray(q.words), answer: undefined, hint: undefined };
-       fetch("/api/room/action", {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({
-            code: activeRoomCode,
-            action: "set_question",
-            payload: { question: studentQ }
-         })
-       }).catch((e) => console.error("Sync Error", e));
+  const scoreStudents = useCallback((students: any[], data: any) => {
+    const answeredStudents = students.filter((s: any) => s.answered && s.lastAnswer);
+    const correctAnswers: any[] = [];
+    const wrongAnswers: any[] = [];
+
+    answeredStudents.forEach((s: any) => {
+      const isCorrect = currentQ && s.lastAnswer === currentQ.answer;
+      if (isCorrect) correctAnswers.push(s);
+      else wrongAnswers.push(s);
+    });
+
+    correctAnswers.sort((a: any, b: any) => (a.answerTime || 0) - (b.answerTime || 0));
+
+    const newPointsEarned: Record<string, number> = {};
+
+    correctAnswers.forEach((s: any, idx: number) => {
+      let pts = 100;
+      if (idx === 0) pts = 500;
+      else if (idx === 1) pts = 400;
+      else if (idx === 2) pts = 300;
+      else if (idx === 3) pts = 200;
+
+      newPointsEarned[s.id] = pts;
+      const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
+      if (team) updateTeamScore(team.id, pts);
+    });
+
+    if (penalizeWrong) {
+      wrongAnswers.forEach((s: any) => {
+        newPointsEarned[s.id] = -100;
+        const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
+        if (team) updateTeamScore(team.id, -100);
+      });
     }
-  }, [questions, activeRoomCode]);
+
+    setPointsEarned(newPointsEarned);
+  }, [currentQ, currentTeams, updateTeamScore, penalizeWrong]);
+
+  const handleReveal = useCallback(async () => {
+    setTimerActive(false);
+    setShowTimesUp(false);
+    setShowAnswer(true);
+
+    if (activeRoomCode) {
+      await fetch("/api/room/action", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: { answer: currentQ?.answer, explanation: currentQ?.hint } })
+      }).catch(() => {});
+
+      // Fetch fresh data for accurate scoring
+      try {
+        const res = await fetch(`/api/room/get?code=${activeRoomCode}`);
+        if (res.ok) {
+          const freshData = await res.json();
+          const freshStudents = freshData.students || [];
+          setRoomStudents(freshStudents);
+          setRoomData(freshData);
+          scoreStudents(freshStudents, freshData);
+        }
+      } catch (e) {
+        console.error("Failed to fetch fresh data for scoring", e);
+        scoreStudents(roomStudents, roomData);
+      }
+    } else {
+      scoreStudents(roomStudents, roomData);
+    }
+  }, [activeRoomCode, currentQ, roomStudents, roomData, scoreStudents]);
 
   // Poll for student responses
   useEffect(() => {
@@ -108,7 +158,8 @@ export default function OddOneOut() {
     if (allTeamsAnswered) {
       handleReveal();
     }
-  }, [roomStudents, showAnswer]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomStudents, showAnswer, handleReveal]);
 
   // Timer countdown — show TIME'S UP but do NOT auto-reveal
   useEffect(() => {
@@ -133,13 +184,13 @@ export default function OddOneOut() {
     if (!topic) return alert("Please enter a topic!");
     
     setIsGenerating(true);
+    setPhase("GENERATING");
     setQuestions(null);
     setCurrentIndex(0);
     setSelectedWord(null);
     setShowHint(false);
     setShowAnswer(false);
     setPointsEarned({});
-    setEliminatedTeams(new Set());
 
     try {
       if (activeRoomCode) {
@@ -152,106 +203,67 @@ export default function OddOneOut() {
       const res = await fetch("/api/generate-odd-one-out", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          apiKey: getActiveApiKey(), 
-          mistralModel, 
-          provider: llmProvider, 
-          topic, 
-          level: levelFilter 
+        body: JSON.stringify({
+          apiKey: getActiveApiKey(),
+          mistralModel: getActiveModel(),
+          provider: llmProvider,
+          topic,
+          level: levelFilter
         })
       });
       const data = await res.json();
       if (res.ok && data.questions) {
-        // Shuffle words on each question so the answer isn't always in the same position
         const shuffled = data.questions.map((q: Question) => ({ ...q, words: shuffleArray(q.words) }));
         setQuestions(shuffled);
-        
-        if (activeRoomCode && shuffled[0]) {
-           const firstQ = shuffled[0];
-           const studentQ = { ...firstQ, words: shuffleArray(firstQ.words), answer: undefined, hint: undefined };
-           await fetch("/api/room/action", {
-             method: "POST", headers: { "Content-Type": "application/json" },
-             body: JSON.stringify({ code: activeRoomCode, action: "set_question", payload: { question: studentQ } })
-           });
-        }
-
-        setTimeLeft(timerDuration);
-        setTimerActive(true);
+        setCurrentIndex(0);
+        setPhase("READY");
       } else {
+        setPhase("SETUP");
         alert("Error: " + (data.error || "Unknown Error"));
       }
     } catch (e: any) {
+      setPhase("SETUP");
       alert("Failed to generate: " + e.message);
     }
     setIsGenerating(false);
   };
 
-  const handleReveal = async () => {
-    setTimerActive(false);
-    setShowTimesUp(false);
-    setShowAnswer(true);
-
+  const handleLaunch = async () => {
     if (activeRoomCode) {
-      await fetch("/api/room/action", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: {} })
-      }).catch(() => {});
-
-      // Fetch fresh data for accurate scoring
       try {
-        const res = await fetch(`/api/room/get?code=${activeRoomCode}`);
-        if (res.ok) {
-          const freshData = await res.json();
-          const freshStudents = freshData.students || [];
-          setRoomStudents(freshStudents);
-          setRoomData(freshData);
-          scoreStudents(freshStudents, freshData);
-        }
-      } catch (e) {
-        console.error("Failed to fetch fresh data for scoring", e);
-        scoreStudents(roomStudents, roomData);
-      }
-    } else {
-      scoreStudents(roomStudents, roomData);
-    }
-  };
+        const r1 = await fetch("/api/room/action", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: activeRoomCode, action: "set_game_mode", payload: { gameMode: "oddoneout" } })
+        });
+        if (!r1.ok) { alert("Failed to sync game mode. Please try again."); return; }
 
-  const scoreStudents = (students: any[], data: any) => {
-    const answeredStudents = students.filter((s: any) => s.answered && s.lastAnswer);
-    const correctAnswers: any[] = [];
-    const wrongAnswers: any[] = [];
-    
-    answeredStudents.forEach((s: any) => {
-      const isCorrect = currentQ && s.lastAnswer === currentQ.answer;
-      if (isCorrect) correctAnswers.push(s);
-      else wrongAnswers.push(s);
-    });
-    
-    correctAnswers.sort((a: any, b: any) => (a.answerTime || 0) - (b.answerTime || 0));
-    
-    const newPointsEarned: Record<string, number> = {};
-    
-    correctAnswers.forEach((s: any, idx: number) => {
-      let pts = 100;
-      if (idx === 0) pts = 500;
-      else if (idx === 1) pts = 400;
-      else if (idx === 2) pts = 300;
-      else if (idx === 3) pts = 200;
-      
-      newPointsEarned[s.id] = pts;
-      const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
-      if (team) updateTeamScore(team.id, pts);
-    });
-    
-    if (penalizeWrong) {
-      wrongAnswers.forEach((s: any) => {
-        newPointsEarned[s.id] = -100;
-        const team = currentTeams.find(t => t.name === s.name || t.students.some(ts => ts.name === s.name));
-        if (team) updateTeamScore(team.id, -100);
-      });
+        const r2 = await fetch("/api/room/action", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: activeRoomCode, action: "update_status", payload: { status: "playing" } })
+        });
+        if (!r2.ok) { alert("Failed to update room status. Please try again."); return; }
+
+        await fetch("/api/room/action", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: activeRoomCode, action: "clear_answers", payload: {} })
+        }).catch(() => {});
+
+        if (questions && questions[0]) {
+          const firstQ = questions[0];
+          const studentQ = { ...firstQ, words: shuffleArray(firstQ.words), answer: undefined, hint: undefined };
+          await fetch("/api/room/action", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: activeRoomCode, action: "set_question", payload: { question: studentQ } })
+          }).catch(() => {});
+        }
+      } catch {
+        alert("Network error during launch. Please try again.");
+        return;
+      }
     }
-    
-    setPointsEarned(newPointsEarned);
+    setTimeLeft(timerDuration);
+    setTimerActive(true);
+    setPhase("PLAYING");
   };
 
   const nextQuestion = async () => {
@@ -292,17 +304,6 @@ export default function OddOneOut() {
     }
   };
 
-  const toggleElimination = (teamId: string) => {
-    setEliminatedTeams(prev => {
-      const next = new Set(prev);
-      if (next.has(teamId)) next.delete(teamId);
-      else next.add(teamId);
-      return next;
-    });
-  };
-
-  const currentQ = questions?.[currentIndex];
-
   const timerDur = timerDuration;
   const timerPct = timerDur > 0 ? (timeLeft / timerDur) * 100 : 100;
   const timerUrgent = timeLeft <= 5 && timerDur > 0 && timerActive;
@@ -310,7 +311,7 @@ export default function OddOneOut() {
   return (
     <>
       {/* Setup overlay — shown when no questions yet */}
-      {(!questions || isGenerating) && (
+      {(phase === "SETUP" || phase === "GENERATING" || phase === "READY") && (
         <div className={styles.setupOverlay}>
           <div className={styles.setupModal}>
             <div className={styles.setupTitleRow}>
@@ -324,10 +325,46 @@ export default function OddOneOut() {
               </div>
             </div>
 
-            {isGenerating ? (
+            {phase === "GENERATING" ? (
               <div className={styles.generatingState}>
                 <div className={styles.spinner} />
                 <div className={styles.generatingText}>Generating word sets...</div>
+              </div>
+            ) : phase === "READY" ? (
+              <div className={styles.lobbyState}>
+                <div className={styles.lobbyReadyBadge}>
+                  <span className={styles.lobbyReadyDot} />
+                  <span>{questions?.length} questions ready</span>
+                </div>
+                <div className={styles.lobbySection}>
+                  <div className={styles.setupLabel}>
+                    Students joined
+                    <span className={styles.lobbyJoinCount}>{roomStudents.length}</span>
+                  </div>
+                  {roomStudents.length === 0 ? (
+                    <div className={styles.lobbyEmpty}>Waiting for students to connect...</div>
+                  ) : (
+                    <div className={styles.lobbyStudentGrid}>
+                      {roomStudents.map(s => {
+                        const team = currentTeams.find(t => t.students.some((ts: any) => ts.name === s.name));
+                        return (
+                          <div key={s.id || s.name} className={styles.lobbyStudent}>
+                            <span className={styles.lobbyStudentName}>{s.name}</span>
+                            {team && <span className={styles.lobbyStudentTeam}>{team.name}</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                <div className={styles.lobbyActions}>
+                  <button className={styles.btnLaunch} onClick={handleLaunch}>
+                    Launch Game →
+                  </button>
+                  <button className={styles.btnBackSetup} onClick={() => setPhase("SETUP")}>
+                    ← Back
+                  </button>
+                </div>
               </div>
             ) : (
               <>
@@ -350,14 +387,6 @@ export default function OddOneOut() {
                       <option value="Low">Low (A1)</option>
                       <option value="Mid">Mid (A2)</option>
                       <option value="High">High (B1)</option>
-                    </select>
-                  </div>
-                  <div className={styles.setupField}>
-                    <div className={styles.setupLabel}>Game Mode</div>
-                    <select className={styles.setupSelect} value={activeMode} onChange={e => setActiveMode(e.target.value as Mode)}>
-                      <option value="Classic">Classic</option>
-                      <option value="Debate">Debate</option>
-                      <option value="Elimination">Elimination</option>
                     </select>
                   </div>
                 </div>
@@ -393,7 +422,7 @@ export default function OddOneOut() {
       )}
 
       {/* Game view */}
-      {questions && !isGenerating && (
+      {phase === "PLAYING" && questions && (
         <div className={styles.page}>
           <div className={styles.gameHeader}>
             <div className={styles.gameTitle}>Odd One Out</div>
@@ -401,8 +430,6 @@ export default function OddOneOut() {
             <div className={styles.qCounter}>
               Q <span className={styles.qCounterNum}>{currentIndex + 1}</span> / {questions.length}
             </div>
-            <div className={styles.headerDivider} />
-            <div className={styles.qCounter}>{activeMode}</div>
             <div className={styles.headerSpacer} />
             {timerDur > 0 && (
               <div className={styles.timerWrap}>
@@ -419,7 +446,7 @@ export default function OddOneOut() {
             )}
             <button
               style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 8, padding: '6px 14px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer' }}
-              onClick={() => { setQuestions(null); setCurrentIndex(0); }}
+              onClick={() => { setPhase("SETUP"); setQuestions(null); setCurrentIndex(0); setShowAnswer(false); setSelectedWord(null); setShowHint(false); setPointsEarned({}); }}
             >
               ← New Game
             </button>
@@ -439,9 +466,7 @@ export default function OddOneOut() {
 
                   <div className={styles.questionTimerRow}>
                     <h2 className={styles.mainSentence}>
-                      {activeMode === "Classic" && "ISOLATE THE ANOMALY."}
-                      {activeMode === "Debate" && "DEBATE PROTOCOL ACTIVE."}
-                      {activeMode === "Elimination" && "ELIMINATION PROTOCOL ACTIVE."}
+                      ISOLATE THE ANOMALY.
                     </h2>
                     <GameTimer
                       timeLeft={timeLeft}
@@ -530,41 +555,6 @@ export default function OddOneOut() {
                       <span style={{ opacity: 0.5 }}>{">"} COMMAND_PROMPT_WAITING_</span>
                     </div>
                   </div>
-
-                  {/* Elimination Module (Sideline) */}
-                  {activeMode === "Elimination" && currentTeams.length > 0 && (
-                    <div style={{ padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                      <h3 style={{ marginBottom: '1rem', color: '#ff4444', textTransform: 'uppercase', fontSize: '0.7rem', fontFamily: 'monospace' }}>// ELIMINATION_TRACKER</h3>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        {currentTeams.map(t => {
-                          const eliminated = eliminatedTeams.has(t.id);
-                          return (
-                            <button
-                              key={t.id}
-                              onClick={() => toggleElimination(t.id)}
-                              style={{
-                                padding: '0.6rem',
-                                borderRadius: '6px',
-                                border: '1px solid',
-                                borderColor: eliminated ? '#ff4444' : 'rgba(255,255,255,0.1)',
-                                background: eliminated ? 'rgba(239, 68, 68, 0.1)' : 'rgba(0,0,0,0.3)',
-                                color: eliminated ? '#ff4444' : 'white',
-                                fontWeight: 'bold',
-                                fontSize: '0.8rem',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                transition: 'all 0.2s'
-                              }}
-                            >
-                              {t.name} {eliminated && <Ban size={14} />}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
 
                   {/* Pre-reveal Lock-in Status */}
                   {!showAnswer && activeRoomCode && roomStudents.length > 0 && (
