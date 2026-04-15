@@ -235,30 +235,26 @@ export default function OddOneOut() {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ code: activeRoomCode, action: "set_game_mode", payload: { gameMode: "oddoneout" } })
         });
-        if (!r1.ok) { alert("Failed to sync game mode. Please try again."); return; }
-
-        const r2 = await fetch("/api/room/action", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: activeRoomCode, action: "update_status", payload: { status: "playing" } })
-        });
-        if (!r2.ok) { alert("Failed to update room status. Please try again."); return; }
-
-        await fetch("/api/room/action", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: activeRoomCode, action: "clear_answers", payload: {} })
-        }).catch(() => {});
-
-        if (questions && questions[0]) {
-          const firstQ = questions[0];
-          const studentQ = { ...firstQ, words: shuffleArray(firstQ.words), answer: undefined, hint: undefined };
+        if (r1.ok) {
           await fetch("/api/room/action", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ code: activeRoomCode, action: "set_question", payload: { question: studentQ } })
+            body: JSON.stringify({ code: activeRoomCode, action: "update_status", payload: { status: "playing" } })
           }).catch(() => {});
+          await fetch("/api/room/action", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: activeRoomCode, action: "clear_answers", payload: {} })
+          }).catch(() => {});
+          if (questions && questions[0]) {
+            const firstQ = questions[0];
+            const studentQ = { ...firstQ, words: shuffleArray(firstQ.words), answer: undefined, hint: undefined };
+            await fetch("/api/room/action", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ code: activeRoomCode, action: "set_question", payload: { question: studentQ } })
+            }).catch(() => {});
+          }
         }
       } catch {
-        alert("Network error during launch. Please try again.");
-        return;
+        // Network error — proceed without student sync
       }
     }
     setTimeLeft(timerDuration);
