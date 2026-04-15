@@ -492,3 +492,60 @@
   font-family: var(--font-mono, 'JetBrains Mono'), monospace;
   font-size: 13px; color: var(--muted, #4a637d); letter-spacing: 0.1em;
 }
+/* ── READY lobby ─────────────────────── */
+.lobbyState { display: flex; flex-direction: column; gap: 20px; }
+.lobbyReadyBadge {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  font-size: 12px; color: var(--text, #dce8f5);
+  letter-spacing: 0.08em;
+}
+.lobbyReadyDot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #00e87a; box-shadow: 0 0 6px #00e87a;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+.lobbySection { display: flex; flex-direction: column; gap: 10px; }
+.lobbyJoinCount {
+  background: var(--surface2, #131b2b);
+  border: 1px solid var(--border2, #243347);
+  border-radius: 20px; padding: 1px 10px;
+  font-size: 11px; color: var(--text, #dce8f5); font-weight: 700;
+}
+.lobbyEmpty {
+  font-size: 13px; color: var(--muted, #4a637d);
+  font-style: italic; padding: 8px 0;
+}
+.lobbyStudentGrid {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.lobbyStudent {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface2, #131b2b);
+  border: 1px solid var(--border2, #243347);
+  border-radius: 8px; padding: 6px 10px;
+}
+.lobbyStudentName { font-size: 13px; font-weight: 700; color: var(--text, #dce8f5); }
+.lobbyStudentTeam {
+  font-size: 10px; color: var(--muted, #4a637d);
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  letter-spacing: 0.08em;
+}
+.lobbyActions { display: flex; gap: 12px; align-items: center; }
+.btnLaunch {
+  background: #b06eff; color: #000; border: none;
+  border-radius: 10px; padding: 14px 28px;
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  font-size: 13px; font-weight: 700; letter-spacing: 0.1em;
+  cursor: pointer; transition: opacity 0.15s;
+}
+.btnLaunch:hover { opacity: 0.88; }
+.btnBackSetup {
+  background: transparent; color: var(--muted, #4a637d);
+  border: 1px solid var(--border2, #243347);
+  border-radius: 10px; padding: 14px 20px;
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  font-size: 12px; cursor: pointer;
+}
+.btnBackSetup:hover { color: var(--text, #dce8f5); }
