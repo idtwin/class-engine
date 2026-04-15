@@ -89,7 +89,9 @@ export default function OddOneOut() {
     if (allTeamsAnswered) {
       handleReveal();
     }
-  }, [roomStudents, showAnswer]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // @ts-ignore — handleReveal is declared after early return but is in scope at runtime
+  }, [roomStudents, showAnswer, handleReveal]);
 
   // Timer countdown — show TIME'S UP but do NOT auto-reveal
   useEffect(() => {
@@ -148,9 +150,11 @@ export default function OddOneOut() {
         setCurrentIndex(0);
         setPhase("READY");
       } else {
+        setPhase("SETUP");
         alert("Error: " + (data.error || "Unknown Error"));
       }
     } catch (e: any) {
+      setPhase("SETUP");
       alert("Failed to generate: " + e.message);
     }
     setIsGenerating(false);
@@ -158,26 +162,35 @@ export default function OddOneOut() {
 
   const handleLaunch = async () => {
     if (activeRoomCode) {
-      await fetch("/api/room/action", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: activeRoomCode, action: "set_game_mode", payload: { gameMode: "oddoneout" } })
-      }).catch(() => {});
-      await fetch("/api/room/action", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: activeRoomCode, action: "update_status", payload: { status: "playing" } })
-      }).catch(() => {});
-      await fetch("/api/room/action", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: activeRoomCode, action: "clear_answers", payload: {} })
-      }).catch(() => {});
+      try {
+        const r1 = await fetch("/api/room/action", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: activeRoomCode, action: "set_game_mode", payload: { gameMode: "oddoneout" } })
+        });
+        if (!r1.ok) { alert("Failed to sync game mode. Please try again."); return; }
 
-      if (questions && questions[0]) {
-        const firstQ = questions[0];
-        const studentQ = { ...firstQ, words: shuffleArray(firstQ.words), answer: undefined, hint: undefined };
+        const r2 = await fetch("/api/room/action", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: activeRoomCode, action: "update_status", payload: { status: "playing" } })
+        });
+        if (!r2.ok) { alert("Failed to update room status. Please try again."); return; }
+
         await fetch("/api/room/action", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: activeRoomCode, action: "set_question", payload: { question: studentQ } })
+          body: JSON.stringify({ code: activeRoomCode, action: "clear_answers", payload: {} })
         }).catch(() => {});
+
+        if (questions && questions[0]) {
+          const firstQ = questions[0];
+          const studentQ = { ...firstQ, words: shuffleArray(firstQ.words), answer: undefined, hint: undefined };
+          await fetch("/api/room/action", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: activeRoomCode, action: "set_question", payload: { question: studentQ } })
+          }).catch(() => {});
+        }
+      } catch {
+        alert("Network error during launch. Please try again.");
+        return;
       }
     }
     setTimeLeft(timerDuration);
