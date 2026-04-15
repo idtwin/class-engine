@@ -32,7 +32,11 @@ export async function POST(req: Request) {
       if (payload.fixitMode !== undefined) room.fixitMode = payload.fixitMode;
     }
     if (action === "end_session") room.status = "ended";
-    if (action === "reveal_answer") room.answerRevealed = true;
+    if (action === "reveal_answer") {
+      room.answerRevealed = true;
+      if (payload.answer)      room.revealedAnswer      = payload.answer;
+      if (payload.explanation) room.revealedExplanation = payload.explanation;
+    }
     if (action === "end_session") room.status = "ended";
     
     // Handle Student actions mapping
