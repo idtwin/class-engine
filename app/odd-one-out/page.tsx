@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import styles from "./odd.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
 import { Sparkles, Lightbulb, ChevronRight } from "lucide-react";
@@ -110,6 +110,8 @@ export default function OddOneOut() {
 
   if (!mounted) return null;
 
+  const currentQ = questions?.[currentIndex];
+
   const handleGenerate = async () => {
     
     
@@ -198,7 +200,7 @@ export default function OddOneOut() {
     setPhase("PLAYING");
   };
 
-  const handleReveal = async () => {
+  const handleReveal = useCallback(async () => {
     setTimerActive(false);
     setShowTimesUp(false);
     setShowAnswer(true);
@@ -226,7 +228,7 @@ export default function OddOneOut() {
     } else {
       scoreStudents(roomStudents, roomData);
     }
-  };
+  }, [activeRoomCode, currentQ, roomStudents, roomData, currentTeams, updateTeamScore, penalizeWrong]);
 
   const scoreStudents = (students: any[], data: any) => {
     const answeredStudents = students.filter((s: any) => s.answered && s.lastAnswer);
@@ -303,8 +305,6 @@ export default function OddOneOut() {
       setTimerActive(true);
     }
   };
-
-  const currentQ = questions?.[currentIndex];
 
   const timerDur = timerDuration;
   const timerPct = timerDur > 0 ? (timeLeft / timerDur) * 100 : 100;
