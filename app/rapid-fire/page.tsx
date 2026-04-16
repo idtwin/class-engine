@@ -2,11 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useClassroomStore, SavedBoard } from "../store/useClassroomStore";
-import { Play, Zap, FastForward, Eye, ChevronRight, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import styles from "./rapid-fire.module.css";
 import MultiplayerHost from "../components/MultiplayerHost";
-import GameTimer from "../components/GameTimer";
-import GameSettingsDrawer from "../components/GameSettingsDrawer";
 import BoardLibrary from "../components/BoardLibrary";
 
 interface RapidFireQuestion {
@@ -193,7 +191,6 @@ export default function RapidFire() {
     setTimerActive(true);
   };
 
-  const timerMax = timerDuration;
   const RF_CIRC = 125.66;
   const rfDashOffset = timerDuration > 0 ? RF_CIRC * (1 - timeLeft / timerDuration) : 0;
   const rfTimerUrgent = timeLeft <= 10 && timerDuration > 0 && timerActive;
@@ -584,7 +581,7 @@ export default function RapidFire() {
                             return <div className={styles.rfSpeedEmpty}>No correct answers</div>;
                           }
                           const medals = ['🥇', '🥈', '🥉'];
-                          const pts = [500, 400, 300];
+                          const pts = [500, 400, 300, 200];
                           return ranked.map((s: any, idx: number) => (
                             <div key={s.id} className={styles.rfSpeedRow}>
                               <div className={styles.rfSpeedMedal}>{medals[idx] ?? '·'}</div>
