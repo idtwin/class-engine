@@ -58,6 +58,7 @@ export default function PlayPage() {
   // ── Timer display ────────────────────────────────
   const [timerDisplay, setTimerDisplay] = useState<string>("");
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const feedbackProcessed = useRef(false);
 
   // ── Initialise from localStorage + start polling ─
   useEffect(() => {
@@ -129,6 +130,7 @@ export default function PlayPage() {
       setShowFeedback(false);
       setFeedbackCorrect(null);
       setFeedbackText("");
+      feedbackProcessed.current = false;
     }
   }, [room?.currentQuestion, lastQuestionId]);
 
@@ -216,9 +218,10 @@ export default function PlayPage() {
       room?.gameMode === "rapidfire" &&
       room?.answerRevealed &&
       selectedWord &&
-      showFeedback &&
-      feedbackCorrect === null
+      showFeedback
     ) {
+      if (feedbackProcessed.current) return;
+      feedbackProcessed.current = true;
       const correct = selectedWord === room.currentQuestion?.correctLetter;
       const explanation = correct
         ? "Correct choice! Well done."
