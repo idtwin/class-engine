@@ -128,7 +128,6 @@ export default function FixIt() {
   if (!mounted) return null;
 
   const currentQ = questions[qIndex];
-  const lockedCount = roomStudents.filter(s => s.answered).length;
 
   // ── Generate — fetches questions then waits in lobby ──
   const handleGenerate = async () => {
@@ -243,9 +242,6 @@ export default function FixIt() {
   };
 
   // ── Timer helpers ─────────────────────────────────────
-  const timerPct = timerDur > 0 ? (timeLeft / timerDur) * 100 : 100;
-  const timerUrgent = timeLeft <= 5 && timerDur > 0 && timerActive;
-
   // New layout timer derivations
   const TIMER_CIRC = 125.66;
   const dashOffset = timerDur > 0 ? TIMER_CIRC * (1 - timeLeft / timerDur) : 0;
@@ -509,7 +505,7 @@ export default function FixIt() {
                     <button className={styles.fixBtnReveal} onClick={handleReveal}>
                       ✦ REVEAL ANSWER
                     </button>
-                    {!showHint && (
+                    {mode === "Hard" && !showHint && (
                       <button className={styles.fixBtnHint} onClick={() => setShowHint(true)}>
                         💡 DEPLOY HINT
                       </button>
