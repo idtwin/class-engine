@@ -22,14 +22,14 @@ interface Question {
 const LETTER = ["A", "B", "C", "D"];
 
 // ── Sentence renderer ────────────────────────────────
-function HighlightedSentence({ sentence, wrongWord }: { sentence: string; wrongWord: string }) {
+function HighlightedSentence({ sentence, wrongWord, wrongWordClass }: { sentence: string; wrongWord: string; wrongWordClass?: string }) {
   const regex = new RegExp(`(\\b${wrongWord.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b)`, "i");
   const parts = sentence.split(regex);
   return (
-    <span className={styles.sentence}>
+    <span>
       {parts.map((part, i) =>
         regex.test(part)
-          ? <span key={i} className={styles.wrongWord}>{part}</span>
+          ? <span key={i} className={wrongWordClass ?? styles.wrongWord}>{part}</span>
           : part
       )}
     </span>
@@ -128,7 +128,6 @@ export default function FixIt() {
   if (!mounted) return null;
 
   const currentQ = questions[qIndex];
-  const lockedCount = roomStudents.filter(s => s.answered).length;
 
   // ── Generate — fetches questions then waits in lobby ──
   const handleGenerate = async () => {
@@ -243,8 +242,11 @@ export default function FixIt() {
   };
 
   // ── Timer helpers ─────────────────────────────────────
-  const timerPct = timerDur > 0 ? (timeLeft / timerDur) * 100 : 100;
-  const timerUrgent = timeLeft <= 5 && timerDur > 0 && timerActive;
+  // New layout timer derivations
+  const TIMER_CIRC = 125.66;
+  const dashOffset = timerDur > 0 ? TIMER_CIRC * (1 - timeLeft / timerDur) : 0;
+  const timerMid = timeLeft <= 20 && timeLeft > 10 && timerDur > 0; // reserved: amber ring state, not wired yet
+  const timerUrgentRing = timeLeft <= 10 && timerDur > 0;
 
   // ═══════════════════════════════════════════════════
   // RENDER
@@ -386,196 +388,222 @@ export default function FixIt() {
         </div>
       )}
 
-      {/* ── Three-zone game layout ── */}
-      <div className={styles.page}>
+      {/* ── New single-column layout ── */}
+      <div className={styles.pageNew}>
 
-        {/* Zone 1: Header */}
-        <div className={styles.gameHeader}>
-          <span className={styles.gameTitle}>Fix It</span>
-          <div className={styles.headerDivider} />
-          {phase !== "SETUP" && phase !== "GENERATING" && (
-            <>
-              <span className={styles.qCounter}>
-                Q <span className={styles.qCounterNum}>{qIndex + 1}</span> / {questions.length}
-              </span>
-              <div className={styles.headerDivider} />
-              <span className={`${styles.modeBadge} ${mode === "Easy" ? styles.modeBadgeEasy : styles.modeBadgeHard}`}>
-                {mode}
-              </span>
-            </>
-          )}
-
-          <div className={styles.headerSpacer} />
-
-          {/* Timer */}
-          {timerDur > 0 && phase === "PLAYING" && (
-            <div className={styles.timerWrap}>
-              <div className={`${styles.timerNum} ${timerUrgent ? styles.timerNumUrgent : ""}`}>
-                {timeLeft}
-              </div>
-              <div className={styles.timerBar}>
-                <div
-                  className={`${styles.timerBarFill} ${timerUrgent ? styles.timerBarFillUrgent : ""}`}
-                  style={{ width: `${timerPct}%` }}
+        {/* Row 1: Header */}
+        <div className={styles.fixHeader}>
+          <span className={styles.fixTitle}>FIX IT</span>
+          <div className={styles.fixHeaderDiv} />
+          <span className={styles.fixQSeq}>
+            QUESTION_{String(qIndex + 1).padStart(2, "0")}
+          </span>
+          <span className={styles.fixLevelBadge}>{level.toUpperCase()}</span>
+          {timerDur > 0 && (
+            <div className={styles.fixTimerWrap}>
+              <svg className={styles.fixTimerSvg} viewBox="0 0 48 48">
+                <defs>
+                  <linearGradient id="fixGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#ffc843" />
+                    <stop offset="100%" stopColor="rgba(255,200,67,0.3)" />
+                  </linearGradient>
+                </defs>
+                <circle className={styles.fixTimerTrack} cx="24" cy="24" r="20" />
+                <circle
+                  className={`${styles.fixTimerRing}${timerUrgentRing ? ` ${styles.fixTimerRingUrgent}` : ""}`}
+                  cx="24" cy="24" r="20"
+                  stroke={timerUrgentRing ? "#ff4444" : "url(#fixGrad)"}
+                  strokeDashoffset={dashOffset}
                 />
+              </svg>
+              <div className={`${styles.fixTimerNum}${timerUrgentRing ? ` ${styles.fixTimerNumUrgent}` : ""}`}>
+                {timeLeft}
               </div>
             </div>
           )}
         </div>
 
-        {/* Zone 2: Content */}
-        <div className={styles.gameContent}>
+        {/* Row 2: Progress bar */}
+        <div className={styles.fixProgressBar}>
+          <div
+            className={`${styles.fixProgressFill}${timerUrgentRing ? ` ${styles.fixProgressFillUrgent}` : ""}`}
+            style={{ width: timerDur > 0 ? `${(timeLeft / timerDur) * 100}%` : "100%" }}
+          />
+        </div>
 
-          {/* ── PLAYING ── */}
+        {/* Row 3: Body */}
+        <div className={styles.fixBody}>
+
+          {/* ── PLAYING + REVEALED ── */}
           {(phase === "PLAYING" || phase === "REVEALED") && currentQ && (
             <>
-              <div className={styles.errorTypeLabel}>
-                Error type: <span className={styles.errorTypeName}>{currentQ.errorType}</span>
+              {/* Prompt label */}
+              <div className={`${styles.fixPromptLabel}${phase === "REVEALED" ? ` ${styles.fixPromptRevealed}` : ""}`}>
+                {phase === "PLAYING" ? "Find and fix the error" : "Answer Revealed"}
               </div>
 
-              {/* Sentence */}
-              <div className={styles.sentenceWrap}>
-                {phase === "PLAYING"
-                  ? <HighlightedSentence sentence={currentQ.sentence} wrongWord={currentQ.wrongWord} />
-                  : null
-                }
+              {/* Sentence card */}
+              <div>
+                <div className={styles.fixErrorLabel}>
+                  Error type: <span className={styles.fixErrorName}>{currentQ.errorType}</span>
+                </div>
+                <div className={styles.fixSentenceCard}>
+                  <span className={styles.fixSentenceText}>
+                    <HighlightedSentence
+                      sentence={currentQ.sentence}
+                      wrongWord={currentQ.wrongWord}
+                      wrongWordClass={styles.fixWrongWord}
+                    />
+                  </span>
+                </div>
               </div>
 
-              {/* PLAYING state controls */}
+              {/* ── PLAYING controls ── */}
               {phase === "PLAYING" && (
                 <>
-                  {/* Easy: MC options */}
+                  {/* Easy: 4 option tiles */}
                   {mode === "Easy" && (
-                    <div className={styles.optionsGrid}>
+                    <div className={styles.fixOptsGrid}>
                       {currentQ.options.map((opt, i) => (
-                        <div key={opt} className={styles.optionCard}>
-                          <span className={styles.optionLetter}>{LETTER[i]}</span>
-                          <span className={styles.optionText}>{opt}</span>
+                        <div key={opt} className={styles.fixOptTile}>
+                          <span className={styles.fixOptLetter}>{LETTER[i]}</span>
+                          <span className={styles.fixOptText}>{opt}</span>
                         </div>
                       ))}
                     </div>
                   )}
 
-                  {/* Hard: waiting status */}
-                  {mode === "Hard" && (
-                    <div className={styles.hardStatus}>
-                      <div className={styles.hardStatusDots}>
-                        {[0, 1, 2].map(i => (
-                          <div
-                            key={i}
-                            className={`${styles.hardStatusDot} ${lockedCount > i ? styles.hardStatusDotActive : ""}`}
-                          />
-                        ))}
-                      </div>
-                      <div className={styles.hardStatusText}>
-                        <span className={styles.hardStatusCount}>{lockedCount}</span>
-                        {" "}answer{lockedCount !== 1 ? "s" : ""} locked
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Hint (Hard mode only) */}
+                  {/* Hard: hint card when deployed */}
                   {mode === "Hard" && showHint && (
-                    <div className={styles.hintCard}>
-                      <span className={styles.hintIcon}>💡</span>
-                      <span className={styles.hintText}>{currentQ.hint}</span>
+                    <div className={styles.fixHintCard}>
+                      <div className={styles.fixHintLabel}>💡 HINT</div>
+                      <div className={styles.fixHintText}>{currentQ.hint}</div>
                     </div>
                   )}
 
-                  {/* Student answer chips */}
-                  {roomStudents.length > 0 && (
-                    <div className={styles.answersRow}>
-                      {roomStudents.map(s => (
-                        <div
-                          key={s.id}
-                          className={`${styles.answerChip} ${s.answered ? styles.answerChipLocked : ""}`}
-                        >
-                          {s.name}
-                        </div>
-                      ))}
+                  {/* Team chips — locked-in state */}
+                  {currentTeams.length > 0 && (
+                    <div className={styles.fixTeamsRow}>
+                      {currentTeams.map(team => {
+                        const locked = roomStudents.some(
+                          s => s.answered && team.students.some(ts => ts.name === s.name)
+                        );
+                        return (
+                          <div
+                            key={team.id}
+                            className={`${styles.fixChip}${locked ? ` ${styles.fixChipLocked}` : ""}`}
+                          >
+                            {locked ? "🔒 " : "· "}{team.name.toUpperCase()}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 
-                  {/* Controls */}
-                  <div className={styles.controls}>
-                    <button className={styles.btnReveal} onClick={handleReveal}>
-                      Reveal Answer
+                  {/* Action buttons */}
+                  <div className={styles.fixActionsRow}>
+                    <button className={styles.fixBtnReveal} onClick={handleReveal}>
+                      ✦ REVEAL ANSWER
                     </button>
                     {mode === "Hard" && !showHint && (
-                      <button className={styles.btnHint} onClick={() => setShowHint(true)}>
-                        💡 Show Hint
+                      <button className={styles.fixBtnHint} onClick={() => setShowHint(true)}>
+                        💡 DEPLOY HINT
                       </button>
                     )}
                   </div>
                 </>
               )}
 
-              {/* REVEALED state */}
+              {/* ── REVEALED controls ── */}
               {phase === "REVEALED" && (
                 <>
-                  <div className={styles.revealBlock}>
-                    {/* Before */}
-                    <div className={styles.revealRow}>
-                      <span className={styles.revealIcon}>❌</span>
-                      <span className={`${styles.revealSentence} ${styles.revealWrong}`}>
-                        {currentQ.sentence.split(new RegExp(`(\\b${currentQ.wrongWord.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b)`, "i")).map((part, i, arr) =>
-                          arr.length > 1 && i === 1
-                            ? <span key={i} className={styles.revealStrike}>{part}</span>
-                            : part
-                        )}
+                  {/* Easy: correct/wrong tile states */}
+                  {mode === "Easy" && (
+                    <div className={styles.fixOptsGrid}>
+                      {currentQ.options.map((opt, i) => {
+                        const isCorrect = opt.trim().toLowerCase() === currentQ.correctWord.toLowerCase();
+                        return (
+                          <div
+                            key={opt}
+                            className={`${styles.fixOptTile}${isCorrect ? ` ${styles.fixOptTileCorrect}` : ` ${styles.fixOptTileDimmed}`}`}
+                          >
+                            <span className={styles.fixOptLetter}>{LETTER[i]}</span>
+                            <span className={styles.fixOptText}>{opt}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Before/after reveal block */}
+                  <div className={styles.fixRevealBlock}>
+                    <div className={styles.fixRevealRow}>
+                      <span className={styles.fixRevealIcon}>❌</span>
+                      <span className={styles.fixRevealSentence}>
+                        {currentQ.sentence
+                          .split(new RegExp(`(\\b${currentQ.wrongWord.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b)`, "i"))
+                          .map((part, i, arr) =>
+                            arr.length > 1 && i === 1
+                              ? <span key={i} className={styles.fixRevealStrike}>{part}</span>
+                              : part
+                          )}
                       </span>
                     </div>
-                    {/* After */}
-                    <div className={styles.revealRow}>
-                      <span className={styles.revealIcon}>✅</span>
-                      <span className={`${styles.revealSentence} ${styles.revealCorrect}`}>
-                        {currentQ.sentence.split(new RegExp(`(\\b${currentQ.wrongWord.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b)`, "i")).map((part, i, arr) =>
-                          arr.length > 1 && i === 1
-                            ? <span key={i} className={styles.revealHighlight}>{currentQ.correctWord}</span>
-                            : part
-                        )}
+                    <div className={styles.fixRevealDivider} />
+                    <div className={styles.fixRevealRow}>
+                      <span className={styles.fixRevealIcon}>✅</span>
+                      <span className={styles.fixRevealSentence}>
+                        {currentQ.sentence
+                          .split(new RegExp(`(\\b${currentQ.wrongWord.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b)`, "i"))
+                          .map((part, i, arr) =>
+                            arr.length > 1 && i === 1
+                              ? <span key={i} className={styles.fixRevealHighlight}>{currentQ.correctWord}</span>
+                              : part
+                          )}
                       </span>
                     </div>
                   </div>
 
-                  {/* Score awards */}
-                  {Object.keys(pointsAwarded).length > 0 && (
-                    <div className={styles.scoreAwards}>
-                      {Object.entries(pointsAwarded).map(([name, pts]) => {
-                        const team = currentTeams.find(t => t.students.some(s => s.name === name));
+                  {/* Team chips — correct/wrong state */}
+                  {currentTeams.length > 0 && (
+                    <div className={styles.fixTeamsRow}>
+                      {currentTeams.map(team => {
+                        const teamStudents = roomStudents.filter(s =>
+                          team.students.some(ts => ts.name === s.name)
+                        );
+                        const anyAnswered = teamStudents.some(s => s.answered);
+                        const anyCorrect = teamStudents.some(
+                          s => s.answered && s.lastAnswer?.trim().toLowerCase() === currentQ.correctWord.toLowerCase()
+                        );
+                        const pts = anyCorrect
+                          ? Object.entries(pointsAwarded)
+                              .filter(([name]) => team.students.some(ts => ts.name === name))
+                              .reduce((sum, [, p]) => sum + p, 0)
+                          : 0;
+
+                        if (!anyAnswered) {
+                          return <div key={team.id} className={styles.fixChip}>· {team.name.toUpperCase()}</div>;
+                        }
+                        if (anyCorrect) {
+                          return (
+                            <div key={team.id} className={`${styles.fixChip} ${styles.fixChipCorrect}`}>
+                              ✓ {team.name.toUpperCase()}{pts > 0 ? ` +${pts}` : ""}
+                            </div>
+                          );
+                        }
                         return (
-                          <div key={name} className={styles.scoreAward}>
-                            <span className={styles.scoreAwardTeam}>{team?.name || name}</span>
-                            <span className={styles.scoreAwardPts}>+{pts}</span>
+                          <div key={team.id} className={`${styles.fixChip} ${styles.fixChipWrong}`}>
+                            ✗ {team.name.toUpperCase()}
                           </div>
                         );
                       })}
                     </div>
                   )}
 
-                  {/* Post-reveal answer chips */}
-                  {roomStudents.filter(s => s.answered).length > 0 && (
-                    <div className={styles.answersRow}>
-                      {roomStudents.filter(s => s.answered).map(s => {
-                        const correct = s.lastAnswer?.trim().toLowerCase() === currentQ.correctWord.toLowerCase();
-                        return (
-                          <div
-                            key={s.id}
-                            className={`${styles.answerChip} ${correct ? styles.answerChipCorrect : styles.answerChipWrong}`}
-                          >
-                            {s.name} · {s.lastAnswer}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  <div className={styles.controls}>
-                    <button
-                      className={styles.btnNext}
-                      onClick={handleNext}
-                    >
-                      {qIndex + 1 >= questions.length ? "Finish Game" : "Next Question →"}
+                  {/* Action buttons */}
+                  <div className={styles.fixActionsRow}>
+                    <button className={styles.fixBtnNext} onClick={handleNext}>
+                      {qIndex + 1 >= questions.length ? "⟳ NEW GAME" : "→ NEXT QUESTION"}
                     </button>
                   </div>
                 </>
@@ -602,6 +630,7 @@ export default function FixIt() {
               </button>
             </div>
           )}
+
         </div>
       </div>
     </>

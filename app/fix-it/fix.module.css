@@ -883,3 +883,474 @@
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ═══════════════════════════════════════════════════
+   FIX IT — New Single-Column Playing Layout (2026-04)
+   ═══════════════════════════════════════════════════ */
+
+/* Page shell — 3-row grid */
+.pageNew {
+  position: fixed;
+  top: var(--nav-h, 60px);
+  left: 0;
+  right: 0;
+  bottom: var(--scoreboard-h, 88px);
+  display: grid;
+  grid-template-rows: 62px 3px 1fr;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* ── Header ── */
+.fixHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 36px;
+  border-bottom: 1px solid var(--border);
+  background: #0a0d18;
+  flex-shrink: 0;
+}
+
+.fixTitle {
+  font-family: 'Syne', var(--font-main), sans-serif;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--yellow);
+  letter-spacing: 0.1em;
+}
+
+.fixHeaderDiv {
+  width: 1px;
+  height: 22px;
+  background: var(--border);
+}
+
+.fixQSeq {
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+.fixLevelBadge {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  background: rgba(255,200,67,0.1);
+  color: var(--yellow);
+  border: 1px solid rgba(255,200,67,0.2);
+  border-radius: 20px;
+  padding: 2px 10px;
+  letter-spacing: 0.06em;
+}
+
+/* ── Circular timer ── */
+.fixTimerWrap {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.fixTimerSvg {
+  width: 48px;
+  height: 48px;
+  transform: rotate(-90deg);
+}
+
+.fixTimerTrack {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 3.5;
+}
+
+.fixTimerRing {
+  fill: none;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-dasharray: 125.66;
+}
+
+.fixTimerRingUrgent {
+  stroke: var(--red) !important;
+  animation: fixUrgPulse 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes fixUrgPulse {
+  from { opacity: 1; }
+  to   { opacity: 0.4; }
+}
+
+.fixTimerNum {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono), monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--yellow);
+}
+
+.fixTimerNumUrgent {
+  color: var(--red);
+  animation: fixUrgPulse 0.6s ease-in-out infinite alternate;
+}
+
+/* ── Progress bar ── */
+.fixProgressBar {
+  height: 3px;
+  background: var(--surface2);
+}
+
+.fixProgressFill {
+  height: 3px;
+  background: linear-gradient(90deg, var(--yellow), rgba(255,200,67,0.2));
+  border-radius: 0 2px 2px 0;
+  transition: width 0.9s linear, background 0.3s;
+}
+
+.fixProgressFillUrgent {
+  background: linear-gradient(90deg, var(--red), rgba(255,68,68,0.2));
+}
+
+/* ── Body ── */
+.fixBody {
+  padding: 28px 56px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  overflow-y: auto;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255,200,67,0.04) 0%, transparent 60%);
+}
+
+/* ── Prompt label ── */
+.fixPromptLabel {
+  font-family: var(--font-mono), monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--text);
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.fixPromptRevealed {
+  color: var(--green);
+  opacity: 1;
+}
+
+/* ── Error type label ── */
+.fixErrorLabel {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.fixErrorName {
+  color: var(--yellow);
+  font-weight: 700;
+}
+
+/* ── Sentence card ── */
+.fixSentenceCard {
+  background: #0d1424;
+  border: 1.5px solid rgba(255,200,67,0.2);
+  border-radius: 12px;
+  padding: 22px 32px;
+  max-width: 760px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+}
+
+.fixSentenceCard::before,
+.fixSentenceCard::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: rgba(255,200,67,0.3);
+  border-style: solid;
+}
+
+.fixSentenceCard::before { top: 8px; left: 8px; border-width: 1.5px 0 0 1.5px; }
+.fixSentenceCard::after  { bottom: 8px; right: 8px; border-width: 0 1.5px 1.5px 0; }
+
+.fixSentenceText {
+  font-family: 'Syne', var(--font-main), sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.fixWrongWord {
+  color: var(--red);
+  text-decoration: underline;
+  text-decoration-color: rgba(255,68,68,0.5);
+  font-weight: 800;
+}
+
+/* ── Option tiles (Easy mode) ── */
+.fixOptsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  max-width: 760px;
+}
+
+.fixOptTile {
+  height: 72px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 22px;
+  background: #0d1424;
+  border: 1.5px solid rgba(255,200,67,0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.fixOptTile::before,
+.fixOptTile::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-color: rgba(255,200,67,0.25);
+  border-style: solid;
+}
+
+.fixOptTile::before { top: 6px; left: 6px; border-width: 1px 0 0 1px; }
+.fixOptTile::after  { bottom: 6px; right: 6px; border-width: 0 1px 1px 0; }
+
+.fixOptTileCorrect {
+  background: #061610;
+  border-color: var(--green);
+}
+
+.fixOptTileDimmed {
+  opacity: 0.18;
+  border-color: var(--border);
+}
+
+.fixOptLetter {
+  font-family: var(--font-mono), monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--yellow);
+  background: rgba(255,200,67,0.1);
+  border: 1px solid rgba(255,200,67,0.25);
+  border-radius: 4px;
+  padding: 2px 8px;
+  flex-shrink: 0;
+  letter-spacing: 0.06em;
+}
+
+.fixOptTileCorrect .fixOptLetter {
+  color: var(--green);
+  background: rgba(0,232,122,0.1);
+  border-color: rgba(0,232,122,0.3);
+}
+
+.fixOptText {
+  font-family: 'Syne', var(--font-main), sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: 0.04em;
+}
+
+.fixOptTileCorrect .fixOptText { color: var(--green); }
+
+/* ── Hard mode hint card ── */
+.fixHintCard {
+  background: #0d1424;
+  border: 1.5px solid rgba(255,200,67,0.15);
+  border-radius: 10px;
+  padding: 16px 24px;
+  max-width: 760px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: fadeSlideIn 0.3s ease;
+}
+
+.fixHintLabel {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  color: var(--yellow);
+  opacity: 0.6;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.fixHintText {
+  font-family: 'Syne', var(--font-main), sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* ── Reveal block (before/after) ── */
+.fixRevealBlock {
+  background: #0d1424;
+  border: 1.5px solid rgba(255,200,67,0.15);
+  border-radius: 12px;
+  padding: 20px 28px;
+  max-width: 760px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeSlideIn 0.35s ease;
+}
+
+.fixRevealRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.fixRevealIcon { font-size: 20px; flex-shrink: 0; }
+
+.fixRevealSentence {
+  font-family: 'Syne', var(--font-main), sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.fixRevealStrike {
+  text-decoration: line-through;
+  color: var(--red);
+  opacity: 0.7;
+}
+
+.fixRevealHighlight {
+  color: var(--green);
+  font-weight: 800;
+}
+
+.fixRevealDivider {
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Team chips ── */
+.fixTeamsRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.fixChip {
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border-radius: 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--border2);
+  color: var(--muted);
+}
+
+.fixChipLocked {
+  border-color: rgba(255,200,67,0.4);
+  color: var(--yellow);
+  background: rgba(255,200,67,0.08);
+}
+
+.fixChipCorrect {
+  border-color: rgba(0,232,122,0.4);
+  color: var(--green);
+  background: rgba(0,232,122,0.08);
+}
+
+.fixChipWrong {
+  border-color: rgba(255,68,68,0.3);
+  color: var(--red);
+  background: rgba(255,68,68,0.06);
+}
+
+/* ── Action buttons ── */
+.fixActionsRow {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.fixBtnReveal {
+  background: var(--yellow);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  padding: 13px 40px;
+  font-family: var(--font-mono), monospace;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  box-shadow: 0 4px 24px rgba(255,200,67,0.25);
+  transition: filter 0.15s;
+}
+
+.fixBtnReveal:hover { filter: brightness(1.08); }
+
+.fixBtnHint {
+  background: transparent;
+  border: 1px dashed rgba(255,200,67,0.35);
+  color: var(--yellow);
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-family: var(--font-mono), monospace;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.fixBtnHint:hover { background: rgba(255,200,67,0.07); }
+
+.fixBtnNext {
+  background: transparent;
+  border: 1px solid rgba(255,200,67,0.3);
+  color: var(--yellow);
+  border-radius: 8px;
+  padding: 13px 36px;
+  font-family: var(--font-mono), monospace;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.fixBtnNext:hover { background: rgba(255,200,67,0.07); }
+
+.fixBtnNewGame {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 12px 18px;
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.fixBtnNewGame:hover { border-color: var(--border2); }
