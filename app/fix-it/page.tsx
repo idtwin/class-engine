@@ -245,7 +245,7 @@ export default function FixIt() {
   // New layout timer derivations
   const TIMER_CIRC = 125.66;
   const dashOffset = timerDur > 0 ? TIMER_CIRC * (1 - timeLeft / timerDur) : 0;
-  const timerMid = timeLeft <= 20 && timeLeft > 10 && timerDur > 0;
+  const timerMid = timeLeft <= 20 && timeLeft > 10 && timerDur > 0; // reserved: amber ring state, not wired yet
   const timerUrgentRing = timeLeft <= 10 && timerDur > 0;
 
   // ═══════════════════════════════════════════════════
