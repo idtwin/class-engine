@@ -44,6 +44,8 @@ export default function RapidFire() {
   const [penalizeWrong, setPenalizeWrong] = useState(false);
   const [pointsEarned, setPointsEarned] = useState<Record<string, number>>({});
   const [showTimesUp, setShowTimesUp] = useState(false);
+  const [buzzActiveIdx, setBuzzActiveIdx] = useState(0);
+  const [buzzResults, setBuzzResults] = useState<Record<number, 'correct' | 'wrong'>>({});
 
   const handleLoadBoard = (saved: SavedBoard) => {
     setQuestions(saved.content as RapidFireQuestion[]);
@@ -159,6 +161,8 @@ export default function RapidFire() {
     setRoomBuzzes([]);
     setPointsEarned({});
     setWrongSelections(new Set());
+    setBuzzActiveIdx(0);
+    setBuzzResults({});
     setRoomStudents(prev => prev.map(s => ({ ...s, answered: false, lastAnswer: null })));
 
     if (activeRoomCode && questions.length > 0) {
@@ -190,6 +194,9 @@ export default function RapidFire() {
   };
 
   const timerMax = timerDuration;
+  const RF_CIRC = 125.66;
+  const rfDashOffset = timerDuration > 0 ? RF_CIRC * (1 - timeLeft / timerDuration) : 0;
+  const rfTimerUrgent = timeLeft <= 10 && timerDuration > 0 && timerActive;
 
   const nextQuestion = async () => {
     if (cursor + 1 >= questions.length) {
@@ -202,6 +209,8 @@ export default function RapidFire() {
       setRoomBuzzes([]);
       setPointsEarned({});
       setWrongSelections(new Set());
+      setBuzzActiveIdx(0);
+      setBuzzResults({});
       setRoomStudents(prev => prev.map(s => ({ ...s, answered: false, lastAnswer: null })));
 
       if (activeRoomCode) {
@@ -301,7 +310,31 @@ export default function RapidFire() {
     return currentTeams.find(t => t.name === name || t.students.some(s => s.name === name));
   };
 
+  const handleBuzzerCorrect = () => {
+    const sorted = [...roomBuzzes].sort((a: any, b: any) => a.timestamp - b.timestamp);
+    const activeBuzz = sorted[buzzActiveIdx];
+    if (!activeBuzz) return;
+    const studentName = roomStudents.find((s: any) => s.id === activeBuzz.studentId)?.name || '';
+    const team = findTeamForName(studentName);
+    if (team) updateTeamScore(team.id, 300);
+    setBuzzResults(prev => ({ ...prev, [buzzActiveIdx]: 'correct' }));
+    setTimerActive(false);
+    setGameState("REVEALED");
+  };
+
+  const handleBuzzerWrong = () => {
+    const sorted = [...roomBuzzes].sort((a: any, b: any) => a.timestamp - b.timestamp);
+    setBuzzResults(prev => ({ ...prev, [buzzActiveIdx]: 'wrong' }));
+    if (buzzActiveIdx + 1 < sorted.length) {
+      setBuzzActiveIdx(prev => prev + 1);
+    } else {
+      setTimerActive(false);
+      setGameState("REVEALED");
+    }
+  };
+
   const currentQ = questions[cursor];
+  const TEAM_COLORS = ['#00e87a', '#00c8f0', '#ffc843', '#ff4d8f', '#b06eff', '#ff7d3b', '#e2e8f0'];
 
   return (
     <>
@@ -421,205 +454,219 @@ export default function RapidFire() {
 
       {/* Game view */}
       {(gameState === "PLAYING" || gameState === "REVEALED" || gameState === "FINISHED") && (
-        <div className={styles.page}>
-          <div className={styles.gameHeader}>
-            <div className={styles.gameTitle}>Rapid Fire</div>
-            <div className={styles.headerDivider} />
-            <div className={styles.qCounter}>
-              Q <span className={styles.qCounterNum}>{cursor + 1}</span> / {questions.length}
-            </div>
-            <div className={styles.headerDivider} />
-            <div className={styles.qCounter}>{rfMode === 'mc' ? 'Multiple Choice' : 'Buzzer'}</div>
-            <div className={styles.headerSpacer} />
-            {timerDuration > 0 && gameState !== "FINISHED" && (
-              <div className={styles.timerWrap}>
-                <div className={`${styles.timerNum} ${timeLeft <= 5 && timerActive ? styles.timerNumUrgent : ''}`}>
-                  {timeLeft}
-                </div>
-                <div className={styles.timerBar}>
-                  <div
-                    className={`${styles.timerBarFill} ${timeLeft <= 5 && timerActive ? styles.timerBarFillUrgent : ''}`}
-                    style={{ width: `${timerDuration > 0 ? (timeLeft / timerDuration) * 100 : 100}%` }}
+        <div className={styles.rfPage}>
+
+          {/* ── Header ── */}
+          <div className={styles.rfHeader}>
+            <div className={styles.rfTitle}>Rapid Fire</div>
+
+            {/* SVG circular timer */}
+            {gameState !== "FINISHED" && (
+              <div className={styles.rfTimerWrap}>
+                <svg className={styles.rfTimerSvg} viewBox="0 0 44 44">
+                  <defs>
+                    <linearGradient id="rfGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#ff4d8f" />
+                      <stop offset="100%" stopColor="#ff7d3b" />
+                    </linearGradient>
+                  </defs>
+                  <circle className={styles.rfTimerTrack} cx="22" cy="22" r="20" />
+                  <circle
+                    className={`${styles.rfTimerRing}${rfTimerUrgent ? ` ${styles.rfTimerRingUrgent}` : ''}`}
+                    cx="22" cy="22" r="20"
+                    stroke={rfTimerUrgent ? "#ff4444" : "url(#rfGrad)"}
+                    strokeDashoffset={rfDashOffset}
                   />
+                </svg>
+                <div className={`${styles.rfTimerNum}${rfTimerUrgent ? ` ${styles.rfTimerNumUrgent}` : ''}`}>
+                  {timeLeft}
                 </div>
               </div>
             )}
-            <button
-              style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 8, padding: '6px 14px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer' }}
-              onClick={() => setGameState("SETUP")}
-            >
-              ← New Game
-            </button>
+
+            {/* Progress bar */}
+            {gameState !== "FINISHED" && (
+              <div className={styles.rfProgressBarWrap}>
+                <div
+                  className={`${styles.rfProgressFill}${rfTimerUrgent ? ` ${styles.rfProgressFillUrgent}` : ''}`}
+                  style={{ width: `${timerDuration > 0 ? (timeLeft / timerDuration) * 100 : 0}%` }}
+                />
+              </div>
+            )}
+
+            <div className={styles.rfHeaderRight}>
+              <div className={styles.rfQCounter}>
+                Q <span className={styles.rfQCounterNum}>{cursor + 1}</span> / {questions.length}
+              </div>
+              <button
+                style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 6, padding: '5px 12px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 10, cursor: 'pointer', letterSpacing: '0.08em' }}
+                onClick={() => setGameState("SETUP")}
+              >
+                ← NEW GAME
+              </button>
+            </div>
           </div>
-          <div className={styles.gameContent} style={{ padding: 0, alignItems: 'stretch', justifyContent: 'flex-start', overflow: 'hidden' }}>
+
+          {/* ── Body ── */}
+          <div className={styles.rfBody}>
 
             {gameState === "FINISHED" ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 24 }}>
-                <h1 style={{ fontSize: "4rem", color: "#00c8f0", fontWeight: 900, margin: 0 }}>Game Over!</h1>
-                <button
-                  className={styles.btnGenerate}
-                  onClick={() => setGameState("SETUP")}
-                >
+                <h1 style={{ fontSize: "4rem", color: "#ff4d8f", fontWeight: 900, margin: 0, fontFamily: 'Syne, sans-serif' }}>Game Over!</h1>
+                <button className={styles.rfBtnNext} onClick={() => setGameState("SETUP")}>
                   New Game
                 </button>
               </div>
             ) : currentQ && (
-              <div className={styles.canvasLeft}>
-                <div className={styles.gameSplit}>
-                  {/* Left Column: Question Area */}
-                  <div className={styles.leftCol}>
-                    <div className={styles.seqLabel}>
-                       QUESTION_0{cursor + 1} // {currentQ.level.toUpperCase()} Lvl — {currentQ.type.toUpperCase()}
+              <>
+                {/* Sentence card */}
+                <div className={styles.rfSentenceCard}>
+                  <div className={styles.rfSentenceText}>{currentQ.text}</div>
+                </div>
+
+                {/* Answer reveal (REVEALED state only) */}
+                {gameState === "REVEALED" && (
+                  <div className={styles.rfRevealCard}>
+                    <div className={styles.rfRevealLabel}>Correct Answer</div>
+                    <div className={styles.rfRevealAnswer}>{currentQ.answer}</div>
+                  </div>
+                )}
+
+                {/* ── MC Mode ── */}
+                {rfMode === "mc" && currentQ.options && (
+                  <>
+                    <div className={styles.rfOptsGrid}>
+                      {(["A", "B", "C", "D"] as const).map(letter => {
+                        const isCorrect = currentQ.correctLetter === letter;
+                        const isRevealed = gameState === "REVEALED";
+                        return (
+                          <div
+                            key={letter}
+                            className={`${styles.rfOptTile}${isRevealed && isCorrect ? ` ${styles.rfOptTileCorrect}` : ''}${isRevealed && !isCorrect ? ` ${styles.rfOptTileDimmed}` : ''}`}
+                          >
+                            <div className={styles.rfOptLetter}>{letter}</div>
+                            <div className={styles.rfOptText}>{currentQ.options![letter as keyof typeof currentQ.options]}</div>
+                          </div>
+                        );
+                      })}
                     </div>
 
-                    <div className={styles.mainSentence}>
-                      {currentQ.text}
-                    </div>
-
-                    {/* MC Mode: Show options on projector */}
-                    {rfMode === "mc" && currentQ.options && (
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', width: '100%', maxWidth: '800px', marginTop: '1rem' }}>
-                        {(["A", "B", "C", "D"] as const).map(letter => {
-                          const isRevealed = gameState === "REVEALED";
-                          const isCorrect = currentQ.correctLetter === letter;
+                    {/* Team submission chips (PLAYING) */}
+                    {gameState === "PLAYING" && activeRoomCode && roomStudents.length > 0 && (
+                      <div className={styles.rfTeamChips}>
+                        {currentTeams.map((team, tIdx) => {
+                          const teamColor = TEAM_COLORS[tIdx % 7];
+                          const submitted = roomStudents.some((s: any) =>
+                            (s.name === team.name || team.students.some((ts: any) => ts.name === s.name)) && s.answered
+                          );
                           return (
                             <div
-                              key={letter}
-                              onClick={() => {
-                                if (gameState !== "PLAYING") return;
-                                if (letter === currentQ.correctLetter) {
-                                  handleReveal();
-                                } else {
-                                  setWrongSelections(prev => new Set(prev).add(letter));
-                                }
-                              }}
-                              style={{
-                                padding: '1.5rem 2rem',
-                                borderRadius: '16px',
-                                fontSize: '1.5rem',
-                                fontWeight: 700,
-                                background: isRevealed && isCorrect ? 'rgba(34,197,94,0.2)' :
-                                           wrongSelections.has(letter) ? 'rgba(239, 68, 68, 0.2)' :
-                                           'rgba(255,255,255,0.05)',
-                                border: `2px solid ${isRevealed && isCorrect ? '#22c55e' :
-                                                  wrongSelections.has(letter) ? '#ef4444' :
-                                                  'rgba(255,255,255,0.1)'}`,
-                                color: isRevealed && isCorrect ? '#22c55e' :
-                                       wrongSelections.has(letter) ? '#ef4444' :
-                                       'white',
-                                opacity: isRevealed && !isCorrect ? 0.3 : 1,
-                                transition: 'all 0.3s',
-                                cursor: gameState === "PLAYING" ? 'pointer' : 'default'
-                              }}
+                              key={team.id}
+                              className={`${styles.rfChip}${submitted ? '' : ` ${styles.rfChipWaiting}`}`}
+                              style={submitted ? { borderColor: teamColor, color: teamColor, background: `${teamColor}14` } : {}}
                             >
-                              <span style={{ fontWeight: 900, marginRight: '0.75rem', opacity: 0.5 }}>{letter}.</span>
-                              {currentQ.options![letter as keyof typeof currentQ.options]}
+                              {team.name}
                             </div>
                           );
                         })}
                       </div>
                     )}
 
-                    {/* Buzzer Mode: Answer Box */}
-                    {rfMode === "buzzer" && (
-                      <div
-                        className={styles.answerText}
-                        onClick={() => { if (gameState === "PLAYING") handleReveal(); }}
-                        style={{
-                          cursor: gameState === "PLAYING" ? 'pointer' : 'default',
-                          opacity: gameState === "REVEALED" ? 1 : 0.05,
-                          transition: 'opacity 0.3s'
-                        }}
-                      >
-                        {gameState === "REVEALED" ? `ANSWER: ${currentQ.answer}` : `[HOST_TOOLTIP: ${currentQ.answer}]`}
-                      </div>
-                    )}
-
-                    <div className={styles.techControls} style={{ marginTop: '2rem' }}>
-                       {gameState !== "REVEALED" ? (
-                         <button className={styles.btnSolid} onClick={handleReveal}>
-                           <Sparkles size={18} /> INITIATE REVEAL
-                         </button>
-                       ) : (
-                         <button className={styles.btnOutline} onClick={nextQuestion}>
-                           {cursor + 1 >= questions.length ? "FINISH SEQUENCE \u2714" : "NEXT SEQUENCE \u27A1"}
-                         </button>
-                       )}
-                    </div>
-                  </div>
-
-                  {/* Right Column: Sidebar (Logs, Buzzes, Status) */}
-                  <div className={styles.rightCol}>
-                    <div className={styles.systemLog}>
-                       <div className={styles.logHeader}>SYSTEM_LOG_v4.2</div>
-                       <div className={styles.logBody}>
-                         <span style={{ color: '#ff3366' }}>[INIT]</span> Sequence activated.<br/>
-                         {">"} Awaiting network node responses...<br/>
-
-                         {rfMode === "buzzer" && roomBuzzes.map((b:any, idx:number) => {
-                            const studentName = roomStudents.find((s:any) => s.id === b.studentId)?.name || 'Unknown Node';
-                            return (
-                              <div key={idx} style={{ color: '#ff3366' }}>
-                                {">"} [BUZZ] {studentName} at {(b.timestamp - roomData?.questionStartTime)/1000}s!
-                              </div>
-                            );
-                         })}
-
-                         {gameState === "REVEALED" && Object.entries(pointsEarned).map(([studentId, pts]) => {
-                            const studentName = roomStudents.find((s:any) => s.id === studentId)?.name || 'Unknown Node';
-                            return (
-                              <div key={studentId} style={{ color: pts > 0 ? '#ff3366' : '#ef4444' }}>
-                                 {">"} [SCORE] {studentName} {pts > 0 ? `+${pts}` : pts} pts.
-                              </div>
-                            );
-                         })}
-                         <br/>
-                         <span style={{ opacity: 0.5 }}>{">"} COMMAND_PROMPT_WAITING_</span>
-                       </div>
-                    </div>
-
-                    {/* Pre-reveal Status Cards */}
-                    {gameState !== "REVEALED" && rfMode === "mc" && activeRoomCode && roomStudents.length > 0 && (
-                      <div style={{ padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                        <h3 style={{ marginBottom: '1rem', color: '#ff3366', fontFamily: 'monospace', fontSize: '0.7rem' }}>// NETWORK_STATUS: {roomStudents.filter((s:any) => s.answered).length} LOCKED</h3>
-                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                          {roomStudents.map((s: any, i: number) => (
-                            <div key={i} style={{
-                              padding: '0.3rem 0.6rem',
-                              borderRadius: '4px',
-                              fontSize: '0.75rem',
-                              background: s.answered ? 'rgba(255, 51, 102, 0.1)' : 'rgba(255,255,255,0.02)',
-                              border: `1px solid ${s.answered ? '#ff3366' : 'rgba(255,255,255,0.05)'}`,
-                              opacity: s.answered ? 1 : 0.4,
-                              color: s.answered ? '#ff3366' : 'white'
-                            }}>
-                              {s.name}
+                    {/* Speed ranking (REVEALED) */}
+                    {gameState === "REVEALED" && (
+                      <div className={styles.rfSpeedRank}>
+                        <div className={styles.rfSpeedRankTitle}>Speed Ranking</div>
+                        {(() => {
+                          const ranked = roomStudents
+                            .filter((s: any) => s.answered && s.lastAnswer === currentQ.correctLetter)
+                            .sort((a: any, b: any) => (a.answerTime || 0) - (b.answerTime || 0));
+                          if (ranked.length === 0) {
+                            return <div className={styles.rfSpeedEmpty}>No correct answers</div>;
+                          }
+                          const medals = ['🥇', '🥈', '🥉'];
+                          const pts = [500, 400, 300];
+                          return ranked.map((s: any, idx: number) => (
+                            <div key={s.id} className={styles.rfSpeedRow}>
+                              <div className={styles.rfSpeedMedal}>{medals[idx] ?? '·'}</div>
+                              <div className={styles.rfSpeedName}>{s.name}</div>
+                              <div className={styles.rfSpeedTime}>{s.answerTime ? `${(s.answerTime / 1000).toFixed(1)}s` : '—'}</div>
+                              <div className={styles.rfSpeedPts}>+{pointsEarned[s.id] ?? pts[idx] ?? 100}</div>
                             </div>
-                          ))}
-                        </div>
+                          ));
+                        })()}
                       </div>
                     )}
+                  </>
+                )}
 
-                    {/* Post-reveal Responses (MC only) */}
-                    {gameState === "REVEALED" && rfMode === "mc" && activeRoomCode && roomStudents.filter((s: any) => s.answered).length > 0 && (
-                      <div style={{ padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                        <h3 style={{ marginBottom: '1rem', color: '#ff3366', fontFamily: 'monospace', fontSize: '0.7rem' }}>// NETWORK_RESPONSES</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                          {roomStudents.filter((s: any) => s.answered).map((s: any, i: number) => {
-                            const isCorrect = currentQ && s.lastAnswer === currentQ.correctLetter;
+                {/* ── Buzzer Mode ── */}
+                {rfMode === "buzzer" && (
+                  <>
+                    {(() => {
+                      const sorted = [...roomBuzzes].sort((a: any, b: any) => a.timestamp - b.timestamp);
+                      return (
+                        <div className={styles.rfBuzzQueue}>
+                          {sorted.length === 0 ? (
+                            <div className={styles.rfBuzzEmpty}>Waiting for first buzz...</div>
+                          ) : sorted.map((b: any, idx: number) => {
+                            const result = buzzResults[idx];
+                            const isActive = gameState === "PLAYING" && !result && idx === buzzActiveIdx;
+                            const isWaiting = gameState === "PLAYING" && !result && idx > buzzActiveIdx;
+                            const studentName = roomStudents.find((s: any) => s.id === b.studentId)?.name || 'Unknown';
+                            const buzzMs = roomData?.questionStartTime
+                              ? `${((b.timestamp - roomData.questionStartTime) / 1000).toFixed(1)}s`
+                              : '—';
+                            const entryClass = [
+                              styles.rfBuzzEntry,
+                              isActive ? styles.rfBuzzEntryActive
+                                : isWaiting ? styles.rfBuzzEntryWaiting
+                                : result === 'correct' ? styles.rfBuzzEntryCorrect
+                                : styles.rfBuzzEntryWrong
+                            ].join(' ');
                             return (
-                              <div key={i} style={{ padding: '0.6rem 0.8rem', background: 'rgba(0,0,0,0.3)', border: `1px solid ${isCorrect ? '#ff3366' : 'rgba(255,0,0,0.3)'}`, borderRadius: '4px' }}>
-                                <div style={{ fontWeight: 800, color: isCorrect ? 'white' : 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>{s.name}</div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)' }}>{s.lastAnswer}</div>
+                              <div key={idx} className={entryClass}>
+                                <div className={styles.rfBuzzPos}>
+                                  {isActive ? '⚡' : idx + 1}
+                                </div>
+                                <div className={styles.rfBuzzInfo}>
+                                  <div className={styles.rfBuzzName}>{studentName}</div>
+                                  <div className={styles.rfBuzzTime}>{buzzMs}</div>
+                                </div>
+                                {isActive && (
+                                  <div className={styles.rfBuzzBtns}>
+                                    <button className={styles.rfBtnCorrect} onClick={handleBuzzerCorrect}>✓</button>
+                                    <button className={styles.rfBtnWrong} onClick={handleBuzzerWrong}>✗</button>
+                                  </div>
+                                )}
+                                {result === 'correct' && (
+                                  <div className={`${styles.rfBuzzBadge} ${styles.rfBuzzBadgeCorrect}`}>✓ +300</div>
+                                )}
+                                {result === 'wrong' && (
+                                  <div className={`${styles.rfBuzzBadge} ${styles.rfBuzzBadgeWrong}`}>✗ wrong</div>
+                                )}
                               </div>
                             );
                           })}
                         </div>
-                      </div>
-                    )}
-                  </div>
+                      );
+                    })()}
+                  </>
+                )}
+
+                {/* ── Actions ── */}
+                <div className={styles.rfActionsRow}>
+                  {gameState === "PLAYING" && (
+                    <button className={styles.rfBtnReveal} onClick={handleReveal}>
+                      Reveal Answer
+                    </button>
+                  )}
+                  {gameState === "REVEALED" && (
+                    <button className={styles.rfBtnNext} onClick={nextQuestion}>
+                      {cursor + 1 >= questions.length ? "Finish →" : "Next Question →"}
+                    </button>
+                  )}
                 </div>
-              </div>
+              </>
             )}
 
           </div>
