@@ -3,7 +3,15 @@ import { generateJSON } from "../../lib/llm";
 
 export async function POST(req: Request) {
   try {
-    const { apiKey, provider, mistralModel, topic, level } = await req.json();
+    const { apiKey, provider, mistralModel, topic, level, replaceOne, category, points } = await req.json();
+
+    if (replaceOne) {
+      const sysPrompt = `You are a Jeopardy question writer for ESL students. Generate exactly 1 replacement question for the "${category}" category worth ${points} points. Return valid JSON: {"text":"specific clue with one answer","answer":"short answer","includeImage":false,"imagePrompt":""}. No markdown.`;
+      const usrPrompt = `Topic: ${topic}\nCategory: ${category}\nPoints: ${points}\n\nGenerate 1 specific Jeopardy clue with a single unambiguous answer now.`;
+      const parsed: any = await generateJSON(apiKey, { systemPrompt: sysPrompt, userPrompt: usrPrompt, temperature: 0.8, mistralModel, provider });
+      return NextResponse.json({ question: parsed });
+    }
+
 
     const systemPrompt = `You are a master quiz writer creating a Jeopardy board for ESL students. Generate a 5x5 Jeopardy game board.
 

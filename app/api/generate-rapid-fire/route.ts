@@ -3,10 +3,20 @@ import { generateJSON } from "../../lib/llm";
 
 export async function POST(req: Request) {
   try {
-    const { apiKey, provider, mistralModel, topic, level, mode } = await req.json();
+    const { apiKey, provider, mistralModel, topic, level, mode, replaceOne, existingQuestions } = await req.json();
 
     let systemPrompt: string;
     let userPrompt: string;
+
+    if (replaceOne) {
+      const ismc = mode === "mc";
+      systemPrompt = ismc
+        ? `You are a creative ESL teacher designing a multiple choice trivia question. Generate exactly 1 new question that is DIFFERENT from the existing ones. Return valid JSON with this schema: {"text":"...","options":{"A":"...","B":"...","C":"...","D":"..."},"correctLetter":"B","level":"Mid","type":"Definition"}. No markdown.`
+        : `You are a creative ESL teacher designing a rapid-fire trivia question. Generate exactly 1 new question that is DIFFERENT from the existing ones. Return valid JSON with this schema: {"text":"...","answer":"...","level":"Mid","type":"Definition"}. No markdown.`;
+      userPrompt = `Topic: ${topic}\nLevel: ${level}\nExisting questions (do NOT repeat):\n${(existingQuestions || []).join('\n')}\n\nGenerate 1 replacement question now.`;
+      const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.9, mistralModel, provider });
+      return NextResponse.json({ question: parsed });
+    }
 
     if (mode === "mc") {
       systemPrompt = `You are a creative ESL teacher designing a multiple choice trivia game.
