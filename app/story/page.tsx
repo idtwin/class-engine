@@ -1,102 +1,127 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./story.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
 import { Sparkles } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
-import ScoreboardOverlay from "../components/ScoreboardOverlay";
-import GameTimer from "../components/GameTimer";
+
+const TEAM_COLORS = ['#00e87a','#00c8f0','#ffc843','#ff4d8f','#b06eff','#ff7d3b','#e2e8f0'];
+const PTS_PER_TURN = 50;
+const SC_CIRC = 125.66;
 
 export default function StoryChainMode() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const { triggerTwist, getActiveApiKey, mistralModel, llmProvider } = useClassroomStore();
+  const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider } = useClassroomStore();
 
-  const [topic, setTopic] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [topic, setTopic]             = useState("");
+  const [timerDuration, setTimerDuration] = useState(20);
+  const [isGenerating, setIsGenerating]   = useState(false);
 
-  const [starter, setStarter] = useState("");
-  const [rounds, setRounds] = useState<{ words: string[] }[]>([]);
+  const [starter, setStarter]           = useState("");
+  const [rounds, setRounds]             = useState<{ words: string[] }[]>([]);
   const [currentRound, setCurrentRound] = useState(-1);
+  const [story, setStory]               = useState<string[]>([]);
+  const [currentInput, setCurrentInput] = useState("");
+  const [timeLeft, setTimeLeft]         = useState(20);
+  const [timerActive, setTimerActive]   = useState(false);
+  const [finished, setFinished]         = useState(false);
 
-  const TURN_SECONDS = 15;
-  const [timeLeft, setTimeLeft] = useState(TURN_SECONDS);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const storyEndRef = useRef<HTMLDivElement>(null);
+  const inputRef    = useRef<HTMLInputElement>(null);
 
   useEffect(() => setMounted(true), []);
 
+  // Timer countdown
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isPlaying && timeLeft > 0) {
-      timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
-    }
-    return () => clearInterval(timer);
-  }, [isPlaying, timeLeft]);
+    if (!timerActive || timeLeft <= 0) return;
+    const id = setInterval(() => setTimeLeft(t => t - 1), 1000);
+    return () => clearInterval(id);
+  }, [timerActive, timeLeft]);
 
-  // Spacebar skips to next turn
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (rounds.length === 0) return;
-      if (e.code === "Space") {
+    if (timeLeft === 0 && timerActive) setTimerActive(false);
+  }, [timeLeft, timerActive]);
+
+  // Spacebar = GOT IT (when not focused on input)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (rounds.length === 0 || finished) return;
+      if (e.code === "Space" && document.activeElement !== inputRef.current) {
         e.preventDefault();
-        handleNextRound();
+        advance(true);
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [rounds, currentRound]);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  // Auto-scroll story
+  useEffect(() => {
+    storyEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [story]);
 
   if (!mounted) return null;
 
+  const currentTeam  = currentTeams.length > 0 && currentRound >= 0
+    ? currentTeams[currentRound % currentTeams.length]
+    : null;
+  const teamIdx      = currentTeam ? currentTeams.indexOf(currentTeam) : 0;
+  const teamColor    = TEAM_COLORS[teamIdx % 7];
+  const scUrgent     = timeLeft <= 5 && timerActive;
+  const scDashOffset = SC_CIRC - (Math.max(timeLeft, 0) / timerDuration) * SC_CIRC;
+
   const handleGenerate = async () => {
-
-
-    if (!topic) return alert("Please enter a topic!");
-
+    if (!topic.trim()) return alert("Please enter a topic!");
     setIsGenerating(true);
-    setRounds([]);
-    setIsPlaying(false);
-
+    setRounds([]); setStory([]); setFinished(false); setCurrentInput("");
     try {
       const res = await fetch("/api/generate-story", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          apiKey: getActiveApiKey(),
-          mistralModel,
-          provider: llmProvider,
-          topic,
-          level: "Mixed Level"
-        })
+        body: JSON.stringify({ apiKey: getActiveApiKey(), mistralModel, provider: llmProvider, topic, level: "Mixed Level" }),
       });
       const data = await res.json();
       if (res.ok && data.rounds) {
         setStarter(data.starter);
         setRounds(data.rounds);
         setCurrentRound(0);
-        setTimeLeft(TURN_SECONDS);
-        setIsPlaying(true);
+        setTimeLeft(timerDuration);
+        setTimerActive(true);
+        setTimeout(() => inputRef.current?.focus(), 100);
       } else {
-        alert("Error: " + (data.error || "Unknown Error"));
+        alert("Error: " + (data.error || "Unknown error"));
       }
-    } catch (e: any) {
-      alert("Failed to generate: " + e.message);
-    }
+    } catch (e: any) { alert("Failed: " + e.message); }
     setIsGenerating(false);
   };
 
-  const handleNextRound = () => {
-    if (currentRound < rounds.length - 1) {
-      setCurrentRound(c => c + 1);
-      setTimeLeft(TURN_SECONDS);
-      setIsPlaying(true);
+  const advance = (awardPts: boolean) => {
+    if (awardPts && currentTeam) updateTeamScore(currentTeam.id, PTS_PER_TURN);
+    const sentence = currentInput.trim();
+    if (sentence) setStory(prev => [...prev, sentence]);
+    setCurrentInput("");
+    if (currentRound >= rounds.length - 1) {
+      setFinished(true);
+      setTimerActive(false);
     } else {
-      setIsPlaying(false);
+      setCurrentRound(r => r + 1);
+      setTimeLeft(timerDuration);
+      setTimerActive(true);
+      setTimeout(() => inputRef.current?.focus(), 50);
     }
+  };
+
+  const reset = () => {
+    setRounds([]); setStory([]); setCurrentRound(-1); setStarter("");
+    setCurrentInput(""); setFinished(false); setTimerActive(false);
   };
 
   return (
     <>
+      {/* ── Setup modal ── */}
       {(rounds.length === 0 || isGenerating) && (
         <div className={styles.setupOverlay}>
           <div className={styles.setupModal}>
@@ -128,71 +153,146 @@ export default function StoryChainMode() {
                     autoFocus
                   />
                 </div>
-                <button className={styles.btnGenerate} onClick={handleGenerate} disabled={!topic.trim()}>
-                  <Sparkles size={16} /> Generate Story Setup
-                </button>
+                <div className={styles.setupField}>
+                  <div className={styles.setupLabel}>Timer per Turn</div>
+                  <select className={styles.setupSelect} value={timerDuration} onChange={e => setTimerDuration(Number(e.target.value))}>
+                    <option value={15}>15 seconds</option>
+                    <option value={20}>20 seconds</option>
+                    <option value={30}>30 seconds</option>
+                    <option value={45}>45 seconds</option>
+                    <option value={60}>60 seconds</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <button className={styles.btnGenerate} onClick={handleGenerate} disabled={!topic.trim()}>
+                    <Sparkles size={16} /> Generate Story Setup
+                  </button>
+                  <button
+                    style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 10, padding: '14px 20px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 12, cursor: 'pointer' }}
+                    onClick={() => router.push('/games')}
+                  >
+                    ← Back to Arcade
+                  </button>
+                </div>
               </>
             )}
           </div>
         </div>
       )}
 
+      {/* ── Game view ── */}
       {rounds.length > 0 && !isGenerating && (
         <div className={styles.page}>
+
+          {/* Header */}
           <div className={styles.gameHeader}>
             <div className={styles.gameTitle}>Story Chain</div>
             <div className={styles.headerDivider} />
-            <div className={styles.qCounter}>
-              Round <span className={styles.qCounterNum}>{Math.max(currentRound + 1, 1)}</span> / {rounds.length}
-            </div>
+            {!finished ? (
+              <div className={styles.qCounter}>
+                Round <span className={styles.qCounterNum}>{currentRound + 1}</span> / {rounds.length}
+              </div>
+            ) : (
+              <div className={styles.qCounter} style={{ color: '#00e87a' }}>Complete ✓</div>
+            )}
             <div className={styles.headerSpacer} />
-            <div className={styles.timerWrap}>
-              <div className={`${styles.timerNum} ${timeLeft <= 5 ? styles.timerNumUrgent : ''}`}>
-                {timeLeft}
+
+            {/* Current team badge */}
+            {currentTeam && !finished && (
+              <div
+                className={styles.scTeamBadge}
+                style={{ borderColor: `${teamColor}55`, background: `${teamColor}12`, color: teamColor }}
+              >
+                {currentTeam.name}&apos;s turn
               </div>
-              <div className={styles.timerBar}>
-                <div
-                  className={`${styles.timerBarFill} ${timeLeft <= 5 ? styles.timerBarFillUrgent : ''}`}
-                  style={{ width: `${(timeLeft / TURN_SECONDS) * 100}%` }}
-                />
+            )}
+
+            {/* Circular timer */}
+            {!finished && (
+              <div className={styles.scTimerWrap}>
+                <svg className={styles.scTimerSvg} viewBox="0 0 44 44">
+                  <defs>
+                    <linearGradient id="scGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#00e87a" />
+                      <stop offset="100%" stopColor="#00c8f0" />
+                    </linearGradient>
+                  </defs>
+                  <circle className={styles.scTimerTrack} cx="22" cy="22" r="20" />
+                  <circle
+                    className={`${styles.scTimerRing}${scUrgent ? ` ${styles.scTimerRingUrgent}` : ''}`}
+                    cx="22" cy="22" r="20"
+                    stroke={scUrgent ? "#ff4444" : "url(#scGrad)"}
+                    strokeDashoffset={scDashOffset}
+                  />
+                </svg>
+                <div className={`${styles.scTimerNum}${scUrgent ? ` ${styles.scTimerNumUrgent}` : ''}`}>
+                  {timeLeft}
+                </div>
               </div>
-            </div>
+            )}
+
             <button
               style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 8, padding: '6px 14px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer' }}
-              onClick={() => { setRounds([]); setCurrentRound(-1); setStarter(''); setIsPlaying(false); }}
+              onClick={reset}
             >
               ← New Story
             </button>
           </div>
-          <div className={styles.gameContent}>
-            <GameTimer
-              timerActive={isPlaying}
-              variant="bar"
-              onTimeUp={() => setIsPlaying(false)}
-              key={currentRound}
-            />
 
-            <div className={styles.starterText}>
-              &ldquo;{starter}&rdquo;
+          {/* Body */}
+          <div className={styles.scBody}>
+
+            {/* Story accumulator */}
+            <div className={styles.scStoryBox}>
+              <div className={styles.scStoryStarter}>&ldquo;{starter}&rdquo;</div>
+              {story.map((line, i) => {
+                const team = currentTeams.length > 0 ? currentTeams[i % currentTeams.length] : null;
+                const col  = team ? TEAM_COLORS[currentTeams.indexOf(team) % 7] : '#4a637d';
+                return (
+                  <div key={i} className={styles.scStoryLine}>
+                    {team && <span className={styles.scStoryDot} style={{ background: col }} />}
+                    <span>{line}</span>
+                  </div>
+                );
+              })}
+              <div ref={storyEndRef} />
             </div>
 
-            {currentRound >= rounds.length - 1 && timeLeft === 0 ? (
-               <h2 style={{ fontSize: '4rem', color: 'var(--success)' }}>STORY COMPLETE!</h2>
-            ) : (
-              <>
-                <div className={styles.wordsContainer}>
-                  {rounds[currentRound]?.words.map((word, i) => (
-                    <div key={i} className={styles.wordBox}>{word}</div>
+            {/* Active turn */}
+            {!finished ? (
+              <div className={styles.scTurnCard}>
+                <div className={styles.scWordsRow}>
+                  {rounds[currentRound]?.words.map((w, i) => (
+                    <div key={i} className={styles.scWordChip}>{w}</div>
                   ))}
                 </div>
-
-                <div className={styles.nextWrap}>
-                  <button className={styles.nextBtn} onClick={handleNextRound}>
-                    NEXT TURN (SPACE)
+                <input
+                  ref={inputRef}
+                  className={styles.scInput}
+                  placeholder="Type student's sentence (optional)..."
+                  value={currentInput}
+                  onChange={e => setCurrentInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); advance(true); } }}
+                />
+                <div className={styles.scActionsRow}>
+                  <button className={styles.scBtnGotIt} onClick={() => advance(true)}>
+                    ✓ GOT IT
+                    <span className={styles.scKeyHint}>[+{PTS_PER_TURN}pts · Space]</span>
+                  </button>
+                  <button className={styles.scBtnSkip} onClick={() => advance(false)}>
+                    ↷ SKIP
                   </button>
                 </div>
-              </>
+              </div>
+            ) : (
+              <div className={styles.scFinished}>
+                <div className={styles.scFinishedLabel}>
+                  {story.length} turn{story.length !== 1 ? 's' : ''} contributed to the story
+                </div>
+                <button className={styles.scBtnNew} onClick={reset}>← New Story</button>
+              </div>
             )}
+
           </div>
         </div>
       )}
