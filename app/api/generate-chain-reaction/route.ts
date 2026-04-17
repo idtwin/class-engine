@@ -10,7 +10,8 @@ export async function POST(req: Request) {
       const systemPrompt = `You are an ESL game designer. Generate 5-7 English vocabulary words for an Indonesian high school classroom game. Words should be thematically connected to the given topic and appropriate for the difficulty level. Rules: single words only (no phrases), 4-9 letters each, all uppercase, varied lengths, appropriate vocabulary for the level. Level guide: Low (A1)=very simple words, High (B1)=more complex. Return JSON: { "words": ["WORD1", "WORD2", ...] }`;
       const userPrompt = `Topic: ${topic}, Level: ${level}`;
       const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.8, mistralModel, provider });
-      return NextResponse.json(parsed);
+      const words = Array.isArray(parsed) ? parsed : (parsed as any).words || [];
+      return NextResponse.json({ words });
     }
 
     if (mode === "speed") {
