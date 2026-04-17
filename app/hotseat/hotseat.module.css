@@ -401,12 +401,13 @@
 
 .hsTargetWord {
   font-family: 'Syne', sans-serif;
-  font-size: clamp(5rem, 12vw, 13rem);
+  font-size: clamp(2.5rem, 11vw, 13rem);
   font-weight: 900; line-height: 0.9;
   letter-spacing: -0.02em; text-transform: uppercase;
   color: #ff7d3b;
   text-shadow: 0 0 60px rgba(255,125,59,0.35);
-  text-align: center; word-break: break-word;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .hsForbiddenRow {
@@ -422,9 +423,6 @@
   border: 1.5px solid var(--border2, #243347);
   border-radius: 10px;
   padding: 10px 20px;
-  text-decoration: line-through;
-  text-decoration-color: rgba(255,125,59,0.4);
-  text-decoration-thickness: 2px;
 }
 
 .hsActionsRow {
