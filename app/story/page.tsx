@@ -17,6 +17,7 @@ export default function StoryChainMode() {
   const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider } = useClassroomStore();
 
   const [topic, setTopic]             = useState("");
+  const [level, setLevel]             = useState("Mixed Level");
   const [timerDuration, setTimerDuration] = useState(20);
   const [isGenerating, setIsGenerating]   = useState(false);
 
@@ -34,16 +35,16 @@ export default function StoryChainMode() {
 
   useEffect(() => setMounted(true), []);
 
-  // Timer countdown
+  // Timer countdown (skipped when timerDuration === 0)
   useEffect(() => {
-    if (!timerActive || timeLeft <= 0) return;
+    if (!timerActive || timerDuration === 0 || timeLeft <= 0) return;
     const id = setInterval(() => setTimeLeft(t => t - 1), 1000);
     return () => clearInterval(id);
-  }, [timerActive, timeLeft]);
+  }, [timerActive, timeLeft, timerDuration]);
 
   useEffect(() => {
-    if (timeLeft === 0 && timerActive) setTimerActive(false);
-  }, [timeLeft, timerActive]);
+    if (timeLeft === 0 && timerActive && timerDuration > 0) setTimerActive(false);
+  }, [timeLeft, timerActive, timerDuration]);
 
   // Spacebar = GOT IT (when not focused on input)
   useEffect(() => {
@@ -81,7 +82,7 @@ export default function StoryChainMode() {
       const res = await fetch("/api/generate-story", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: getActiveApiKey(), mistralModel, provider: llmProvider, topic, level: "Mixed Level" }),
+        body: JSON.stringify({ apiKey: getActiveApiKey(), mistralModel, provider: llmProvider, topic, level }),
       });
       const data = await res.json();
       if (res.ok && data.rounds) {
@@ -89,7 +90,7 @@ export default function StoryChainMode() {
         setRounds(data.rounds);
         setCurrentRound(0);
         setTimeLeft(timerDuration);
-        setTimerActive(true);
+        setTimerActive(timerDuration > 0);
         setTimeout(() => inputRef.current?.focus(), 100);
       } else {
         alert("Error: " + (data.error || "Unknown error"));
@@ -109,7 +110,7 @@ export default function StoryChainMode() {
     } else {
       setCurrentRound(r => r + 1);
       setTimeLeft(timerDuration);
-      setTimerActive(true);
+      setTimerActive(timerDuration > 0);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   };
@@ -153,15 +154,30 @@ export default function StoryChainMode() {
                     autoFocus
                   />
                 </div>
-                <div className={styles.setupField}>
-                  <div className={styles.setupLabel}>Timer per Turn</div>
-                  <select className={styles.setupSelect} value={timerDuration} onChange={e => setTimerDuration(Number(e.target.value))}>
-                    <option value={15}>15 seconds</option>
-                    <option value={20}>20 seconds</option>
-                    <option value={30}>30 seconds</option>
-                    <option value={45}>45 seconds</option>
-                    <option value={60}>60 seconds</option>
-                  </select>
+                <div className={styles.setupRow}>
+                  <div className={styles.setupField}>
+                    <div className={styles.setupLabel}>Student Level</div>
+                    <select className={styles.setupSelect} value={level} onChange={e => setLevel(e.target.value)}>
+                      <option value="Low (A1)">Low (A1)</option>
+                      <option value="Low-Mid (A1-A2)">Low-Mid (A1–A2)</option>
+                      <option value="Mid (A2)">Mid (A2)</option>
+                      <option value="Mid-High (A2-B1)">Mid-High (A2–B1)</option>
+                      <option value="High (B1)">High (B1)</option>
+                      <option value="Mixed Level">Mixed Level</option>
+                    </select>
+                  </div>
+                  <div className={styles.setupField}>
+                    <div className={styles.setupLabel}>Timer per Turn</div>
+                    <select className={styles.setupSelect} value={timerDuration} onChange={e => setTimerDuration(Number(e.target.value))}>
+                      <option value={0}>No Timer</option>
+                      <option value={15}>15 seconds</option>
+                      <option value={20}>20 seconds</option>
+                      <option value={30}>30 seconds</option>
+                      <option value={45}>45 seconds</option>
+                      <option value={60}>60 seconds</option>
+                      <option value={90}>90 seconds</option>
+                    </select>
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                   <button className={styles.btnGenerate} onClick={handleGenerate} disabled={!topic.trim()}>
@@ -208,7 +224,7 @@ export default function StoryChainMode() {
             )}
 
             {/* Circular timer */}
-            {!finished && (
+            {!finished && timerDuration > 0 && (
               <div className={styles.scTimerWrap}>
                 <svg className={styles.scTimerSvg} viewBox="0 0 44 44">
                   <defs>
