@@ -159,27 +159,37 @@ export async function generateText(
 ): Promise<string> {
   const provider = opts.provider ?? "gemini";
 
-  if (provider === "lmstudio") {
-    return callLMStudio(opts);
-  }
-  if (provider === "mistral") {
+  try {
+    if (provider === "lmstudio") {
+      return await callLMStudio(opts);
+    }
+    if (provider === "mistral") {
+      if (!apiKey || apiKey.trim().length < 10) {
+        throw new Error("Mistral API key is required. Go to Dashboard → Settings and add your key.");
+      }
+      return await callMistral(apiKey.trim(), opts);
+    }
+    if (provider === "groq") {
+      const groqKey = apiKey?.trim() || process.env.GROQ_API_KEY;
+      if (!groqKey || groqKey.length < 10) {
+        throw new Error("Groq API key is required. Go to Games → Settings and paste your Groq key (groq.com).");
+      }
+      return await callGroq(groqKey, opts);
+    }
+    // Gemini
     if (!apiKey || apiKey.trim().length < 10) {
-      throw new Error("Mistral API key is required. Go to Dashboard → Settings and add your key.");
+      throw new Error("Gemini API key is required. Go to Dashboard → Settings and add your key, or switch to LM Studio / Mistral.");
     }
-    return callMistral(apiKey.trim(), opts);
-  }
-  if (provider === "groq") {
-    const groqKey = apiKey?.trim() || process.env.GROQ_API_KEY;
-    if (!groqKey || groqKey.length < 10) {
-      throw new Error("Groq API key is required. Go to Games → Settings and paste your Groq key (groq.com).");
+    return await callGemini(apiKey.trim(), opts);
+  } catch (e: any) {
+    if (e.message === "fetch failed" || e.cause?.code === "ECONNREFUSED") {
+      if (provider === "lmstudio") {
+        throw new Error("LM Studio is not running. Start LM Studio on port 1234, or switch to a cloud provider in Dashboard → Settings.");
+      }
+      throw new Error(`Network error reaching ${provider} API. Check your internet or switch providers in Dashboard → Settings.`);
     }
-    return callGroq(groqKey, opts);
+    throw e;
   }
-  // Gemini
-  if (!apiKey || apiKey.trim().length < 10) {
-    throw new Error("Gemini API key is required. Go to Dashboard → Settings and add your key, or switch to LM Studio / Mistral.");
-  }
-  return callGemini(apiKey.trim(), opts);
 }
 
 /**
