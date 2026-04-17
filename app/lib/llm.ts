@@ -169,9 +169,9 @@ export async function generateText(
     return callMistral(apiKey.trim(), opts);
   }
   if (provider === "groq") {
-    const groqKey = process.env.GROQ_API_KEY || apiKey?.trim();
+    const groqKey = apiKey?.trim() || process.env.GROQ_API_KEY;
     if (!groqKey || groqKey.length < 10) {
-      throw new Error("Groq API key is required. Set GROQ_API_KEY in .env.local or Vercel environment variables.");
+      throw new Error("Groq API key is required. Go to Games → Settings and paste your Groq key (groq.com).");
     }
     return callGroq(groqKey, opts);
   }
