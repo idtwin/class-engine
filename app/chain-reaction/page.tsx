@@ -24,7 +24,7 @@ type GamePhase = "setup" | "loading" | "playing" | "finished";
 export default function ChainReaction() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider } = useClassroomStore();
+  const { currentTeams, updateTeamScore, getActiveApiKey, getActiveModel, llmProvider } = useClassroomStore();
 
   // Setup
   const [topic, setTopic] = useState("");
@@ -67,8 +67,6 @@ export default function ChainReaction() {
       handleWrongRef.current();
     }
   }, [timeLeft, timerActive, timerDuration]);
-
-  if (!mounted) return null;
 
   // ── Helpers ──
 
@@ -235,7 +233,7 @@ export default function ChainReaction() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           apiKey: getActiveApiKey(),
-          mistralModel,
+          mistralModel: getActiveModel(),
           provider: llmProvider,
           topic,
           level,
@@ -308,6 +306,8 @@ export default function ChainReaction() {
   };
 
   // ── Render ──
+
+  if (!mounted) return null;
 
   return (
     <>
