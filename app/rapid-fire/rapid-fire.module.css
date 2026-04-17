@@ -528,7 +528,7 @@
 
 .rfSentenceText {
   font-family: 'Syne', sans-serif;
-  font-size: clamp(18px, 2.4vw, 26px);
+  font-size: clamp(26px, 3.2vw, 46px);
   font-weight: 700; color: var(--text, #dce8f5); line-height: 1.4;
 }
 
@@ -549,7 +549,7 @@
 
 .rfRevealAnswer {
   font-family: 'Syne', sans-serif;
-  font-size: 22px; font-weight: 800; color: #00e87a;
+  font-size: clamp(22px, 2.8vw, 40px); font-weight: 800; color: #00e87a;
 }
 
 /* MC options grid */
@@ -593,7 +593,7 @@
 
 .rfOptText {
   font-family: 'Syne', sans-serif;
-  font-size: 15px; font-weight: 700; color: var(--text, #dce8f5);
+  font-size: clamp(16px, 2vw, 26px); font-weight: 700; color: var(--text, #dce8f5);
 }
 
 .rfOptTileCorrect .rfOptText { color: #00e87a; }

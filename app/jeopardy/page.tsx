@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./game.module.css";
 import GameTimer from "../components/GameTimer";
 import GameSettingsDrawer from "../components/GameSettingsDrawer";
@@ -64,6 +65,7 @@ const DEFAULT_GAME_BOARD = [
 ];
 
 export default function JeopardyPage() {
+  const router = useRouter();
   const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider, triggerTwist, activeRoomCode, saveBoard, setActiveAwardAmount } = useClassroomStore();
   const [mounted, setMounted] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -125,6 +127,26 @@ export default function JeopardyPage() {
   }, [timerActive, timeLeft]);
 
   if (!mounted) return null;
+
+  const replaceJeopardyQuestion = async (cIndex: number, qIndex: number) => {
+    const apiKey = getActiveApiKey();
+    if (!apiKey && llmProvider !== 'lmstudio') return;
+    const cat = board[cIndex].category;
+    const pts = board[cIndex].questions[qIndex].points;
+    try {
+      const res = await fetch("/api/generate-game", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey, mistralModel, provider: llmProvider, topic, level: "Mixed Level Class", replaceOne: true, category: cat, points: pts }),
+      });
+      const data = await res.json();
+      if (res.ok && data.question) {
+        const newBoard = [...board];
+        newBoard[cIndex].questions[qIndex] = { ...newBoard[cIndex].questions[qIndex], ...data.question };
+        setBoard(newBoard);
+      }
+    } catch (e) { console.error("Replace error:", e); }
+  };
 
   const handleGenerate = async () => {
     if (!getActiveApiKey() && llmProvider !== 'lmstudio') return alert("Please set your API key in Dashboard → Config first!");
@@ -243,9 +265,9 @@ export default function JeopardyPage() {
                   </button>
                   <button
                     style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 10, padding: '14px 20px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 12, cursor: 'pointer' }}
-                    onClick={() => setShowSetupModal(false)}
+                    onClick={() => router.push('/arcade')}
                   >
-                    Cancel
+                    ← Back to Arcade
                   </button>
                 </div>
               </>
@@ -305,6 +327,13 @@ export default function JeopardyPage() {
                           className={styles.reviewInput}
                           placeholder="Question text..."
                         />
+                        <button
+                          title="Replace with AI"
+                          onClick={() => replaceJeopardyQuestion(cIndex, qIndex)}
+                          style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 6, padding: '4px 10px', color: '#fbbf24', fontFamily: 'monospace', fontSize: 14, cursor: 'pointer', flexShrink: 0 }}
+                        >
+                          ↺
+                        </button>
                       </div>
                       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.5rem' }}>
                         <span style={{ fontSize: '0.8rem', color: 'var(--accent)', width: '30px', fontWeight: 'bold' }}>Ans:</span>

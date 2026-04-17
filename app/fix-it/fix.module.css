@@ -1086,10 +1086,10 @@
 
 .fixSentenceText {
   font-family: 'Syne', var(--font-main), sans-serif;
-  font-size: 24px;
+  font-size: clamp(28px, 3.5vw, 52px);
   font-weight: 700;
   color: var(--text);
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 .fixWrongWord {
@@ -1103,13 +1103,13 @@
 .fixOptsGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
-  max-width: 760px;
+  max-width: 900px;
 }
 
 .fixOptTile {
-  height: 72px;
+  height: clamp(80px, 9vh, 110px);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -1165,7 +1165,7 @@
 
 .fixOptText {
   font-family: 'Syne', var(--font-main), sans-serif;
-  font-size: 20px;
+  font-size: clamp(20px, 2.4vw, 32px);
   font-weight: 800;
   color: var(--text);
   letter-spacing: 0.04em;

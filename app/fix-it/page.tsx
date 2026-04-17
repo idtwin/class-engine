@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./fix.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
 import MultiplayerHost from "../components/MultiplayerHost";
@@ -38,6 +39,7 @@ function HighlightedSentence({ sentence, wrongWord, wrongWordClass }: { sentence
 
 // ── Main component ────────────────────────────────────
 export default function FixIt() {
+  const router = useRouter();
   const {
     currentTeams, updateTeamScore,
     getActiveApiKey, getActiveModel, llmProvider,
@@ -375,13 +377,21 @@ export default function FixIt() {
                   </div>
                 </div>
 
-                <button
-                  className={styles.btnGenerate}
-                  onClick={handleGenerate}
-                  disabled={!topic.trim()}
-                >
-                  Generate Questions
-                </button>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <button
+                    className={styles.btnGenerate}
+                    onClick={handleGenerate}
+                    disabled={!topic.trim()}
+                  >
+                    Generate Questions
+                  </button>
+                  <button
+                    style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 10, padding: '14px 20px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 12, cursor: 'pointer' }}
+                    onClick={() => router.push('/arcade')}
+                  >
+                    ← Back to Arcade
+                  </button>
+                </div>
               </>
             )}
           </div>
@@ -482,7 +492,7 @@ export default function FixIt() {
                   )}
 
                   {/* Team chips — locked-in state */}
-                  {currentTeams.length > 0 && (
+                  {activeRoomCode && roomStudents.length > 0 && (
                     <div className={styles.fixTeamsRow}>
                       {currentTeams.map(team => {
                         const locked = roomStudents.some(
@@ -565,7 +575,7 @@ export default function FixIt() {
                   </div>
 
                   {/* Team chips — correct/wrong state */}
-                  {currentTeams.length > 0 && (
+                  {activeRoomCode && roomStudents.length > 0 && (
                     <div className={styles.fixTeamsRow}>
                       {currentTeams.map(team => {
                         const teamStudents = roomStudents.filter(s =>

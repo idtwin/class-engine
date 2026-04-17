@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useClassroomStore, SavedBoard } from "../store/useClassroomStore";
 import { Sparkles } from "lucide-react";
 import styles from "./rapid-fire.module.css";
@@ -20,6 +21,7 @@ type GameState = "SETUP" | "LOADING" | "READY" | "PLAYING" | "REVEALED" | "FINIS
 type RFMode = "buzzer" | "mc";
 
 export default function RapidFire() {
+  const router = useRouter();
   const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider, triggerTwist, activeRoomCode, saveBoard } = useClassroomStore();
   const [mounted, setMounted] = useState(false);
   const [roomBuzzes, setRoomBuzzes] = useState<any[]>([]);
@@ -49,6 +51,23 @@ export default function RapidFire() {
     setQuestions(saved.content as RapidFireQuestion[]);
     setTopic(saved.topic);
     setGameState("READY");
+  };
+
+  const replaceQuestion = async (idx: number) => {
+    const apiKey = getActiveApiKey();
+    if (!apiKey && llmProvider !== 'lmstudio') return;
+    try {
+      const existing = questions.map(q => q.text);
+      const res = await fetch("/api/generate-rapid-fire", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey, provider: llmProvider, mistralModel, topic, level: targetLevel, mode: rfMode, replaceOne: true, existingQuestions: existing }),
+      });
+      const data = await res.json();
+      if (data.question) {
+        setQuestions(prev => prev.map((q, i) => i === idx ? data.question : q));
+      }
+    } catch (e) { console.error("Replace error:", e); }
   };
 
   useEffect(() => {
@@ -381,9 +400,18 @@ export default function RapidFire() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' }}>
                   {questions.map((q, i) => (
-                    <div key={i} style={{ background: 'var(--surface2, #131b2b)', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border2, #243347)' }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text, #dce8f5)', fontSize: 14 }}>{i + 1}. {q.text}</div>
-                      <div style={{ color: 'var(--muted, #4a637d)', fontSize: 12, marginTop: 4 }}>Answer: {q.answer}</div>
+                    <div key={i} style={{ background: 'var(--surface2, #131b2b)', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border2, #243347)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700, color: 'var(--text, #dce8f5)', fontSize: 14 }}>{i + 1}. {q.text}</div>
+                        <div style={{ color: 'var(--muted, #4a637d)', fontSize: 12, marginTop: 4 }}>Answer: {q.answer}</div>
+                      </div>
+                      <button
+                        title="Replace this question"
+                        onClick={() => replaceQuestion(i)}
+                        style={{ background: 'rgba(255,77,143,0.08)', border: '1px solid rgba(255,77,143,0.25)', borderRadius: 6, padding: '4px 10px', color: '#ff4d8f', fontFamily: 'var(--font-mono, monospace)', fontSize: 13, cursor: 'pointer', flexShrink: 0, lineHeight: 1.4 }}
+                      >
+                        ↺
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -442,6 +470,12 @@ export default function RapidFire() {
                     <Sparkles size={16} /> Generate Questions
                   </button>
                   <BoardLibrary currentGameType="rapidfire" onLoadBoard={handleLoadBoard} />
+                  <button
+                    style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 10, padding: '14px 20px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 12, cursor: 'pointer' }}
+                    onClick={() => router.push('/arcade')}
+                  >
+                    ← Back to Arcade
+                  </button>
                 </div>
               </>
             )}
