@@ -1,494 +1,333 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useClassroomStore } from "../store/useClassroomStore";
-import { Sparkles, Link2, SkipForward, Zap } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import styles from "./chain.module.css";
 import MultiplayerHost from "../components/MultiplayerHost";
-import GameTimer from "../components/GameTimer";
 import ScoreboardOverlay from "../components/ScoreboardOverlay";
-import { stopAllSFX } from "../lib/audio";
-import GameSettingsDrawer from "../components/GameSettingsDrawer";
 
-type GameMode = "puzzle" | "speed";
-type GameState = "SETUP" | "LOADING" | "PLAYING" | "FINISHED";
+const TEAM_COLORS = ['#00e87a', '#00c8f0', '#ffc843', '#ff4d8f', '#b06eff', '#ff7d3b', '#e2e8f0'];
+const PTS_LETTER = 20;
+const PTS_WORD = 100;
+const CIRC = 125.66;
 
-interface Chain {
-  words: string[];
-  connections?: string[];
-  difficulty?: string;
-}
-
-interface SpeedCategory {
-  name: string;
-  startWord: string;
-  validWords: string[];
-  difficulty?: string;
-}
-
-interface ChainWord {
+interface WordState {
   word: string;
-  teamId?: string;
-  teamColor?: string;
+  revealed: boolean[];
+  solved: boolean;
 }
+
+type GamePhase = "setup" | "loading" | "playing" | "finished";
 
 export default function ChainReaction() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider, triggerTwist } = useClassroomStore();
+  const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider } = useClassroomStore();
 
   // Setup
-  const [gameMode, setGameMode] = useState<GameMode>("puzzle");
-  const [gameState, setGameState] = useState<GameState>("SETUP");
   const [topic, setTopic] = useState("");
-  const [difficulty, setDifficulty] = useState("Intermediate");
-  const [timerDuration, setTimerDuration] = useState(15);
-  const [roundCount, setRoundCount] = useState(5);
-  const [circlesPerChain, setCirclesPerChain] = useState<string>("random");
+  const [level, setLevel] = useState("Mid (A2)");
+  const [timerDuration, setTimerDuration] = useState(0);
+  const [phase, setPhase] = useState<GamePhase>("setup");
 
-  // Chain Puzzle state
-  const [chains, setChains] = useState<Chain[]>([]);
-  const [chainIndex, setChainIndex] = useState(0);
-  const [revealedWords, setRevealedWords] = useState<boolean[]>([]);
-  const [hintLetters, setHintLetters] = useState<number[]>([]); // how many letters revealed per word
-  const [foundBy, setFoundBy] = useState<(string | null)[]>([]); // teamId that found each word
-
-  // Speed Chain state
-  const [categories, setCategories] = useState<SpeedCategory[]>([]);
-  const [catIndex, setCatIndex] = useState(0);
-  const [chainWords, setChainWords] = useState<ChainWord[]>([]);
-  const [strikes, setStrikes] = useState<Record<string, number>>({});
-
-  // Shared
+  // Game state
+  const [words, setWords] = useState<WordState[]>([]);
+  const [currentWordIdx, setCurrentWordIdx] = useState(0);
   const [currentTeamIdx, setCurrentTeamIdx] = useState(0);
-  const [guess, setGuess] = useState("");
-  const [feedback, setFeedback] = useState<{ type: "correct" | "wrong" | "hint"; text: string } | null>(null);
-  const [timeLeft, setTimeLeft] = useState(15);
-  const [timerActive, setTimerActive] = useState(false);
-  const [showTimesUp, setShowTimesUp] = useState(false);
-
-  const guessRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setMounted(true);
-    return () => stopAllSFX(); // Silence game on exit
-  }, []);
+  const [gameTally, setGameTally] = useState<Record<string, number>>({});
+  const [currentLetter, setCurrentLetter] = useState("");
+  const [feedback, setFeedback] = useState<{ type: "correct" | "wrong" | "solve" | null; msg: string }>({ type: null, msg: "" });
+  const [finished, setFinished] = useState(false);
+  const [pushed, setPushed] = useState(false);
+  const [flippingTiles, setFlippingTiles] = useState<Set<string>>(new Set());
 
   // Timer
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [timerActive, setTimerActive] = useState(false);
+
+  const letterInputRef = useRef<HTMLInputElement>(null);
+  const handleWrongRef = useRef<() => void>(() => {});
+
+  useEffect(() => { setMounted(true); }, []);
+
+  // Timer countdown
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (timerActive && timeLeft > 0) {
-      interval = setInterval(() => setTimeLeft(t => t - 1), 1000);
-    } else if (timeLeft === 0 && timerActive) {
+    if (!timerActive || timerDuration === 0) return;
+    if (timeLeft <= 0) return;
+    const id = setInterval(() => setTimeLeft(t => t - 1), 1000);
+    return () => clearInterval(id);
+  }, [timerActive, timerDuration, timeLeft]);
+
+  // Timer expiry → wrong
+  useEffect(() => {
+    if (timeLeft === 0 && timerActive && timerDuration > 0) {
       setTimerActive(false);
-      if (gameMode === "speed") {
-        // Timeout = strike
-        handleSpeedWrong();
-      } else {
-        setShowTimesUp(true);
-        setTimeout(() => setShowTimesUp(false), 2500);
-        // Auto-reveal a letter hint
-        handlePuzzleWrong();
-      }
+      handleWrongRef.current();
     }
-    return () => clearInterval(interval);
-  }, [timerActive, timeLeft]);
+  }, [timeLeft, timerActive, timerDuration]);
 
   if (!mounted) return null;
 
-  if (currentTeams.length === 0) {
-    return (
-      <div className={styles.setupOverlay}>
-        <div className={styles.setupModal}>
-          <div className={styles.setupTitleRow}>
-            <div className={styles.setupTitleIcon}>🔗</div>
-            <div>
-              <div className={styles.setupTitleText}>Chain Reaction</div>
-              <div className={styles.setupTitleSub}>No Teams Found</div>
-            </div>
-          </div>
-          <p style={{ color: 'var(--muted, #4a637d)', fontSize: 14 }}>Generate teams in the Dashboard before playing.</p>
-        </div>
-      </div>
-    );
-  }
+  // ── Helpers ──
 
-const TEAM_COLORS = [
-  "#00FF41", // Green  - Alpha
-  "#00E5FF", // Cyan   - Bravo
-  "#FFB800", // Amber  - Charlie
-  "#FF2D78", // Pink   - Delta
-  "#BC13FE", // Purple - Epsilon
-  "#FF9100", // Orange - Zeta
-  "#2DD4BF", // Teal   - Eta
-  "#F87171", // Red    - Theta
-];
-  const currentTeam = currentTeams[currentTeamIdx % currentTeams.length];
-  const currentColor = TEAM_COLORS[currentTeamIdx % TEAM_COLORS.length];
+  const resetTimer = () => {
+    setTimeLeft(timerDuration);
+    setTimerActive(timerDuration > 0);
+  };
+
+  const advanceTeam = (teams: typeof currentTeams) => {
+    setCurrentTeamIdx(i => (i + 1) % Math.max(teams.length, 1));
+  };
+
+  const showFeedback = (type: "correct" | "wrong" | "solve", msg: string) => {
+    setFeedback({ type, msg });
+    setTimeout(() => setFeedback({ type: null, msg: "" }), 2000);
+  };
+
+  const revealTileAnimate = (wordIdx: number, letterIdx: number) => {
+    const key = `${wordIdx}-${letterIdx}`;
+    setFlippingTiles(prev => new Set(prev).add(key));
+    setTimeout(() => setFlippingTiles(prev => {
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    }), 450);
+  };
+
+  const revealRandomLetter = (wordsList: WordState[], wordIdx: number): WordState[] => {
+    const w = wordsList[wordIdx];
+    const unrevealed = w.revealed.reduce<number[]>((acc, r, i) => (!r ? [...acc, i] : acc), []);
+    if (unrevealed.length === 0) return wordsList;
+    const pick = unrevealed[Math.floor(Math.random() * unrevealed.length)];
+    revealTileAnimate(wordIdx, pick);
+    const newRevealed = [...w.revealed];
+    newRevealed[pick] = true;
+    const allDone = newRevealed.every(Boolean);
+    const newWords = [...wordsList];
+    newWords[wordIdx] = { ...w, revealed: newRevealed, solved: allDone };
+    return newWords;
+  };
+
+  const addTally = (teamId: string, pts: number) => {
+    setGameTally(prev => ({ ...prev, [teamId]: (prev[teamId] || 0) + pts }));
+  };
+
+  // ── Game flow ──
+
+  const handleWordSolved = (newWords: WordState[], teamId?: string) => {
+    const nextIdx = newWords.findIndex((w, i) => i > currentWordIdx && !w.solved);
+    if (nextIdx === -1) {
+      setWords(newWords);
+      setCurrentWordIdx(newWords.length - 1);
+      setFinished(true);
+      setTimerActive(false);
+      return;
+    }
+    const afterReveal = revealRandomLetter(newWords, nextIdx);
+    setWords(afterReveal);
+    setCurrentWordIdx(nextIdx);
+    setCurrentTeamIdx(i => (i + 1) % Math.max(currentTeams.length, 1));
+    resetTimer();
+  };
+
+  const handleCorrect = () => {
+    if (!words.length || finished) return;
+    const letter = currentLetter.trim().toUpperCase();
+    if (!letter) return;
+    const w = words[currentWordIdx];
+    const indices = w.revealed.reduce<number[]>((acc, r, i) => (!r && w.word[i] === letter ? [...acc, i] : acc), []);
+    if (indices.length === 0) {
+      handleWrong();
+      return;
+    }
+    const newRevealed = [...w.revealed];
+    indices.forEach(i => {
+      newRevealed[i] = true;
+      revealTileAnimate(currentWordIdx, i);
+    });
+    const allDone = newRevealed.every(Boolean);
+    const newWords = [...words];
+    newWords[currentWordIdx] = { ...w, revealed: newRevealed, solved: allDone };
+
+    const teamId = currentTeams[currentTeamIdx]?.id;
+    if (teamId) addTally(teamId, PTS_LETTER);
+    showFeedback("correct", `+${PTS_LETTER} — "${letter}" revealed!`);
+    setCurrentLetter("");
+
+    if (allDone) {
+      handleWordSolved(newWords, teamId);
+    } else {
+      setWords(newWords);
+      resetTimer();
+    }
+  };
+
+  const handleWrong = useCallback(() => {
+    if (!words.length || finished) return;
+    const newWords = revealRandomLetter([...words], currentWordIdx);
+    showFeedback("wrong", "✗ Wrong — next team gets a hint letter");
+    setWords(newWords);
+    setCurrentLetter("");
+    setCurrentTeamIdx(i => (i + 1) % Math.max(currentTeams.length, 1));
+    resetTimer();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [words, currentWordIdx, currentTeams, finished, timerDuration]);
+
+  // Keep ref current at render time (not in effect) to avoid stale closure
+  handleWrongRef.current = handleWrong;
+
+  const handlePass = () => {
+    if (finished) return;
+    showFeedback("wrong", "↷ Passed — next team, no hint");
+    setCurrentLetter("");
+    setCurrentTeamIdx(i => (i + 1) % Math.max(currentTeams.length, 1));
+    resetTimer();
+  };
+
+  const handleSolveWord = () => {
+    if (!words.length || finished) return;
+    const w = words[currentWordIdx];
+    const newRevealed = w.word.split("").map(() => true);
+    w.word.split("").forEach((_, i) => {
+      if (!w.revealed[i]) revealTileAnimate(currentWordIdx, i);
+    });
+    const newWords = [...words];
+    newWords[currentWordIdx] = { ...w, revealed: newRevealed, solved: true };
+
+    const teamId = currentTeams[currentTeamIdx]?.id;
+    if (teamId) addTally(teamId, PTS_WORD);
+    showFeedback("solve", `★ SOLVED! +${PTS_WORD}`);
+    setCurrentLetter("");
+    handleWordSolved(newWords, teamId);
+  };
+
+  const handlePush = () => {
+    Object.entries(gameTally).forEach(([teamId, pts]) => {
+      if (pts > 0) updateTeamScore(teamId, pts);
+    });
+    setPushed(true);
+  };
+
+  const reset = () => {
+    setWords([]);
+    setCurrentWordIdx(0);
+    setCurrentTeamIdx(0);
+    setGameTally({});
+    setCurrentLetter("");
+    setFeedback({ type: null, msg: "" });
+    setFinished(false);
+    setPushed(false);
+    setFlippingTiles(new Set());
+    setTimerActive(false);
+    setPhase("setup");
+  };
 
   // ── Generate ──
-  const handleGenerate = async () => {
-    if (!topic) return alert("Please enter a topic!");
-    setGameState("LOADING");
 
+  const handleGenerate = async () => {
+    if (!topic.trim()) return;
+    setPhase("loading");
     try {
       const res = await fetch("/api/generate-chain-reaction", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          apiKey: getActiveApiKey(), 
-          mistralModel, 
-          provider: llmProvider, 
-          topic, 
-          level: difficulty, 
-          mode: gameMode,
-          count: roundCount,
-          circleCount: circlesPerChain
-        })
+        body: JSON.stringify({
+          apiKey: getActiveApiKey(),
+          mistralModel,
+          provider: llmProvider,
+          topic,
+          level,
+          mode: "word-reveal",
+        }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
+      const rawWords: string[] = data.words || [];
+      if (rawWords.length === 0) throw new Error("No words generated.");
 
-      if (gameMode === "puzzle") {
-        const ch = data.chains || [];
-        if (ch.length === 0) throw new Error("No chains generated.");
-        setChains(ch);
-        setChainIndex(0);
-        initChain(ch[0]);
-      } else {
-        const cats = data.categories || [];
-        if (cats.length === 0) throw new Error("No categories generated.");
-        setCategories(cats);
-        setCatIndex(0);
-        initSpeed(cats[0]);
-      }
+      const initialWords: WordState[] = rawWords.map(w => {
+        const upper = w.toUpperCase();
+        const revealed = upper.split("").map(() => false);
+        // Reveal 1 random letter to start
+        const pick = Math.floor(Math.random() * upper.length);
+        revealed[pick] = true;
+        return { word: upper, revealed, solved: false };
+      });
 
+      setWords(initialWords);
+      setCurrentWordIdx(0);
       setCurrentTeamIdx(0);
-      setStrikes(Object.fromEntries(currentTeams.map(t => [t.id, 0])));
-      setGameState("PLAYING");
+      setGameTally(Object.fromEntries(currentTeams.map(t => [t.id, 0])));
+      setFinished(false);
+      setPushed(false);
+      setCurrentLetter("");
+      setFeedback({ type: null, msg: "" });
+      setFlippingTiles(new Set());
+      setTimeLeft(timerDuration);
+      setTimerActive(timerDuration > 0);
+      setPhase("playing");
+      setTimeout(() => letterInputRef.current?.focus(), 100);
     } catch (err: any) {
       alert("Failed: " + err.message);
-      setGameState("SETUP");
+      setPhase("setup");
     }
   };
 
-  // ── Chain Puzzle helpers ──
-  const initChain = (chain: Chain) => {
-    const revealed = chain.words.map((_, i) => i === 0 || i === chain.words.length - 1);
-    setRevealedWords(revealed);
-    setHintLetters(chain.words.map(() => 0));
-    setFoundBy(chain.words.map(() => null));
-    setGuess("");
-    setTimeLeft(timerDuration);
-    setTimerActive(true);
-    setShowTimesUp(false);
+  // ── Derived ──
+
+  const currentTeam = currentTeams[currentTeamIdx % Math.max(currentTeams.length, 1)];
+  const currentColor = TEAM_COLORS[currentTeamIdx % TEAM_COLORS.length];
+  const totalWords = words.length;
+  const solvedCount = words.filter(w => w.solved).length;
+
+  const timerDash = timerDuration > 0 && timeLeft > 0
+    ? CIRC - (timeLeft / timerDuration) * CIRC
+    : timerDuration > 0 ? CIRC : 0;
+  const timerUrgent = timerDuration > 0 && timeLeft <= 5 && timeLeft > 0;
+
+  const leadingTeamId = Object.entries(gameTally).reduce<string | null>((best, [id, pts]) => {
+    if (!best) return id;
+    return pts > (gameTally[best] || 0) ? id : best;
+  }, null);
+
+  const getRowStyle = (idx: number): "active" | "adjacent" | "solved" | "inactive" => {
+    if (words[idx]?.solved) return "solved";
+    if (idx === currentWordIdx) return "active";
+    if (idx === currentWordIdx - 1 || idx === currentWordIdx + 1) return "adjacent";
+    return "inactive";
   };
 
-  const currentChain = chains[chainIndex];
-  // Find the first unrevealed word (the one we're guessing)
-  const activeWordIdx = currentChain ? revealedWords.findIndex((r, i) => !r) : -1;
-
-  const getWordBlanks = (word: string, hintsShown: number) => {
-    const letters = word.toUpperCase().split("");
-    return letters.map((ch, i) => (i < hintsShown ? ch : "_"));
+  const getInactiveOpacity = (idx: number): number => {
+    const dist = Math.abs(idx - currentWordIdx);
+    if (dist === 2) return 0.38;
+    if (dist === 3) return 0.25;
+    if (dist === 4) return 0.15;
+    return 0.08;
   };
-
-  const getPointsForWord = (hintsShown: number) => {
-    if (hintsShown === 0) return 200;
-    if (hintsShown === 1) return 150;
-    if (hintsShown === 2) return 100;
-    return 50;
-  };
-
-  const handlePuzzleGuess = () => {
-    if (!currentChain || activeWordIdx === -1) return;
-    const target = currentChain.words[activeWordIdx].toUpperCase();
-    const g = guess.trim().toUpperCase();
-    if (!g) return;
-
-    if (g === target) {
-      // Correct!
-      const pts = getPointsForWord(hintLetters[activeWordIdx]);
-      updateTeamScore(currentTeam.id, pts);
-
-      const newRevealed = [...revealedWords];
-      newRevealed[activeWordIdx] = true;
-      setRevealedWords(newRevealed);
-
-      const newFoundBy = [...foundBy];
-      newFoundBy[activeWordIdx] = currentTeam.id;
-      setFoundBy(newFoundBy);
-
-      showFeedback("correct", `+${pts}!`);
-      setGuess("");
-
-      // Check if chain is complete
-      const allRevealed = newRevealed.every(r => r);
-      if (allRevealed) {
-        // Bonus for completing the chain
-        updateTeamScore(currentTeam.id, 300);
-        showFeedback("correct", "+300 CHAIN BONUS!");
-
-        setTimeout(() => {
-          if (chainIndex + 1 < chains.length) {
-            setChainIndex(chainIndex + 1);
-            initChain(chains[chainIndex + 1]);
-            setCurrentTeamIdx(prev => (prev + 1) % currentTeams.length);
-          } else {
-            setTimerActive(false);
-            setGameState("FINISHED");
-          }
-        }, 1500);
-        return;
-      }
-
-      // Same team continues, reset timer
-      setTimeLeft(timerDuration);
-      setTimerActive(true);
-    } else {
-      // Wrong — reveal a letter, pass turn
-      handlePuzzleWrong();
-    }
-
-    setGuess("");
-    setTimeout(() => guessRef.current?.focus(), 100);
-  };
-
-  const handlePuzzleWrong = () => {
-    if (!currentChain || activeWordIdx === -1) return;
-    const word = currentChain.words[activeWordIdx];
-    const newHints = [...hintLetters];
-    if (newHints[activeWordIdx] < word.length - 1) {
-      newHints[activeWordIdx]++;
-    }
-    setHintLetters(newHints);
-
-    const blanks = getWordBlanks(word, newHints[activeWordIdx]);
-    showFeedback("hint", `Hint: ${blanks.join(" ")}`);
-
-    // Pass turn
-    setCurrentTeamIdx(prev => (prev + 1) % currentTeams.length);
-    setTimeLeft(timerDuration);
-    setTimerActive(true);
-    setGuess("");
-  };
-
-  const skipChain = () => {
-    setTimerActive(false);
-    if (chainIndex + 1 < chains.length) {
-      setChainIndex(chainIndex + 1);
-      initChain(chains[chainIndex + 1]);
-      setCurrentTeamIdx(prev => (prev + 1) % currentTeams.length);
-    } else {
-      setGameState("FINISHED");
-    }
-  };
-
-  // ── Speed Chain helpers ──
-  const initSpeed = (cat: SpeedCategory) => {
-    setChainWords([{ word: cat.startWord.toLowerCase(), teamId: undefined, teamColor: undefined }]);
-    setGuess("");
-    setTimeLeft(timerDuration);
-    setTimerActive(true);
-    setShowTimesUp(false);
-  };
-
-  const currentCategory = categories[catIndex];
-  const lastChainWord = chainWords[chainWords.length - 1]?.word || "";
-  const requiredLetter = lastChainWord ? lastChainWord[lastChainWord.length - 1].toUpperCase() : "";
-
-  const handleSpeedGuess = () => {
-    const g = guess.trim().toLowerCase();
-    if (!g) return;
-
-    const lastLetter = lastChainWord[lastChainWord.length - 1];
-
-    // Validate: starts with last letter
-    if (g[0] !== lastLetter) {
-      showFeedback("wrong", `Must start with "${lastLetter.toUpperCase()}"!`);
-      setGuess("");
-      return;
-    }
-
-    // Check if already used
-    if (chainWords.some(cw => cw.word === g)) {
-      showFeedback("wrong", "Already used!");
-      setGuess("");
-      return;
-    }
-
-    // [TOPIC ENFORCEMENT]: Must be in the AI-generated valid word list
-    const isValid = currentCategory.validWords.some(vw => vw.toLowerCase() === g);
-    if (!isValid) {
-      showFeedback("wrong", `"${g.toUpperCase()}" is not in ${currentCategory.name}!`);
-      setGuess("");
-      return;
-    }
-
-    // Valid word — add to chain
-    setChainWords(prev => [...prev, { word: g, teamId: currentTeam.id, teamColor: currentColor }]);
-    updateTeamScore(currentTeam.id, 100);
-    showFeedback("correct", "+100!");
-
-    // Next team's turn
-    setCurrentTeamIdx(prev => (prev + 1) % currentTeams.length);
-    setTimeLeft(timerDuration);
-    setTimerActive(true);
-    setGuess("");
-    setTimeout(() => guessRef.current?.focus(), 100);
-  };
-
-  const handleSpeedWrong = () => {
-    // Strike
-    const newStrikes = { ...strikes };
-    const teamId = currentTeam.id;
-    newStrikes[teamId] = (newStrikes[teamId] || 0) + 1;
-    setStrikes(newStrikes);
-
-    if (newStrikes[teamId] >= 3) {
-      // 3 strikes = huge penalty
-      updateTeamScore(teamId, -500);
-      showFeedback("wrong", "-500! 3 STRIKES!");
-      newStrikes[teamId] = 0; // Reset strikes after penalty
-      setStrikes(newStrikes);
-    } else {
-      showFeedback("wrong", `Strike ${newStrikes[teamId]}!`);
-    }
-
-    // Next team
-    setCurrentTeamIdx(prev => (prev + 1) % currentTeams.length);
-    setTimeLeft(timerDuration);
-    setTimerActive(true);
-    setGuess("");
-  };
-
-  const skipCategory = () => {
-    setTimerActive(false);
-    if (catIndex + 1 < categories.length) {
-      setCatIndex(catIndex + 1);
-      initSpeed(categories[catIndex + 1]);
-      setCurrentTeamIdx(prev => (prev + 1) % currentTeams.length);
-      setStrikes(Object.fromEntries(currentTeams.map(t => [t.id, 0])));
-    } else {
-      setGameState("FINISHED");
-    }
-  };
-
-  // ── Shared helpers ──
-  const showFeedback = (type: "correct" | "wrong" | "hint", text: string) => {
-    setFeedback({ type, text });
-    setTimeout(() => setFeedback(null), type === "hint" ? 2000 : 1200);
-  };
-
-  const handleSubmit = () => {
-    if (gameMode === "puzzle") handlePuzzleGuess();
-    else handleSpeedGuess();
-  };
-
-  // Drawer Settings
-  const settings = [
-    {
-      label: "Topic / Subject",
-      type: "select" as const, // Changed to select for simplicity in the drawer, or I can add a text input if I modify the drawer, but I'll stick to select/text pattern
-      value: topic,
-      onChange: setTopic,
-      options: [
-        { value: "", label: "-- Select Topic --" },
-        { value: "Animals", label: "Animals" },
-        { value: "Food & Drinks", label: "Food & Drinks" },
-        { value: "Nature & Environment", label: "Nature" },
-        { value: "Science & Technology", label: "Science/Tech" },
-        { value: "Daily Life", label: "Daily Life" },
-        { value: "Sports & Hobbies", label: "Sports" },
-        { value: "Custom", label: "Custom (Type below)" }
-      ],
-      description: "Base theme for word generation"
-    },
-    {
-      label: "Game Mode",
-      type: "select" as const,
-      value: gameMode,
-      onChange: setGameMode,
-      options: [
-        { value: "puzzle", label: "🧩 Compound Puzzle" },
-        { value: "speed", label: "⚡ Speed Chain" }
-      ],
-      description: "Puzzle: Word math. Speed: Last-letter race."
-    },
-    {
-      label: "Difficulty Level",
-      type: "select" as const,
-      value: difficulty,
-      onChange: setDifficulty,
-      options: [
-        { value: "Beginner", label: "A1-A2 Beginner" },
-        { value: "Intermediate", label: "B1-B2 Intermediate" },
-        { value: "Advanced", label: "Fluent Speakers" }
-      ]
-    },
-    {
-      label: "Circles per Chain",
-      type: "select" as const,
-      value: circlesPerChain,
-      onChange: setCirclesPerChain,
-      options: [
-        { value: "4", label: "4 Circles" },
-        { value: "5", label: "5 Circles" },
-        { value: "6", label: "6 Circles" },
-        { value: "7", label: "7 Circles" },
-        { value: "random", label: "Varying (4-7)" }
-      ],
-      description: "How many words in each puzzle chain"
-    },
-    {
-      label: "Rounds per Game",
-      type: "select" as const,
-      value: roundCount,
-      onChange: setRoundCount,
-      options: [
-        { value: 4, label: "4 Rounds" },
-        { value: 5, label: "5 Rounds" },
-        { value: 6, label: "6 Rounds" },
-        { value: 7, label: "7 Rounds" }
-      ]
-    },
-    {
-      label: "Turn Timer",
-      type: "select" as const,
-      value: timerDuration,
-      onChange: setTimerDuration,
-      options: [
-        { value: 8, label: "8 Seconds" },
-        { value: 10, label: "10 Seconds" },
-        { value: 15, label: "15 Seconds" },
-        { value: 20, label: "20 Seconds" },
-        { value: 30, label: "30 Seconds" }
-      ]
-    }
-  ];
 
   // ── Render ──
+
   return (
     <>
       {/* Setup / Loading overlay */}
-      {(gameState === "SETUP" || gameState === "LOADING") && (
+      {(phase === "setup" || phase === "loading") && (
         <div className={styles.setupOverlay}>
           <div className={styles.setupModal}>
             <div className={styles.setupTitleRow}>
-              <div className={styles.setupTitleIcon}>🔗</div>
-              <div>
+              <div className={styles.setupTitleIcon}>⚡</div>
+              <div style={{ flex: 1 }}>
                 <div className={styles.setupTitleText}>Chain Reaction</div>
-                <div className={styles.setupTitleSub}>Compound Word Chain Game</div>
+                <div className={styles.setupTitleSub}>Word Reveal Game</div>
               </div>
-              <div style={{ marginLeft: 'auto' }}>
-                <MultiplayerHost gameMode="chainreaction" />
-              </div>
+              <MultiplayerHost gameMode="chainreaction" />
             </div>
-            {gameState === "LOADING" ? (
+
+            {phase === "loading" ? (
               <div className={styles.generatingState}>
                 <div className={styles.spinner} />
-                <div className={styles.generatingText}>
-                  {gameMode === "puzzle" ? "Forging compound word chains..." : "Building vocabulary categories..."}
-                </div>
+                <div className={styles.generatingText}>Generating vocabulary chain...</div>
               </div>
             ) : (
               <>
@@ -496,49 +335,53 @@ const TEAM_COLORS = [
                   <div className={styles.setupLabel}>Topic / Theme</div>
                   <input
                     className={styles.setupInput}
-                    placeholder="e.g. Science, Travel, Space..."
+                    placeholder="e.g. Weather, Animals, Sports..."
                     value={topic}
                     onChange={e => setTopic(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && topic.trim() && handleGenerate()}
+                    onKeyDown={e => e.key === "Enter" && topic.trim() && handleGenerate()}
                     autoFocus
                   />
                 </div>
+
                 <div className={styles.setupRow}>
                   <div className={styles.setupField}>
-                    <div className={styles.setupLabel}>Game Mode</div>
-                    <select className={styles.setupSelect} value={gameMode} onChange={e => setGameMode(e.target.value as GameMode)}>
-                      <option value="puzzle">Chain Puzzle</option>
-                      <option value="speed">Speed Chain</option>
+                    <div className={styles.setupLabel}>Level</div>
+                    <select className={styles.setupSelect} value={level} onChange={e => setLevel(e.target.value)}>
+                      <option value="Low (A1)">Low (A1)</option>
+                      <option value="Low-Mid (A1-A2)">Low-Mid (A1-A2)</option>
+                      <option value="Mid (A2)">Mid (A2)</option>
+                      <option value="Mid-High (A2-B1)">Mid-High (A2-B1)</option>
+                      <option value="High (B1)">High (B1)</option>
+                      <option value="Mixed Level">Mixed Level</option>
                     </select>
                   </div>
                   <div className={styles.setupField}>
-                    <div className={styles.setupLabel}>Difficulty</div>
-                    <select className={styles.setupSelect} value={difficulty} onChange={e => setDifficulty(e.target.value)}>
-                      <option value="Beginner">Beginner</option>
-                      <option value="Intermediate">Intermediate</option>
-                      <option value="Advanced">Advanced</option>
-                    </select>
-                  </div>
-                </div>
-                <div className={styles.setupRow}>
-                  <div className={styles.setupField}>
-                    <div className={styles.setupLabel}>Rounds</div>
-                    <select className={styles.setupSelect} value={roundCount} onChange={e => setRoundCount(Number(e.target.value))}>
-                      {[3,4,5,6,7,8].map(n => <option key={n} value={n}>{n} rounds</option>)}
-                    </select>
-                  </div>
-                  <div className={styles.setupField}>
-                    <div className={styles.setupLabel}>Timer per Round</div>
+                    <div className={styles.setupLabel}>Timer</div>
                     <select className={styles.setupSelect} value={timerDuration} onChange={e => setTimerDuration(Number(e.target.value))}>
-                      <option value={10}>10 seconds</option>
-                      <option value={15}>15 seconds</option>
-                      <option value={20}>20 seconds</option>
-                      <option value={30}>30 seconds</option>
+                      <option value={0}>No Timer</option>
+                      <option value={15}>15s</option>
+                      <option value={20}>20s</option>
+                      <option value={30}>30s</option>
+                      <option value={45}>45s</option>
+                      <option value={60}>60s</option>
                     </select>
                   </div>
                 </div>
-                <button className={styles.btnGenerate} onClick={handleGenerate} disabled={!topic.trim()}>
-                  <Sparkles size={16} /> {gameMode === 'puzzle' ? 'Forge Chains' : 'Ignite Speed Chain'}
+
+                <button
+                  className={styles.btnGenerate}
+                  onClick={handleGenerate}
+                  disabled={!topic.trim()}
+                >
+                  <Sparkles size={16} />
+                  Generate Chain
+                </button>
+
+                <button
+                  className={styles.btnBack}
+                  onClick={() => router.push("/games")}
+                >
+                  ← Back to Arcade
                 </button>
               </>
             )}
@@ -547,240 +390,211 @@ const TEAM_COLORS = [
       )}
 
       {/* Game view */}
-      {(gameState === "PLAYING" || gameState === "FINISHED") && (
+      {(phase === "playing") && words.length > 0 && (
         <div className={styles.page}>
+          {/* Header */}
           <div className={styles.gameHeader}>
             <div className={styles.gameTitle}>Chain Reaction</div>
             <div className={styles.headerDivider} />
             <div className={styles.qCounter}>
-              {gameMode === 'puzzle'
-                ? <><span>Chain </span><span className={styles.qCounterNum}>{chainIndex + 1}</span><span> / {chains.length}</span></>
-                : <><span>Category </span><span className={styles.qCounterNum}>{catIndex + 1}</span><span> / {categories.length}</span></>
-              }
+              WORD <span className={styles.qCounterNum}>{Math.min(currentWordIdx + 1, totalWords)}</span> / {totalWords}
             </div>
-            <div className={styles.headerDivider} />
-            <div className={styles.qCounter}>{gameMode === 'puzzle' ? 'Chain Puzzle' : 'Speed Chain'}</div>
             <div className={styles.headerSpacer} />
-            <div className={styles.timerWrap}>
-              <div className={`${styles.timerNum} ${timeLeft <= 5 ? styles.timerNumUrgent : ''}`}>
-                {timeLeft}
-              </div>
-              <div className={styles.timerBar}>
-                <div
-                  className={`${styles.timerBarFill} ${timeLeft <= 5 ? styles.timerBarFillUrgent : ''}`}
-                  style={{ width: `${(timeLeft / timerDuration) * 100}%` }}
-                />
-              </div>
-            </div>
-            <button
-              style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 8, padding: '6px 14px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer' }}
-              onClick={() => setGameState("SETUP")}
-            >
-              ← New Game
-            </button>
+            <button className={styles.btnNewGame} onClick={reset}>← New Game</button>
           </div>
-          <div className={styles.gameContent} style={{ padding: '20px 40px', alignItems: 'stretch', justifyContent: 'flex-start', overflow: 'auto' }}>
 
-            {/* ── PLAYING: Chain Puzzle ── */}
-            {gameState === "PLAYING" && gameMode === "puzzle" && currentChain && (
-              <div className={styles.chainArea}>
-                <div className={styles.chainMeta}>
-                  Chain {chainIndex + 1} of {chains.length} • {currentChain.difficulty || difficulty} Level
+          {/* Body: board + control panel */}
+          <div className={styles.gameBody}>
+            {/* Board panel */}
+            <div className={styles.boardPanel}>
+              {/* Feedback toast */}
+              {feedback.type && (
+                <div className={`${styles.feedbackToast} ${feedback.type === "correct" || feedback.type === "solve" ? styles.feedbackToastGood : styles.feedbackToastBad}`}>
+                  {feedback.msg}
                 </div>
+              )}
 
-                <div className={styles.timerGiant}>
-                  <GameTimer variant="circle" label="" timeLeft={timeLeft} totalTime={timerDuration} showTimesUp={false} />
-                </div>
+              {words.map((w, wordIdx) => {
+                const rowStyle = finished ? "solved" : getRowStyle(wordIdx);
+                const isActive = rowStyle === "active";
+                const isSolved = rowStyle === "solved";
+                const isAdjacent = rowStyle === "adjacent";
+                const isInactive = rowStyle === "inactive";
+                const opacity = isInactive ? getInactiveOpacity(wordIdx) : 1;
 
-                {/* Chain nodes */}
-                <div className={styles.chainTrack}>
-                  {currentChain.words.map((word, i) => {
-                    const isRevealed = revealedWords[i];
-                    const isActive = i === activeWordIdx;
-                    const hints = hintLetters[i];
-                    const blanks = getWordBlanks(word, hints);
-                    const pts = getPointsForWord(hints);
-
-                    // Connection label between nodes
-                    const showConnection = isRevealed && i > 0 && revealedWords[i - 1] && currentChain.connections;
-
-                    return (
-                      <div key={i} style={{ display: "flex", alignItems: "center" }}>
-                        {i > 0 && (
-                          <div className={`${styles.chainLink} ${revealedWords[i - 1] && isRevealed ? styles.chainLinkRevealed : ""}`}>
-                            {showConnection && currentChain.connections?.[i - 1] && (
-                              <span className={styles.connectionLabel}>{currentChain.connections[i - 1]}</span>
-                            )}
-                          </div>
-                        )}
-                        <div className={styles.chainNode}>
-                          <div className={`${styles.nodeCircle} ${isRevealed ? styles.nodeRevealed : ""} ${isActive ? styles.nodeActive : ""}`}>
-                            {isRevealed ? word.toUpperCase() : "?"}
-                          </div>
-                          {!isRevealed && (
-                            <div className={styles.letterBlanks}>
-                              {blanks.map((ch, j) => (
-                                <span key={j} className={ch !== "_" ? styles.letterRevealed : ""}>
-                                  {ch}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                          {!isRevealed && isActive && (
-                            <div className={styles.pointsBadge}>{pts} pts</div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Turn + Input */}
-                <div className={styles.guessArea}>
-                  <div className={styles.turnBadge} style={{ borderColor: currentColor, color: currentColor }}>
-                    {currentTeam.name}&apos;s Turn
-                  </div>
-                  <div className={styles.guessRow}>
-                    <input
-                      ref={guessRef}
-                      className={styles.guessInput}
-                      value={guess}
-                      onChange={e => setGuess(e.target.value)}
-                      placeholder={`Type your guess...`}
-                      onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                      autoFocus
-                    />
-                    <button className={styles.checkBtn} onClick={handleSubmit}>CHECK</button>
-                  </div>
-                </div>
-
-                {/* Controls */}
-                <div className={styles.controlRow}>
-                  <button className={styles.controlBtn} onClick={skipChain}>
-                    <SkipForward size={16} style={{ marginRight: "0.3rem" }} /> Skip Chain
-                  </button>
-                  <button className={styles.controlBtn} onClick={() => handlePuzzleWrong()}>
-                    Pass Turn
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* ── PLAYING: Speed Chain ── */}
-            {gameState === "PLAYING" && gameMode === "speed" && currentCategory && (
-              <div className={styles.speedArea}>
-                <div className={styles.categoryBadge}>
-                  📂 {currentCategory.name}
-                  <span style={{ fontSize: "0.8rem", opacity: 0.5, marginLeft: "0.75rem" }}>
-                    Round {catIndex + 1} of {categories.length}
-                  </span>
-                </div>
-
-                <div className={styles.timerGiant}>
-                  <GameTimer variant="circle" label="" timeLeft={timeLeft} totalTime={timerDuration} showTimesUp={false} />
-                </div>
-
-                {/* Word chain */}
-                <div className={styles.wordChain}>
-                  {chainWords.map((cw, i) => (
+                return (
+                  <div key={wordIdx}>
                     <div
-                      key={i}
-                      className={`${styles.wordBubble} ${i === chainWords.length - 1 ? styles.wordBubbleLatest : ""}`}
-                      style={cw.teamColor ? { borderColor: cw.teamColor, color: cw.teamColor } : {}}
+                      className={`${styles.wordRow} ${isActive ? styles.wordRowActive : ""} ${isSolved ? styles.wordRowSolved : ""} ${isAdjacent ? styles.wordRowAdjacent : ""}`}
+                      style={{ opacity }}
                     >
-                      {cw.word}
-                      {i === chainWords.length - 1 && (
-                        <span className={styles.lastLetter}>
-                          {cw.word[cw.word.length - 1].toUpperCase()}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#FFD700" }}>
-                  Next word must start with: <span style={{ fontSize: "2.5rem" }}>{requiredLetter}</span>
-                </div>
-
-                {/* Strikes */}
-                <div className={styles.strikeRow}>
-                  {currentTeams.map((t, i) => (
-                    <div key={t.id} className={styles.strikeCard} style={{ borderColor: t.id === currentTeam.id ? TEAM_COLORS[i % TEAM_COLORS.length] : "var(--panel-border)" }}>
-                      <div style={{ fontWeight: 700, color: TEAM_COLORS[i % TEAM_COLORS.length] }}>{t.name}</div>
-                      <div className={styles.strikes}>
-                        {Array(3).fill(0).map((_, j) => (
-                          <span key={j} style={{ color: j < (strikes[t.id] || 0) ? "#ef4444" : "rgba(255,255,255,0.15)" }}>✕</span>
-                        ))}
+                      <div className={`${styles.rowNum} ${isActive ? styles.rowNumActive : ""}`}>
+                        {wordIdx + 1}
+                      </div>
+                      <div className={styles.tilesRow}>
+                        {w.word.split("").map((letter, li) => {
+                          const key = `${wordIdx}-${li}`;
+                          const isRevealed = w.revealed[li];
+                          const isFlipping = flippingTiles.has(key);
+                          return (
+                            <div
+                              key={li}
+                              className={`${styles.tile} ${isActive ? styles.tileActive : ""} ${isSolved ? styles.tileSolved : ""} ${isRevealed && !isSolved ? styles.tileRevealed : ""} ${isFlipping ? styles.tileFlip : ""}`}
+                            >
+                              {isRevealed || isSolved ? letter : ""}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  ))}
-                </div>
-
-                {/* Turn + Input */}
-                <div className={styles.guessArea}>
-                  <div className={styles.turnBadge} style={{ borderColor: currentColor, color: currentColor }}>
-                    {currentTeam.name}&apos;s Turn
+                    {wordIdx < words.length - 1 && <div className={styles.rowDivider} />}
                   </div>
-                  <div className={styles.guessRow}>
-                    <input
-                      ref={guessRef}
-                      className={styles.guessInput}
-                      value={guess}
-                      onChange={e => setGuess(e.target.value)}
-                      placeholder={`Word starting with "${requiredLetter}"...`}
-                      onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                      autoFocus
-                    />
-                    <button className={styles.checkBtn} onClick={handleSubmit}>GO</button>
+                );
+              })}
+            </div>
+
+            {/* Control panel */}
+            <div className={styles.controlPanel}>
+              {finished ? (
+                /* End panel */
+                <div className={styles.endPanel}>
+                  <div className={styles.endTitle}>Chain Complete</div>
+
+                  <div className={styles.endTally}>
+                    {currentTeams.map((t, i) => {
+                      const pts = gameTally[t.id] || 0;
+                      const isLead = t.id === leadingTeamId && pts > 0;
+                      return (
+                        <div key={t.id} className={`${styles.tallyRow} ${isLead ? styles.tallyRowLead : ""}`}>
+                          <span className={styles.tallyDot} style={{ background: TEAM_COLORS[i % TEAM_COLORS.length] }} />
+                          <span className={styles.tallyName}>{t.name}</span>
+                          <span className={styles.tallyDelta} style={{ color: isLead ? "var(--yellow)" : "var(--text)" }}>
+                            +{pts}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <button className={styles.controlBtn} onClick={() => { handleSpeedWrong(); }} style={{ marginTop: "0.5rem" }}>
-                    Pass (Strike)
-                  </button>
-                </div>
 
-                {/* Controls */}
-                <div className={styles.controlRow}>
-                  <button className={styles.controlBtn} onClick={skipCategory}>
-                    <SkipForward size={16} style={{ marginRight: "0.3rem" }} /> Next Category
-                  </button>
-                </div>
-              </div>
-            )}
+                  {!pushed ? (
+                    <button className={styles.btnPush} onClick={handlePush}>
+                      ✓ PUSH TO SCOREBOARD
+                    </button>
+                  ) : (
+                    <div className={styles.savedMsg}>✓ Scores saved!</div>
+                  )}
 
-            {/* ── FINISHED ── */}
-            {gameState === "FINISHED" && (
-              <div className={styles.setupContainer}>
-                <h1 style={{ fontSize: "3.5rem", color: "#00CED1" }}>🔗 Game Over!</h1>
-                <p style={{ fontSize: "1.3rem", opacity: 0.7 }}>
-                  {gameMode === "puzzle"
-                    ? `${chains.length} chains completed!`
-                    : `${chainWords.length} words chained across ${catIndex + 1} categories!`}
-                </p>
-                <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-                  <button className={styles.btn} onClick={() => {
-                    setGameState("SETUP");
-                    setChains([]);
-                    setCategories([]);
-                  }}>
-                    Play Again
+                  <button className={styles.btnPlayAgain} onClick={reset}>
+                    ↺ Play Again (new chain)
                   </button>
-                </div>
-              </div>
-            )}
 
+                  {!pushed && (
+                    <button className={styles.btnSkipSave} onClick={reset}>
+                      Skip — don't save scores
+                    </button>
+                  )}
+                </div>
+              ) : (
+                /* Active control panel */
+                <>
+                  <div className={styles.ctrlSection}>CURRENT TURN</div>
+
+                  <div className={styles.turnRow}>
+                    {currentTeam && (
+                      <div className={styles.teamBadge} style={{ borderColor: currentColor, color: currentColor }}>
+                        {currentTeam.name}
+                      </div>
+                    )}
+                    {timerDuration > 0 && (
+                      <div className={styles.timerWrap}>
+                        <svg width="64" height="64" viewBox="0 0 44 44">
+                          <circle cx="22" cy="22" r="20" fill="none" stroke="var(--border2)" strokeWidth="3" />
+                          <circle
+                            cx="22" cy="22" r="20" fill="none"
+                            stroke={timerUrgent ? "#ff4d8f" : "var(--cyan)"}
+                            strokeWidth="3"
+                            strokeDasharray={CIRC}
+                            strokeDashoffset={timerDash}
+                            strokeLinecap="round"
+                            transform="rotate(-90 22 22)"
+                            style={{ transition: "stroke-dashoffset 0.9s linear, stroke 0.3s" }}
+                          />
+                          <text
+                            x="22" y="27" textAnchor="middle"
+                            fill={timerUrgent ? "#ff4d8f" : "var(--text)"}
+                            fontSize="14" fontWeight="700"
+                            fontFamily="var(--font-mono)"
+                            className={timerUrgent ? styles.timerPulse : ""}
+                          >
+                            {timeLeft}
+                          </text>
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className={styles.ctrlSection}>LETTER GUESS</div>
+
+                  <input
+                    ref={letterInputRef}
+                    className={styles.letterInput}
+                    value={currentLetter}
+                    onChange={e => setCurrentLetter(e.target.value.slice(-1).toUpperCase())}
+                    onKeyDown={e => { if (e.key === "Enter") handleCorrect(); }}
+                    maxLength={1}
+                    placeholder="A"
+                    autoComplete="off"
+                  />
+
+                  <button className={styles.btnCorrect} onClick={handleCorrect}>
+                    ✓ CORRECT — REVEAL
+                  </button>
+                  <button className={styles.btnWrong} onClick={handleWrong}>
+                    ✗ WRONG — HINT + NEXT TEAM
+                  </button>
+
+                  <div className={styles.ctrlDivider} />
+
+                  <button className={styles.btnPass} onClick={handlePass}>
+                    ↷ PASS — next team, no hint
+                  </button>
+                  <button className={styles.btnSolve} onClick={handleSolveWord}>
+                    ★ SOLVE WORD (full word guessed)
+                  </button>
+
+                  <div className={styles.ctrlDivider} />
+
+                  <div className={styles.ptsKeyRow}>
+                    <div className={styles.ptsChip}>+{PTS_LETTER} Letter</div>
+                    <div className={styles.ptsChip}>+{PTS_WORD} Word</div>
+                  </div>
+
+                  <div className={styles.ctrlDivider} />
+
+                  <div className={styles.ctrlSection}>THIS GAME</div>
+
+                  <div className={styles.gameTally}>
+                    {currentTeams.map((t, i) => {
+                      const pts = gameTally[t.id] || 0;
+                      const isLead = t.id === leadingTeamId && pts > 0;
+                      return (
+                        <div key={t.id} className={`${styles.tallyRow} ${isLead ? styles.tallyRowLead : ""}`}>
+                          <span className={styles.tallyDot} style={{ background: TEAM_COLORS[i % TEAM_COLORS.length] }} />
+                          <span className={styles.tallyName}>{t.name}</span>
+                          <span className={styles.tallyDelta} style={{ color: isLead ? "var(--yellow)" : "var(--muted)" }}>
+                            +{pts}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
 
-      {/* ── Feedback Overlay ── */}
-      {feedback && (
-        <div className={feedback.type === "correct" ? styles.feedbackCorrect : styles.feedbackWrong}>
-          {feedback.text}
-        </div>
-      )}
-
-      {/* ── Overlays ── */}
-      {showTimesUp && <GameTimer showTimesUp={true} />}
       <ScoreboardOverlay />
     </>
   );
