@@ -345,3 +345,160 @@
   font-family: var(--font-mono, 'JetBrains Mono'), monospace;
   font-size: 13px; color: var(--muted, #4a637d); letter-spacing: 0.1em;
 }
+
+/* ── Circular timer (header) ─────────────────────────── */
+.hsTimerWrap {
+  position: relative;
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.hsTimerSvg {
+  position: absolute; inset: 0;
+  width: 44px; height: 44px;
+  transform: rotate(-90deg);
+}
+.hsTimerTrack {
+  fill: none;
+  stroke: var(--border2, #243347);
+  stroke-width: 3;
+}
+.hsTimerRing {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 125.66;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.9s linear, stroke 0.3s;
+}
+@keyframes hsUrgPulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+.hsTimerRingUrgent { animation: hsUrgPulse 0.7s ease-in-out infinite; }
+.hsTimerNum {
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  font-size: 13px; font-weight: 700; color: #ff7d3b;
+  position: relative; z-index: 1; line-height: 1;
+}
+.hsTimerNumUrgent { color: #ff4444; }
+
+/* ── Game body ───────────────────────────────────────── */
+.hsBody {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 32px 60px; gap: 32px;
+  width: 100%; height: 100%;
+}
+
+/* ── Card (playing state) ────────────────────────────── */
+.hsCard {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 28px;
+  animation: hsSlideIn 0.25s ease;
+}
+@keyframes hsSlideIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.hsTargetWord {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(5rem, 12vw, 13rem);
+  font-weight: 900; line-height: 0.9;
+  letter-spacing: -0.02em; text-transform: uppercase;
+  color: #ff7d3b;
+  text-shadow: 0 0 60px rgba(255,125,59,0.35);
+  text-align: center; word-break: break-word;
+}
+
+.hsForbiddenRow {
+  display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+}
+
+.hsForbiddenChip {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(1rem, 2.2vw, 1.8rem);
+  font-weight: 700; text-transform: uppercase;
+  color: var(--muted, #4a637d);
+  background: var(--surface2, #131b2b);
+  border: 1.5px solid var(--border2, #243347);
+  border-radius: 10px;
+  padding: 10px 20px;
+  text-decoration: line-through;
+  text-decoration-color: rgba(255,125,59,0.4);
+  text-decoration-thickness: 2px;
+}
+
+.hsActionsRow {
+  display: flex; gap: 16px; align-items: center; margin-top: 8px;
+}
+
+.hsBtnGotIt {
+  background: rgba(255,125,59,0.12);
+  border: 2px solid #ff7d3b;
+  border-radius: 12px;
+  padding: 16px 40px;
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  font-size: clamp(14px, 1.6vw, 20px); font-weight: 700;
+  color: #ff7d3b; letter-spacing: 0.08em; text-transform: uppercase;
+  cursor: pointer; transition: background 0.15s, box-shadow 0.15s;
+}
+.hsBtnGotIt:hover {
+  background: rgba(255,125,59,0.22);
+  box-shadow: 0 0 24px rgba(255,125,59,0.3);
+}
+.hsKeyHint {
+  font-size: 11px; opacity: 0.55; margin-left: 8px;
+}
+
+.hsBtnSkip {
+  background: transparent;
+  border: 1.5px solid var(--border2, #243347);
+  border-radius: 12px;
+  padding: 16px 32px;
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  font-size: clamp(13px, 1.4vw, 18px); font-weight: 600;
+  color: var(--muted, #4a637d); cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.hsBtnSkip:hover { border-color: var(--text, #dce8f5); color: var(--text, #dce8f5); }
+
+/* ── Finished state ──────────────────────────────────── */
+.hsFinished {
+  display: flex; flex-direction: column; align-items: center; gap: 24px;
+  animation: hsSlideIn 0.3s ease;
+}
+.hsFinishedLabel {
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--muted, #4a637d);
+}
+.hsScore {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(4rem, 9vw, 10rem);
+  font-weight: 900; line-height: 1; color: #ff7d3b;
+  text-shadow: 0 0 40px rgba(255,125,59,0.3);
+}
+.hsScoreLabel {
+  font-size: 0.35em; color: var(--muted, #4a637d); font-weight: 600;
+  vertical-align: middle; margin-left: 12px;
+}
+.hsAwardRow {
+  display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+}
+.hsAwardBtn {
+  background: rgba(255,125,59,0.1);
+  border: 1.5px solid rgba(255,125,59,0.4);
+  border-radius: 10px; padding: 12px 24px;
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  font-size: 13px; font-weight: 700; color: #ff7d3b;
+  cursor: pointer; transition: background 0.15s;
+}
+.hsAwardBtn:hover { background: rgba(255,125,59,0.2); }
+.hsBtnNewDeck {
+  background: transparent;
+  border: 1.5px solid var(--border2, #243347);
+  border-radius: 10px; padding: 12px 24px;
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  font-size: 13px; color: var(--muted, #4a637d); cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.hsBtnNewDeck:hover { color: var(--text, #dce8f5); border-color: var(--text, #dce8f5); }

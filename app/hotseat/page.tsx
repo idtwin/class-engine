@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./hotseat.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
-import { Sparkles, Zap } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
-import GameTimer from "../components/GameTimer";
-import GameSettingsDrawer from "../components/GameSettingsDrawer";
 
 export default function HotSeatMode() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, triggerTwist, getActiveApiKey, mistralModel, llmProvider } = useClassroomStore();
+  const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider } = useClassroomStore();
 
   const [topic, setTopic] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -102,24 +102,9 @@ export default function HotSeatMode() {
   };
 
   const currentWord = words[currentIndex];
-
-  const renderAwardButtons = () => (
-    <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-      {currentTeams.map(t => (
-        <button
-          key={t.id}
-          className={styles.scoreBtn}
-          style={{ fontSize: '1.2rem', padding: '0.8rem 1.5rem', background: 'var(--panel)', color: 'white', border: '1px solid var(--accent)' }}
-          onClick={() => {
-            updateTeamScore(t.id, score * 100);
-            setWords([]);
-          }}
-        >
-          +{score * 100} {t.name}
-        </button>
-      ))}
-    </div>
-  );
+  const HS_CIRC = 125.66;
+  const hsDashOffset = HS_CIRC - (timeLeft / timerDuration) * HS_CIRC;
+  const hsTimerUrgent = timeLeft <= 10 && timerDuration > 0 && isPlaying;
 
   return (
     <>
@@ -166,9 +151,17 @@ export default function HotSeatMode() {
                     <option value={120}>120 seconds</option>
                   </select>
                 </div>
-                <button className={styles.btnGenerate} onClick={handleGenerate} disabled={!topic.trim()}>
-                  <Sparkles size={16} /> Generate Taboo Deck
-                </button>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <button className={styles.btnGenerate} onClick={handleGenerate} disabled={!topic.trim()}>
+                    <Sparkles size={16} /> Generate Taboo Deck
+                  </button>
+                  <button
+                    style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 10, padding: '14px 20px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 12, cursor: 'pointer' }}
+                    onClick={() => router.push('/arcade')}
+                  >
+                    ← Back to Arcade
+                  </button>
+                </div>
               </>
             )}
           </div>
@@ -185,15 +178,24 @@ export default function HotSeatMode() {
               Card <span className={styles.qCounterNum}>{currentIndex + 1}</span> / {words.length}
             </div>
             <div className={styles.headerSpacer} />
-            <div className={styles.timerWrap}>
-              <div className={`${styles.timerNum} ${timeLeft <= 10 ? styles.timerNumUrgent : ''}`}>
-                {timeLeft}
-              </div>
-              <div className={styles.timerBar}>
-                <div
-                  className={`${styles.timerBarFill} ${timeLeft <= 10 ? styles.timerBarFillUrgent : ''}`}
-                  style={{ width: `${(timeLeft / timerDuration) * 100}%` }}
+            <div className={styles.hsTimerWrap}>
+              <svg className={styles.hsTimerSvg} viewBox="0 0 44 44">
+                <defs>
+                  <linearGradient id="hsGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#ff7d3b" />
+                    <stop offset="100%" stopColor="#ffc843" />
+                  </linearGradient>
+                </defs>
+                <circle className={styles.hsTimerTrack} cx="22" cy="22" r="20" />
+                <circle
+                  className={`${styles.hsTimerRing}${hsTimerUrgent ? ` ${styles.hsTimerRingUrgent}` : ''}`}
+                  cx="22" cy="22" r="20"
+                  stroke={hsTimerUrgent ? "#ff4444" : "url(#hsGrad)"}
+                  strokeDashoffset={hsDashOffset}
                 />
+              </svg>
+              <div className={`${styles.hsTimerNum}${hsTimerUrgent ? ` ${styles.hsTimerNumUrgent}` : ''}`}>
+                {timeLeft}
               </div>
             </div>
             <button
@@ -203,65 +205,53 @@ export default function HotSeatMode() {
               ← New Deck
             </button>
           </div>
-          <div className={styles.gameContent} style={{ padding: 0, alignItems: 'stretch', justifyContent: 'flex-start', overflow: 'hidden' }}>
+          <div className={styles.hsBody}>
 
-            <div style={{ display: 'flex', width: '100%', height: '100%', position: 'relative' }}>
-
-              {/* Main Cinematic Left Canvas */}
-              <div className={styles.canvasLeft}>
-                <div className={styles.seqLabel}>
-                   TABOO_CARD_0{currentIndex + 1} // CAUTION: FORBIDDEN LEXICON ALIVE
+            {/* ── PLAYING ── */}
+            {currentIndex < words.length && timeLeft > 0 && (
+              <div key={currentIndex} className={styles.hsCard}>
+                <div className={styles.hsTargetWord}>{currentWord?.word}</div>
+                <div className={styles.hsForbiddenRow}>
+                  {currentWord?.forbidden.map((f: string, i: number) => (
+                    <span key={i} className={styles.hsForbiddenChip}>❌ {f}</span>
+                  ))}
                 </div>
-
-                {timeLeft === 0 ? (
-                  <div style={{ animation: 'slideIn 0.3s ease' }}>
-                    <div className={styles.targetWord}>TIME'S UP!</div>
-                    <p style={{ fontSize: '2rem', fontFamily: 'monospace', color: '#ff4500' }}>Final Score: {score} Stars</p>
-                    {renderAwardButtons()}
-                  </div>
-                ) : currentIndex >= words.length ? (
-                  <div style={{ animation: 'slideIn 0.3s ease' }}>
-                    <div className={styles.targetWord} style={{ color: 'var(--success)' }}>DECK CLEAR!</div>
-                    <p style={{ fontSize: '2rem', fontFamily: 'monospace', color: '#ff4500' }}>Final Score: {score} Stars</p>
-                    {renderAwardButtons()}
-                  </div>
-                ) : (
-                  <div key={currentIndex} style={{ animation: 'slideIn 0.3s ease' }}>
-                    <div className={styles.targetWord}>{currentWord?.word}</div>
-                    <div className={styles.forbiddenContainer}>
-                      {currentWord?.forbidden.map((f: string, i: number) => (
-                        <span key={i} className={styles.forbiddenWord}>{f}</span>
-                      ))}
-                    </div>
-
-                    <div className={styles.controls}>
-                      <button onClick={() => handleScore(true)} className={styles.scoreBtn}>ACCESS GRANTED [SPACE]</button>
-                      <button onClick={() => handleScore(false)} className={styles.skipBtn}>SKIP PROTOCOL</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* System Log on Right */}
-              <div className={styles.systemLog}>
-                <div className={styles.logHeader}>SYSTEM_LOG // STATUS</div>
-                <div className={styles.scoreOverlay}>
-                  {score} XP
+                <div className={styles.hsActionsRow}>
+                  <button className={styles.hsBtnGotIt} onClick={() => handleScore(true)}>
+                    ✓ GOT IT <span className={styles.hsKeyHint}>[SPACE]</span>
+                  </button>
+                  <button className={styles.hsBtnSkip} onClick={() => handleScore(false)}>
+                    ↷ SKIP
+                  </button>
                 </div>
-                {currentTeams.length === 0 && <span style={{ opacity: 0.5 }}>No Teams Synchronized.</span>}
-                {currentTeams.map(t => (
-                  <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.8rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <span>{t.name}</span>
-                    <span style={{ color: '#ff4500', fontWeight: 800 }}>{t.score}</span>
-                  </div>
-                ))}
-                {words.length > 0 && isPlaying && (
-                  <div style={{ marginTop: '2rem' }}>
-                    <GameTimer variant="circle" label="HACK TIME" timeLeft={timeLeft} totalTime={timerDuration} showTimesUp={showTimesUp} />
-                  </div>
-                )}
               </div>
-            </div>
+            )}
+
+            {/* ── FINISHED ── */}
+            {(currentIndex >= words.length || timeLeft === 0) && (
+              <div className={styles.hsFinished}>
+                <div className={styles.hsFinishedLabel}>
+                  {timeLeft === 0 ? "⏱ TIME'S UP" : "✓ DECK CLEAR"}
+                </div>
+                <div className={styles.hsScore}>
+                  {score} <span className={styles.hsScoreLabel}>scored</span>
+                </div>
+                <div className={styles.hsAwardRow}>
+                  {currentTeams.map(t => (
+                    <button
+                      key={t.id}
+                      className={styles.hsAwardBtn}
+                      onClick={() => { updateTeamScore(t.id, score * 100); setWords([]); }}
+                    >
+                      +{score * 100} → {t.name}
+                    </button>
+                  ))}
+                  <button className={styles.hsBtnNewDeck} onClick={() => setWords([])}>
+                    New Deck
+                  </button>
+                </div>
+              </div>
+            )}
 
           </div>
         </div>
