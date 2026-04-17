@@ -6,14 +6,20 @@ export async function POST(req: Request) {
     const { apiKey, provider, mistralModel, topic, level, mode, count, circleCount } = await req.json();
     const finalCount = count || 5;
 
+    if (mode === "word-reveal") {
+      const systemPrompt = `You are an ESL game designer. Generate 5-7 English vocabulary words for an Indonesian high school classroom game. Words should be thematically connected to the given topic and appropriate for the difficulty level. Rules: single words only (no phrases), 4-9 letters each, all uppercase, varied lengths, appropriate vocabulary for the level. Level guide: Low (A1)=very simple words, High (B1)=more complex. Return JSON: { "words": ["WORD1", "WORD2", ...] }`;
+      const userPrompt = `Topic: ${topic}, Level: ${level}`;
+      const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.8, mistralModel, provider });
+      return NextResponse.json(parsed);
+    }
+
     if (mode === "speed") {
-      // Speed Chain: generate categories with valid word lists
       const systemPrompt = `You are an ESL vocabulary game designer creating a "Speed Chain" word game.
 
 Generate ${finalCount} category-based word lists for the topic. Each category should have 30+ valid English words.
 These words will be used in a last-letter chain game (the next word must start with the last letter of the previous word).
 
-CRITICAL: 
+CRITICAL:
 1. Provide a broad variety of words starting with MANY different letters so the game doesn't get stuck.
 2. All words must be strictly relevant to the category.
 3. Include plurals and common variations where appropriate.
@@ -39,15 +45,14 @@ All words must be lowercase. No markdown.`;
 
       const userPrompt = `Topic: ${topic}\n\nGenerate ${finalCount} categories with 30+ words each! Ensure high vocabulary variety.`;
       const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.9, mistralModel, provider });
-      
-      // Handle both array and object responses
+
       if (Array.isArray(parsed)) {
         return NextResponse.json({ categories: parsed });
       }
       return NextResponse.json(parsed);
     }
 
-    // Chain Puzzle: generate compound word chains
+    // Default: Chain Puzzle (compound word chains — backwards compat)
     let difficultyGuide = "";
 
     if (level === "Beginner") {
@@ -62,8 +67,8 @@ All words must be lowercase. No markdown.`;
     }
 
     const isRandom = circleCount === "random";
-    const wordCountRule = isRandom 
-      ? `choose a DIFFERENT number of words (between 4 and 7) for EACH of the ${finalCount} chains independently. Diversity in length is required.` 
+    const wordCountRule = isRandom
+      ? `choose a DIFFERENT number of words (between 4 and 7) for EACH of the ${finalCount} chains independently. Diversity in length is required.`
       : `EVERY chain in the "chains" array must have EXACTLY ${circleCount || 5} words in its "words" array. No exceptions.`;
 
     const systemPrompt = `You are creating a "Chain Reaction" word puzzle game for ESL students.
