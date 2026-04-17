@@ -1,15 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./wyr.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
 import { Sparkles } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
-import ScoreboardOverlay from "../components/ScoreboardOverlay";
+
+const TEAM_COLORS = ['#00e87a','#00c8f0','#ffc843','#ff4d8f','#b06eff','#ff7d3b','#e2e8f0'];
 
 export default function WouldYouRatherMode() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const { getActiveApiKey, mistralModel, llmProvider, activeRoomCode } = useClassroomStore();
+  const { getActiveApiKey, mistralModel, llmProvider, activeRoomCode, currentTeams } = useClassroomStore();
   
   const [topic, setTopic] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -119,9 +122,17 @@ export default function WouldYouRatherMode() {
                     autoFocus
                   />
                 </div>
-                <button className={styles.btnGenerate} onClick={handleGenerate} disabled={!topic.trim() || isGenerating}>
-                  <Sparkles size={16} /> Generate Scenarios
-                </button>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <button className={styles.btnGenerate} onClick={handleGenerate} disabled={!topic.trim() || isGenerating}>
+                    <Sparkles size={16} /> Generate Scenarios
+                  </button>
+                  <button
+                    style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 10, padding: '14px 20px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 12, cursor: 'pointer' }}
+                    onClick={() => router.push('/games')}
+                  >
+                    ← Back to Arcade
+                  </button>
+                </div>
               </>
             )}
           </div>
@@ -138,9 +149,11 @@ export default function WouldYouRatherMode() {
               Scenario <span className={styles.qCounterNum}>{currentIndex + 1}</span> / {prompts.length}
             </div>
             <div className={styles.headerSpacer} />
-            <div className={styles.qCounter} style={{ color: 'var(--muted)', fontSize: 11 }}>
-              SPACE to advance
-            </div>
+            {activeRoomCode && (
+              <div className={styles.qCounter}>
+                {roomStudents.filter(s => s.lastAnswer).length} / {roomStudents.length} voted
+              </div>
+            )}
             <button
               style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 8, padding: '6px 14px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer' }}
               onClick={() => setPrompts([])}
@@ -148,24 +161,95 @@ export default function WouldYouRatherMode() {
               ← New Topic
             </button>
           </div>
-          <div className={styles.gameContent} style={{ padding: 0, overflow: 'hidden' }}>
-            <div className={styles.splitScreen}>
-              <div className={`${styles.choicePanel} ${styles.red}`}>
-                <p className={styles.promptText}>{currentPrompt.optionA}</p>
+
+          <div className={styles.wyrBody}>
+            <div className={styles.wyrStanceLabel}>Choose your stance — defend it</div>
+
+            {/* ── Podiums ── */}
+            <div className={styles.wyrPodiums}>
+              {/* A */}
+              <div className={`${styles.wyrPodium} ${styles.wyrPodiumA}`} key={`a-${currentIndex}`}>
+                <div className={styles.wyrPodiumGhost}>A</div>
+                <div className={styles.wyrPodiumTag}>Option A</div>
+                <div className={styles.wyrPodiumText}>{currentPrompt.optionA}</div>
+                {activeRoomCode && (
+                  <div className={styles.wyrChips}>
+                    {(() => {
+                      const voters = roomStudents.filter(s => s.lastAnswer === 'A');
+                      return currentTeams.map((team, tIdx) => {
+                        const voted = voters.some(s => team.students.some(ts => ts.name === s.name));
+                        if (!voted) return null;
+                        const col = TEAM_COLORS[tIdx % 7];
+                        return (
+                          <span key={team.id} className={styles.wyrChip} style={{ background: `${col}18`, border: `1px solid ${col}44`, color: col }}>
+                            {team.name}
+                          </span>
+                        );
+                      });
+                    })()}
+                  </div>
+                )}
               </div>
 
-              <div className={styles.vsCircle}>VS</div>
-
-              <div className={`${styles.choicePanel} ${styles.blue}`}>
-                <p className={styles.promptText}>{currentPrompt.optionB}</p>
+              {/* VS */}
+              <div className={styles.wyrVsCol}>
+                <div className={styles.wyrVsLine}>
+                  <div className={styles.wyrVsText}>VS</div>
+                </div>
               </div>
 
-              {/* Next Scenario Control */}
+              {/* B */}
+              <div className={`${styles.wyrPodium} ${styles.wyrPodiumB}`} key={`b-${currentIndex}`}>
+                <div className={styles.wyrPodiumGhost}>B</div>
+                <div className={styles.wyrPodiumTag}>Option B</div>
+                <div className={styles.wyrPodiumText}>{currentPrompt.optionB}</div>
+                {activeRoomCode && (
+                  <div className={styles.wyrChips}>
+                    {(() => {
+                      const voters = roomStudents.filter(s => s.lastAnswer === 'B');
+                      return currentTeams.map((team, tIdx) => {
+                        const voted = voters.some(s => team.students.some(ts => ts.name === s.name));
+                        if (!voted) return null;
+                        const col = TEAM_COLORS[tIdx % 7];
+                        return (
+                          <span key={team.id} className={styles.wyrChip} style={{ background: `${col}18`, border: `1px solid ${col}44`, color: col }}>
+                            {team.name}
+                          </span>
+                        );
+                      });
+                    })()}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── Vote bar ── */}
+            {activeRoomCode && (() => {
+              const vA = roomStudents.filter(s => s.lastAnswer === 'A').length;
+              const vB = roomStudents.filter(s => s.lastAnswer === 'B').length;
+              const total = vA + vB;
+              return total > 0 ? (
+                <div className={styles.wyrVoteBar}>
+                  <div className={styles.wyrVoteA} style={{ width: `${(vA / total) * 100}%` }}>
+                    A · {Math.round((vA / total) * 100)}%
+                  </div>
+                  <div className={styles.wyrVoteB} style={{ width: `${(vB / total) * 100}%` }}>
+                    {Math.round((vB / total) * 100)}% · B
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.wyrVoteBar}>
+                  <div className={styles.wyrVoteWaiting}>⏳ Waiting for votes...</div>
+                </div>
+              );
+            })()}
+
+            {/* ── Actions ── */}
+            <div className={styles.wyrActionsRow}>
               {currentIndex < prompts.length - 1 ? (
-                <button className={styles.nextBtn} onClick={() => {
+                <button className={styles.wyrBtnNext} onClick={() => {
                   const nextIdx = currentIndex + 1;
                   setCurrentIndex(nextIdx);
-                  // Push next scenario + clear votes
                   if (activeRoomCode) {
                     fetch("/api/room/action", {
                       method: "POST", headers: { "Content-Type": "application/json" },
@@ -177,14 +261,11 @@ export default function WouldYouRatherMode() {
                       });
                     }).catch(() => {});
                   }
-                }}>
-                  Next Scenario (Space)
-                </button>
+                }}>→ Next Scenario [Space]</button>
               ) : (
-                <button className={styles.nextBtn} onClick={() => setPrompts([])}>
-                  Finished! Give me a new topic.
-                </button>
+                <button className={styles.wyrBtnNext} onClick={() => setPrompts([])}>✓ Done — New Topic</button>
               )}
+              <button className={styles.wyrBtnNew} onClick={() => setPrompts([])}>← New Topic</button>
             </div>
           </div>
         </div>
