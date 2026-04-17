@@ -389,11 +389,11 @@ export const useClassroomStore = create<ClassroomState>()(
       })),
 
       // --- Settings ---
-      llmProvider: "mistral",
+      llmProvider: "groq",
       setLlmProvider: (p) => set({ llmProvider: p }),
       geminiKey: "",
       setGeminiKey: (key) => set({ geminiKey: key }),
-      mistralKey: "Itfi3iUZwTF9lAST1SdvOfwftSdgO7La",
+      mistralKey: "",
       setMistralKey: (key) => set({ mistralKey: key }),
       groqKey: "",
       setGroqKey: (key) => set({ groqKey: key }),

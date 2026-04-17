@@ -157,7 +157,7 @@ export default function HotSeatMode() {
                   </button>
                   <button
                     style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 10, padding: '14px 20px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 12, cursor: 'pointer' }}
-                    onClick={() => router.push('/arcade')}
+                    onClick={() => router.push('/games')}
                   >
                     ← Back to Arcade
                   </button>

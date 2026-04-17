@@ -118,7 +118,10 @@ async function callGemini(apiKey: string, opts: LLMOptions): Promise<string> {
 
 // ── Groq ─────────────────────────────────────────────────────────────────────
 async function callGroq(apiKey: string, opts: LLMOptions): Promise<string> {
-  const model = opts.mistralModel ?? "llama-3.3-70b-versatile";
+  // Ignore mistral model names passed from game pages — use groq default instead
+  const model = (opts.mistralModel && !opts.mistralModel.toLowerCase().includes("mistral"))
+    ? opts.mistralModel
+    : "llama-3.3-70b-versatile";
 
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
