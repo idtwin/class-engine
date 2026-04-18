@@ -362,25 +362,13 @@ export default function JeopardyPage() {
         <div className={styles.page}>
           <div className={styles.gameHeader}>
             <div className={styles.gameTitle}>Jeopardy</div>
-            <div className={styles.headerDivider} />
-            <div className={styles.qCounter}>
-              <span className={styles.qCounterNum}>{board?.length ? board.reduce((acc: number, col: any) => acc + col.questions.filter((q: any) => q.answered).length, 0) : 0}</span> answered
-            </div>
             <div className={styles.headerSpacer} />
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <BoardLibrary currentGameType="jeopardy" onLoadBoard={handleLoadBoard} />
-              <button
-                style={{ background: 'rgba(255,200,67,0.12)', border: '1px solid rgba(255,200,67,0.3)', borderRadius: 8, padding: '6px 14px', color: '#ffc843', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer' }}
-                onClick={() => setShowSetupModal(true)}
-              >
-                ✦ New Board
-              </button>
-              <button
-                style={{ background: 'rgba(0,200,240,0.1)', border: '1px solid rgba(0,200,240,0.25)', borderRadius: 8, padding: '6px 14px', color: '#00c8f0', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer' }}
-                onClick={() => setReviewMode(true)}
-              >
-                ✎ Edit Board
-              </button>
+            <div className={styles.headerActions}>
+              <div className={styles.libraryWrap}>
+                <BoardLibrary currentGameType="jeopardy" onLoadBoard={handleLoadBoard} />
+              </div>
+              <button className={styles.headerBtn} onClick={() => setShowSetupModal(true)}>New Board</button>
+              <button className={styles.headerBtn} onClick={() => setReviewMode(true)}>Edit Board</button>
               <MultiplayerHost gameMode="jeopardy" />
             </div>
           </div>
