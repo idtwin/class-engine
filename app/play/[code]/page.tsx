@@ -750,7 +750,7 @@ export default function PlayPage() {
 
     const handleChainSubmit = async () => {
       const answer = buildFullAnswer();
-      if (answer.length !== (activeWord?.word?.length || 0) || answer.includes("")) return;
+      if (answer.length !== (activeWord?.word?.length || 0)) return;
       if (!myTeamInfo) return;
       await sendAction("submit_chain_answer", {
         answer: answer.toUpperCase(),
@@ -875,8 +875,8 @@ export default function PlayPage() {
                 }}
                 onKeyDown={(e) => { if (e.key === "Enter") handleChainSubmit(); }}
                 style={{
-                  position: "absolute", opacity: 0, width: 1, height: 1,
-                  padding: 0, border: "none", pointerEvents: "none",
+                  position: "fixed", top: -100, left: -100, opacity: 0, width: 1, height: 1,
+                  padding: 0, border: "none",
                 }}
               />
               <div style={{
