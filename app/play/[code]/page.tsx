@@ -574,6 +574,190 @@ export default function PlayPage() {
     return renderFeedback();
   }
 
+  // ── CHAIN REACTION: Phone UI ────────────────────
+  if (room.gameMode === "chainreaction") {
+    const chainState = room.chainState;
+    const isMyTurn = chainState?.currentTeamId === myTeamInfo?.id;
+    const isComplete = chainState?.chainComplete;
+
+    if (!chainState) {
+      return (
+        <div className={styles.screen}>
+          {renderGameChrome()}
+          <div className={styles.loadingState}>
+            <div className={styles.loadingEmoji}>🔗</div>
+            <div className={styles.loadingTitle}>Chain Reaction</div>
+            <div className={styles.spinner} />
+            <div className={styles.loadingMuted}>Waiting for the teacher to start...</div>
+          </div>
+        </div>
+      );
+    }
+
+    const crWords: any[] = chainState.words || [];
+    const currentIdx = chainState.currentWordIdx ?? 0;
+    const activeWord = crWords[currentIdx];
+    const prevWord = currentIdx > 0 ? crWords[currentIdx - 1] : null;
+    const nextWord = currentIdx < crWords.length - 1 ? crWords[currentIdx + 1] : null;
+    const currentTeam = room.teams?.find((t: any) => t.id === chainState.currentTeamId);
+    const currentTeamColor = currentTeam?.color || "#00c8f0";
+
+    const handleChainSubmit = async () => {
+      if (!textInput.trim() || !myTeamInfo) return;
+      await sendAction("submit_chain_answer", {
+        answer: textInput.toUpperCase(),
+        teamId: myTeamInfo.id,
+      });
+      setTextInput("");
+    };
+
+    const renderCrTiles = (wordState: any, mini: boolean) => {
+      if (!wordState) return null;
+      const size = mini ? 28 : 44;
+      const fontSize = mini ? 13 : 20;
+      return (
+        <div style={{ display: "flex", gap: mini ? 4 : 6, flexWrap: "wrap", justifyContent: "center" }}>
+          {wordState.word.split("").map((ch: string, i: number) => {
+            const shown = wordState.revealed?.[i] || wordState.solved || wordState.isGiven;
+            return (
+              <div
+                key={i}
+                style={{
+                  width: size, height: size, borderRadius: 6,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize, fontWeight: 700,
+                  fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
+                  background: shown ? "rgba(0,200,240,0.18)" : "rgba(255,255,255,0.05)",
+                  border: `1.5px solid ${shown ? "#00c8f0" : "rgba(255,255,255,0.1)"}`,
+                  color: shown ? "#00c8f0" : "transparent",
+                }}
+              >
+                {shown ? ch : ""}
+              </div>
+            );
+          })}
+        </div>
+      );
+    };
+
+    return (
+      <div className={styles.screen}>
+        {renderGameChrome()}
+        <div className={styles.gameBody}>
+
+          {/* Turn banner */}
+          <div style={{
+            padding: "10px 16px", borderRadius: 10,
+            background: `${currentTeamColor}20`,
+            border: `1.5px solid ${currentTeamColor}`,
+            textAlign: "center", marginBottom: 16,
+          }}>
+            <div style={{
+              fontSize: 11, color: currentTeamColor,
+              fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
+              letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 2,
+            }}>
+              {isMyTurn ? "YOUR TURN" : "NOW PLAYING"}
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#dce8f5" }}>
+              {isMyTurn ? "Type your answer below!" : (currentTeam?.name || "Team")}
+            </div>
+          </div>
+
+          {/* Chain progress */}
+          <div style={{
+            fontSize: 11, color: "#4a637d", textAlign: "center", marginBottom: 16,
+            fontFamily: "var(--font-mono,'JetBrains Mono',monospace)", letterSpacing: "0.08em",
+          }}>
+            CHAIN {(chainState.currentChainIdx ?? 0) + 1} OF {chainState.totalChains ?? "?"}
+          </div>
+
+          {/* Word board: prev → active → next */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center", marginBottom: 24 }}>
+            {prevWord && <div style={{ opacity: 0.5 }}>{renderCrTiles(prevWord, true)}</div>}
+
+            {activeWord && (
+              <div style={{
+                padding: "16px 12px", borderRadius: 12,
+                background: "rgba(0,200,240,0.06)",
+                border: "1.5px solid rgba(0,200,240,0.25)",
+                width: "100%", display: "flex", justifyContent: "center",
+              }}>
+                {renderCrTiles(activeWord, false)}
+              </div>
+            )}
+
+            {nextWord && (
+              <div style={{ opacity: 0.25 }}>
+                {renderCrTiles(
+                  { ...nextWord, revealed: nextWord.word.split("").map(() => false), solved: false, isGiven: false },
+                  true
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Input for active team */}
+          {isMyTurn && !isComplete && (
+            <div style={{ display: "flex", gap: 8, width: "100%" }}>
+              <input
+                type="text"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value.toUpperCase())}
+                onKeyDown={(e) => { if (e.key === "Enter") handleChainSubmit(); }}
+                placeholder="Type the word..."
+                autoFocus
+                style={{
+                  flex: 1, padding: "14px 16px", borderRadius: 10,
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1.5px solid rgba(0,200,240,0.4)",
+                  color: "#dce8f5", fontSize: 18,
+                  fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
+                  fontWeight: 700, outline: "none", letterSpacing: "0.1em",
+                }}
+              />
+              <button
+                onClick={handleChainSubmit}
+                style={{
+                  padding: "14px 20px", borderRadius: 10,
+                  background: "#00c8f0", border: "none",
+                  color: "#07090f", fontSize: 16, fontWeight: 800, cursor: "pointer",
+                }}
+              >
+                GO
+              </button>
+            </div>
+          )}
+
+          {/* Watching message */}
+          {!isMyTurn && !isComplete && (
+            <div style={{
+              padding: "16px", borderRadius: 10,
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              textAlign: "center", color: "#4a637d", fontSize: 14,
+            }}>
+              Watch the projector — you&apos;ll play next!
+            </div>
+          )}
+
+          {/* Chain complete */}
+          {isComplete && (
+            <div style={{
+              padding: "20px", borderRadius: 12,
+              background: "rgba(0,232,122,0.08)",
+              border: "1.5px solid #00e87a", textAlign: "center",
+            }}>
+              <div style={{ fontSize: 28, marginBottom: 8 }}>🔗✅</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: "#00e87a" }}>Chain Complete!</div>
+              <div style={{ fontSize: 13, color: "#4a637d", marginTop: 4 }}>Next chain coming up...</div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   // Waiting for question to load
   if (!room.currentQuestion && !isPassive) {
     return (
