@@ -109,8 +109,9 @@ export default function ChainReaction() {
         }
       }
     };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    // capture:true fires before any focused element; window survives tab/window switches
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [phase]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -137,6 +138,9 @@ export default function ChainReaction() {
 
   const revealNextLetter = (wordsList: WordState[], wordIdx: number): WordState[] => {
     const w = wordsList[wordIdx];
+    const unrevealedCount = w.revealed.filter(r => !r).length;
+    // Never reveal the last letter — team must guess it
+    if (unrevealedCount <= 1) return wordsList;
     const nextUnrevealed = w.revealed.findIndex(r => !r);
     if (nextUnrevealed === -1) return wordsList;
     revealTileAnimate(wordIdx, nextUnrevealed);
@@ -464,7 +468,10 @@ export default function ChainReaction() {
 
       {/* Game view */}
       {phase === "playing" && words.length > 0 && (
-        <div className={styles.page}>
+        <div
+          className={styles.page}
+          onMouseDown={() => { (document.activeElement as HTMLElement)?.blur(); }}
+        >
           {/* Header */}
           <div className={styles.gameHeader}>
             <div className={styles.gameTitle}>Chain Reaction</div>
