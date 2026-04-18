@@ -215,8 +215,12 @@ export default function PictureRevealMode() {
     setPressingTile(index);
     setTimeout(() => {
       setPressingTile(null);
+      setShowAnswer(false);
       setActiveAwardAmount(100);
       setActiveQuestion({ ...gameData.questions[index], index });
+      // Signal phones: new question active, reset buzz state
+      sendRoomAction("set_question", { text: gameData.questions[index].q, tileIndex: index });
+      sendRoomAction("clear_buzzes", {});
     }, 120);
   };
 
@@ -229,13 +233,14 @@ export default function PictureRevealMode() {
     setRevealedTiles(newTiles);
     setActiveQuestion(null);
     setActiveAwardAmount(0);
-    // Offer image guess
+    sendRoomAction("set_question", {});  // clear question on phones → lobby
     setImageGuessMode("offering");
   };
 
   const handleWrongTile = () => {
     setActiveQuestion(null);
     setActiveAwardAmount(0);
+    sendRoomAction("set_question", {});  // clear question on phones → lobby
     advanceTurn();
   };
 

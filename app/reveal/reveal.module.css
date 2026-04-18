@@ -132,8 +132,9 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   grid-template-rows: repeat(4, 1fr);
-  gap: 4px;
-  padding: 4px;
+  gap: 3px;
+  padding: 3px;
+  background: #07090f; /* gaps show opaque bg, not the image */
   z-index: 10;
 }
 
@@ -168,9 +169,7 @@
   pointer-events: none;
 }
 .tile:hover {
-  background: linear-gradient(160deg,
-    rgba(255, 125, 59, 0.18),
-    rgba(255, 100, 30, 0.08));
+  background: linear-gradient(160deg, #2d1400 0%, #200f00 100%);
   border-color: #ff7d3b;
   box-shadow:
     inset 0 0 20px rgba(255, 125, 59, 0.12),
@@ -366,30 +365,33 @@
 }
 .btnWrong:hover { border-color: var(--muted, #4a637d); color: var(--text, #dce8f5); }
 
-/* ── Round End Overlay ── */
+/* ── Round End Overlay — anchored to bottom so image stays visible ── */
 .roundEndOverlay {
   position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  bottom: 0; left: 0; right: 0;
+  padding: 40px 24px 28px;
   z-index: 25;
-  background: rgba(7, 5, 0, 0.6);
-  backdrop-filter: blur(4px);
-}
-.roundEndCard {
-  background: rgba(14, 20, 32, 0.97);
-  border: 1px solid rgba(255, 125, 59, 0.4);
-  border-radius: 20px;
-  padding: 36px 48px;
+  background: linear-gradient(to top,
+    rgba(7, 5, 0, 0.97) 0%,
+    rgba(7, 5, 0, 0.82) 55%,
+    transparent 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
+  animation: slideUp 0.4s ease;
+}
+.roundEndCard {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   text-align: center;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 0 60px rgba(255, 125, 59, 0.15);
-  animation: slideUp 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: none;
 }
 .roundEndLabel {
   font-family: var(--font-mono, 'JetBrains Mono'), monospace;
