@@ -1,3 +1,39 @@
+/* ── Mode toggle (setup) ── */
+.modeToggle {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border2, #243347);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.modeBtn {
+  flex: 1;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--muted, #4a637d);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.modeBtnActive {
+  background: rgba(0, 200, 240, 0.15);
+  color: var(--cyan, #00c8f0);
+}
+
+.modeHint {
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  font-size: 9px;
+  color: var(--muted, #4a637d);
+  letter-spacing: 0.05em;
+  line-height: 1.4;
+}
+
 /* ── Setup Modal ── */
 .setupOverlay {
   position: fixed;
@@ -226,6 +262,19 @@
   font-weight: 700;
 }
 
+/* Mode pill in header */
+.modePill {
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--cyan, #00c8f0);
+  background: rgba(0, 200, 240, 0.1);
+  border: 1px solid rgba(0, 200, 240, 0.25);
+  border-radius: 4px;
+  padding: 3px 7px;
+}
+
 .headerSpacer {
   flex: 1;
 }
@@ -285,6 +334,17 @@
 .wordRowAdjacent {
   background: rgba(0, 200, 240, 0.04);
   border-left: 3px solid rgba(0, 200, 240, 0.25);
+}
+
+/* Given word rows */
+.wordRowGivenFirst {
+  background: rgba(176, 110, 255, 0.06);
+  border-left: 3px solid rgba(176, 110, 255, 0.5);
+}
+
+.wordRowGivenLast {
+  background: rgba(255, 125, 59, 0.06);
+  border-left: 3px solid rgba(255, 125, 59, 0.5);
 }
 
 .rowDivider {
@@ -354,6 +414,46 @@
   background: rgba(0, 232, 122, 0.15);
   border-color: var(--green, #00e87a);
   color: var(--green, #00e87a);
+}
+
+/* Given word tiles */
+.tileGivenFirst {
+  background: rgba(176, 110, 255, 0.2);
+  border-color: var(--purple, #b06eff);
+  color: var(--purple, #b06eff);
+}
+
+.tileGivenLast {
+  background: rgba(255, 125, 59, 0.2);
+  border-color: var(--orange, #ff7d3b);
+  color: var(--orange, #ff7d3b);
+}
+
+/* Hint letters (revealed, not yet typed over) */
+.tileHint {
+  background: rgba(255, 200, 67, 0.12);
+  border-color: rgba(255, 200, 67, 0.4);
+  color: var(--yellow, #ffc843);
+}
+
+/* Letters the active team has typed */
+.tileTyped {
+  background: rgba(0, 200, 240, 0.2);
+  border-color: var(--cyan, #00c8f0);
+  color: var(--text, #dce8f5);
+  font-weight: 900;
+}
+
+/* Blinking cursor tile (next position to type) */
+.tileCursor {
+  border-color: var(--cyan, #00c8f0);
+  border-style: solid;
+  animation: cursorBlink 1s step-end infinite;
+}
+
+@keyframes cursorBlink {
+  0%, 100% { border-color: var(--cyan, #00c8f0); }
+  50%       { border-color: var(--border, #1c2a40); }
 }
 
 /* Flip animation */
@@ -581,6 +681,16 @@
   background: rgba(255, 200, 67, 0.18);
 }
 
+/* Typing prompt */
+.typingHint {
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  font-size: 10px;
+  color: var(--muted, #4a637d);
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  padding: 2px 0;
+}
+
 /* Points key chips */
 .ptsKeyRow {
   display: flex;
@@ -666,6 +776,26 @@
   border: 1px solid var(--border, #1c2a40);
   border-radius: 10px;
   padding: 12px;
+}
+
+/* Next chain button */
+.btnNextChain {
+  background: rgba(0, 200, 240, 0.15);
+  border: 1px solid var(--cyan, #00c8f0);
+  border-radius: 8px;
+  padding: 14px 16px;
+  color: var(--cyan, #00c8f0);
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s;
+}
+
+.btnNextChain:hover {
+  background: rgba(0, 200, 240, 0.28);
 }
 
 .btnPush {
