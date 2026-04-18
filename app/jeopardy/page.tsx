@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./game.module.css";
-import GameTimer from "../components/GameTimer";
 import GameSettingsDrawer from "../components/GameSettingsDrawer";
 import BoardLibrary from "../components/BoardLibrary";
 import { useClassroomStore, SavedBoard } from "../store/useClassroomStore";
 import { Sparkles } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
 import { stopAllSFX } from "../lib/audio";
+
+const TEAM_COLORS = ['#00e87a', '#00c8f0', '#ffc843', '#ff4d8f', '#b06eff', '#ff7d3b', '#e2e8f0'];
 
 const DEFAULT_GAME_BOARD = [
   {
@@ -84,8 +85,8 @@ export default function JeopardyPage() {
   const [timeLeft, setTimeLeft] = useState(30);
   const [timerDuration, setTimerDuration] = useState(30);
   const [timerActive, setTimerActive] = useState(false);
-  const [showTimesUp, setShowTimesUp] = useState(false);
-  
+  const [pressingTile, setPressingTile] = useState<{cIndex: number; qIndex: number} | null>(null);
+
   const [roomBuzzes, setRoomBuzzes] = useState<any[]>([]);
   const [roomStudents, setRoomStudents] = useState<any[]>([]);
   const [roomData, setRoomData] = useState<any>(null);
@@ -120,8 +121,6 @@ export default function JeopardyPage() {
       timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
     } else if (timeLeft === 0 && timerActive) {
       setTimerActive(false);
-      setShowTimesUp(true);
-      setTimeout(() => setShowTimesUp(false), 3000);
     }
     return () => clearInterval(timer);
   }, [timerActive, timeLeft]);
@@ -183,25 +182,27 @@ export default function JeopardyPage() {
 
   const handleTileClick = (cIndex: number, qIndex: number) => {
     if (board[cIndex].questions[qIndex].answered) return;
-    setActiveQuestion({ ...board[cIndex].questions[qIndex], cIndex, qIndex, category: board[cIndex].category });
-    setShowAnswer(false);
-    setTimeLeft(timerDuration);
-    setTimerActive(true);
-    setShowTimesUp(false);
-    setRoomBuzzes([]);
-    setActiveAwardAmount(board[cIndex].questions[qIndex].points);
-    // Push question to Redis + clear buzzes
-    if (activeRoomCode) {
-      fetch("/api/room/action", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: activeRoomCode, action: "clear_buzzes", payload: {} })
-      }).then(() => {
+    setPressingTile({ cIndex, qIndex });
+    setTimeout(() => {
+      setPressingTile(null);
+      setActiveQuestion({ ...board[cIndex].questions[qIndex], cIndex, qIndex, category: board[cIndex].category });
+      setShowAnswer(false);
+      setTimeLeft(timerDuration);
+      setTimerActive(true);
+      setRoomBuzzes([]);
+      setActiveAwardAmount(board[cIndex].questions[qIndex].points);
+      if (activeRoomCode) {
         fetch("/api/room/action", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: activeRoomCode, action: "set_question", payload: { question: { text: board[cIndex].questions[qIndex].text, category: board[cIndex].category, points: board[cIndex].questions[qIndex].points } } })
-        });
-      }).catch(() => {});
-    }
+          body: JSON.stringify({ code: activeRoomCode, action: "clear_buzzes", payload: {} })
+        }).then(() => {
+          fetch("/api/room/action", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: activeRoomCode, action: "set_question", payload: { question: { text: board[cIndex].questions[qIndex].text, category: board[cIndex].category, points: board[cIndex].questions[qIndex].points } } })
+          });
+        }).catch(() => {});
+      }
+    }, 120);
   };
 
   const closeQuestion = (markAnswered = true) => {
@@ -212,7 +213,6 @@ export default function JeopardyPage() {
     }
     setActiveQuestion(null);
     setTimerActive(false);
-    setShowTimesUp(false);
   };
 
   return (
@@ -392,7 +392,7 @@ export default function JeopardyPage() {
                   {col.questions.map((q: any, qIndex: number) => (
                     <button
                       key={qIndex}
-                      className={`${styles.tile} ${q.answered ? styles.answered : ''}`}
+                      className={`${styles.tile} ${q.answered ? styles.answered : ''} ${pressingTile?.cIndex === cIndex && pressingTile?.qIndex === qIndex ? styles.pressing : ''}`}
                       onClick={() => handleTileClick(cIndex, qIndex)}
                       disabled={q.answered}
                     >
@@ -406,71 +406,100 @@ export default function JeopardyPage() {
         </div>
       )}
 
-      {/* Active question modal — completely unchanged */}
+      {/* Active question modal */}
       {activeQuestion && (() => {
         const sortedBuzzes = [...roomBuzzes].sort((a: any, b: any) => a.time - b.time);
-        const firstBuzzer = sortedBuzzes[0];
-        const firstBuzzerTeam = firstBuzzer ? currentTeams.find(t => t.name === firstBuzzer.name || t.students.some(s => s.name === firstBuzzer.name)) : null;
 
-        // Find student answers from the buzzed-in students
-        const buzzedStudentAnswers = sortedBuzzes.map(b => {
-          const student = roomStudents.find((s: any) => s.name === b.name);
-          return { ...b, answered: student?.answered, lastAnswer: student?.lastAnswer, answerTime: student?.answerTime };
-        });
+        const awardToTeam = (teamId: string) => {
+          updateTeamScore(teamId, activeQuestion.points);
+          closeQuestion(true);
+          if (activeRoomCode) {
+            fetch("/api/room/action", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: {} })
+            }).catch(() => {});
+          }
+        };
+
+        const revealAnswer = () => {
+          setShowAnswer(true);
+          if (activeRoomCode) {
+            fetch("/api/room/action", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: {} })
+            }).catch(() => {});
+          }
+        };
 
         return (
           <div className={styles.modalOverlay}>
-            <div className={styles.modal} style={{ maxHeight: '90vh', overflowY: 'auto', padding: '2.5rem 3rem' }}>
-              <h2 style={{ margin: 0 }}>{activeQuestion.category} - {activeQuestion.points}</h2>
+            <div className={styles.modal}>
+              {/* Category + points badge */}
+              <div className={styles.qBadge}>
+                <span>{activeQuestion.category}</span>
+                <span className={styles.qBadgePts}>· {activeQuestion.points} pts</span>
+              </div>
 
+              {/* Image (if any) */}
               {activeQuestion.includeImage && activeQuestion.imagePrompt && (
                 <img
                   src={`https://image.pollinations.ai/prompt/${encodeURIComponent(activeQuestion.imagePrompt)}?width=800&height=400&nologo=true`}
                   alt="Question image"
                   className={styles.modalImage}
-                  style={{ background: '#111', minHeight: '200px' }}
                   onLoad={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '1'; }}
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                   ref={(el) => { if (el) el.style.opacity = '0'; }}
                 />
               )}
 
+              {/* Question or answer */}
               {showAnswer ? (
                 <div className={styles.answerBox}>
-                  <h3 style={{ color: '#fbbf24', marginBottom: '0.5rem', fontFamily: 'monospace' }}>DECRYPTED_ANSWER:</h3>
                   <p className={styles.questionText}>{activeQuestion.answer || "No answer provided."}</p>
                 </div>
               ) : (
                 <p className={styles.questionText}>{activeQuestion.text}</p>
               )}
 
-              {/* Buzz-in + Typed Answers Panel */}
+              {/* Timer */}
+              <div className={styles.timerRow}>
+                <div className={`${styles.timerNum} ${timeLeft <= 10 ? styles.timerNumUrgent : ''}`}>{timeLeft}</div>
+                <div className={styles.timerBar}>
+                  <div
+                    className={`${styles.timerFill} ${timeLeft <= 10 ? styles.timerFillUrgent : ''}`}
+                    style={{ width: `${(timeLeft / timerDuration) * 100}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Buzz panel */}
               {activeRoomCode && sortedBuzzes.length > 0 && (
-                <div style={{ width: '100%', padding: '1.5rem', borderRadius: '16px', background: 'rgba(45,212,191,0.1)', border: '2px solid var(--accent)' }}>
-                  <div style={{ fontWeight: 800, color: 'var(--accent)', marginBottom: '0.75rem', fontSize: '1.1rem' }}>🔔 Buzz Order:</div>
-                  {buzzedStudentAnswers.map((b: any, i: number) => {
+                <div className={styles.buzzPanel}>
+                  <div className={styles.buzzHeader}>Buzz order</div>
+                  {sortedBuzzes.map((b: any, i: number) => {
+                    const team = currentTeams.find(t => t.name === b.name || t.students.some((s: any) => s.name === b.name));
+                    const teamIdx = team ? currentTeams.indexOf(team) : -1;
+                    const color = teamIdx >= 0 ? (TEAM_COLORS[teamIdx] || '#00c8f0') : '#00c8f0';
                     return (
-                      <div key={i} style={{
-                        padding: '0.5rem 0',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem',
-                        borderBottom: i < sortedBuzzes.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none'
-                      }}>
-                        <span style={{
-                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                          width: '30px', height: '30px', borderRadius: '50%',
-                          background: i === 0 ? 'var(--accent)' : 'rgba(255,255,255,0.1)',
-                          color: i === 0 ? '#111' : 'rgba(255,255,255,0.5)',
-                          fontWeight: 900, fontSize: '0.9rem'
-                        }}>{i + 1}</span>
-                        <span style={{ fontWeight: i === 0 ? 900 : 400, color: i === 0 ? '#fff' : 'rgba(255,255,255,0.5)' }}>
-                          {b.teamName && b.teamName !== b.name ? `${b.teamName} — ${b.name}` : b.name} {i === 0 && '🏆'}
-                        </span>
-                        {b.answered && b.lastAnswer && (
-                          <span style={{ marginLeft: 'auto', background: 'rgba(255,255,255,0.05)', padding: '0.3rem 0.8rem', borderRadius: '8px', fontSize: '1rem' }}>
-                            &ldquo;{b.lastAnswer}&rdquo;
-                          </span>
+                      <div key={i} className={styles.buzzRow}>
+                        <div
+                          className={styles.buzzNum}
+                          style={i === 0 ? { background: color, color: '#000' } : {}}
+                        >
+                          {i + 1}
+                        </div>
+                        <div className={styles.buzzInfo}>
+                          <div className={styles.buzzTeam} style={i === 0 ? { color } : {}}>{team?.name || b.name}</div>
+                          <div className={`${styles.buzzStudent} ${i === 0 ? styles.buzzStudentFirst : ''}`}>{b.name}</div>
+                        </div>
+                        {i === 0 && team && (
+                          <button
+                            className={styles.awardBtn}
+                            style={{ background: color, color: '#000' }}
+                            onClick={() => awardToTeam(team.id)}
+                          >
+                            + {activeQuestion.points} pts
+                          </button>
                         )}
                       </div>
                     );
@@ -478,50 +507,16 @@ export default function JeopardyPage() {
                 </div>
               )}
 
-              <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <GameTimer variant="circle" timeLeft={timeLeft} totalTime={timerDuration} showTimesUp={showTimesUp} />
-              </div>
-
-              {/* Action Buttons */}
+              {/* Actions */}
               <div className={styles.modalActions}>
                 {!showAnswer && (
-                  <button onClick={() => {
-                    setShowAnswer(true);
-                    if (activeRoomCode) {
-                      fetch("/api/room/action", {
-                        method: "POST", headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: {} })
-                      }).catch(() => {});
-                    }
-                  }}>
-                    DECRYPT ANSWER
+                  <button className={styles.btnReveal} onClick={revealAnswer}>
+                    Reveal Answer
                   </button>
                 )}
-
-                {/* Manual Award: Give points to first buzzer's team */}
-                {firstBuzzerTeam && (
-                  <button onClick={() => {
-                    updateTeamScore(firstBuzzerTeam.id, activeQuestion.points);
-                    setShowAnswer(true);
-                    if (activeRoomCode) {
-                      fetch("/api/room/action", {
-                        method: "POST", headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ code: activeRoomCode, action: "reveal_answer", payload: {} })
-                      }).catch(() => {});
-                    }
-                  }}>
-                    AWARD [{activeQuestion.points}] {firstBuzzer.name}
-                  </button>
-                )}
-
-                <button className={styles.secondaryBtn} onClick={() => closeQuestion(true)}>
-                  ARCHIVE MODULE
+                <button className={styles.btnSkip} onClick={() => closeQuestion(true)}>
+                  {showAnswer ? 'Close' : 'Skip / Close'}
                 </button>
-                {!showAnswer && (
-                  <button className={styles.secondaryBtn} onClick={() => closeQuestion(false)}>
-                    CANCEL OVERRIDE
-                  </button>
-                )}
               </div>
             </div>
           </div>

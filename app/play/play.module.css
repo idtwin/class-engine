@@ -738,30 +738,30 @@
 }
 
 .buzzLabel {
-  font-family: var(--font-mono), 'JetBrains Mono', monospace;
-  font-size: 11px;
+  font-family: var(--font-phone), 'Nunito', sans-serif;
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
   color: #4a637d;
+  text-align: center;
 }
 
 .buzzBtn {
   width: 180px;
   height: 180px;
   border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, rgba(255, 125, 59, 0.9), rgba(210, 45, 0, 0.95));
-  border: none;
+  background: radial-gradient(circle at 40% 35%, #ff9f5a, #ff5500 60%, #cc3300);
+  border: 3px solid rgba(255, 120, 50, 0.4);
   box-shadow:
-    0 0 0 10px rgba(255, 125, 59, 0.12),
-    0 0 0 20px rgba(255, 125, 59, 0.06),
-    0 24px 64px rgba(255, 100, 0, 0.4);
+    0 0 0 10px rgba(255, 100, 30, 0.1),
+    0 0 0 20px rgba(255, 80, 20, 0.05),
+    0 24px 64px rgba(255, 80, 20, 0.45);
   cursor: pointer;
   font-family: var(--font-phone), 'Nunito', sans-serif;
   font-size: 26px;
   font-weight: 900;
   color: #fff;
   letter-spacing: 0.03em;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
   transition: all 0.12s ease;
   animation: buzzPulse 2s ease-in-out infinite;
   display: flex;
@@ -772,29 +772,31 @@
 @keyframes buzzPulse {
   0%, 100% {
     box-shadow:
-      0 0 0 10px rgba(255, 125, 59, 0.12),
-      0 0 0 20px rgba(255, 125, 59, 0.06),
-      0 24px 64px rgba(255, 100, 0, 0.4);
+      0 0 0 10px rgba(255, 100, 30, 0.1),
+      0 0 0 20px rgba(255, 80, 20, 0.05),
+      0 24px 64px rgba(255, 80, 20, 0.45);
   }
   50% {
     box-shadow:
-      0 0 0 14px rgba(255, 125, 59, 0.18),
-      0 0 0 28px rgba(255, 125, 59, 0.07),
-      0 24px 64px rgba(255, 100, 0, 0.55);
+      0 0 0 16px rgba(255, 100, 30, 0.15),
+      0 0 0 30px rgba(255, 80, 20, 0.07),
+      0 24px 64px rgba(255, 80, 20, 0.65);
   }
 }
 
 .buzzBtn:active {
   transform: scale(0.93);
   animation: none;
-  box-shadow: 0 0 0 6px rgba(255, 125, 59, 0.25), 0 8px 20px rgba(255, 100, 0, 0.5);
+  box-shadow: 0 0 0 6px rgba(255, 100, 30, 0.2), 0 8px 20px rgba(255, 80, 0, 0.45);
 }
 
 .buzzBtnPressed {
   background: radial-gradient(circle at 40% 35%, #444, #222);
+  border-color: rgba(255, 255, 255, 0.05);
   animation: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   pointer-events: none;
+  opacity: 0.4;
 }
 
 .buzzedIn {
@@ -806,10 +808,12 @@
 }
 
 .buzzedInLabel {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 900;
   color: #00c8f0;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
 }
 
 .buzzAnswer {
