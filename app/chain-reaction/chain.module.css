@@ -336,15 +336,15 @@
   border-left: 3px solid rgba(0, 200, 240, 0.25);
 }
 
-/* Given word rows */
+/* Given word rows — both use cyan */
 .wordRowGivenFirst {
-  background: rgba(176, 110, 255, 0.06);
-  border-left: 3px solid rgba(176, 110, 255, 0.5);
+  background: rgba(0, 200, 240, 0.06);
+  border-left: 3px solid rgba(0, 200, 240, 0.4);
 }
 
 .wordRowGivenLast {
-  background: rgba(255, 125, 59, 0.06);
-  border-left: 3px solid rgba(255, 125, 59, 0.5);
+  background: rgba(0, 200, 240, 0.06);
+  border-left: 3px solid rgba(0, 200, 240, 0.4);
 }
 
 .rowDivider {
@@ -416,32 +416,35 @@
   color: var(--green, #00e87a);
 }
 
-/* Given word tiles */
+/* Given word tiles — same as revealed (cyan) */
 .tileGivenFirst {
-  background: rgba(176, 110, 255, 0.2);
-  border-color: var(--purple, #b06eff);
-  color: var(--purple, #b06eff);
+  background: rgba(0, 200, 240, 0.15);
+  border-color: var(--cyan, #00c8f0);
+  color: var(--cyan, #00c8f0);
+  box-shadow: 0 0 12px rgba(0, 200, 240, 0.25);
 }
 
 .tileGivenLast {
-  background: rgba(255, 125, 59, 0.2);
-  border-color: var(--orange, #ff7d3b);
-  color: var(--orange, #ff7d3b);
-}
-
-/* Hint letters (revealed, not yet typed over) */
-.tileHint {
-  background: rgba(255, 200, 67, 0.12);
-  border-color: rgba(255, 200, 67, 0.4);
-  color: var(--yellow, #ffc843);
-}
-
-/* Letters the active team has typed */
-.tileTyped {
-  background: rgba(0, 200, 240, 0.2);
+  background: rgba(0, 200, 240, 0.15);
   border-color: var(--cyan, #00c8f0);
-  color: var(--text, #dce8f5);
+  color: var(--cyan, #00c8f0);
+  box-shadow: 0 0 12px rgba(0, 200, 240, 0.25);
+}
+
+/* Hint letters — same cyan as given/revealed */
+.tileHint {
+  background: rgba(0, 200, 240, 0.15);
+  border-color: var(--cyan, #00c8f0);
+  color: var(--cyan, #00c8f0);
+}
+
+/* Letters the active team has typed — bright white to distinguish from hints */
+.tileTyped {
+  background: rgba(0, 200, 240, 0.25);
+  border-color: var(--cyan, #00c8f0);
+  color: #ffffff;
   font-weight: 900;
+  box-shadow: 0 0 16px rgba(0, 200, 240, 0.35);
 }
 
 /* Blinking cursor tile (next position to type) */
