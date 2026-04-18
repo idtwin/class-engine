@@ -117,6 +117,29 @@ export async function POST(req: Request) {
       room.chainSubmit = null;
     }
 
+    // Picture Reveal: teacher offers image guess to active team
+    if (action === "trigger_image_guess") {
+      room.imageGuessActive = true;
+      room.imageGuessTeamId = payload.teamId;
+      room.imageGuessTeamName = payload.teamName;
+      room.imageGuess = null;
+    }
+
+    // Phone submits image guess
+    if (action === "submit_image_guess") {
+      if (room.imageGuessActive) {
+        room.imageGuess = { guess: payload.guess, name: payload.name, teamId: payload.teamId };
+      }
+    }
+
+    // Projector clears after judging guess
+    if (action === "clear_image_guess") {
+      room.imageGuessActive = false;
+      room.imageGuessTeamId = null;
+      room.imageGuessTeamName = null;
+      room.imageGuess = null;
+    }
+
     await redis.set(roomCode, room, { ex: 14400 });
 
     return NextResponse.json({ success: true, room });

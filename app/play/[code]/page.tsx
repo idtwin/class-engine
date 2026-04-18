@@ -63,6 +63,10 @@ export default function PlayPage() {
 
   // ── Chain Reaction phone state ───────────────────
   const [phoneInput, setPhoneInput] = useState("");
+
+  // ── Picture Reveal: image guess state ────────────
+  const [imageGuessInput, setImageGuessInput] = useState("");
+  const [imageGuessSubmitted, setImageGuessSubmitted] = useState(false);
   const [showHostPanel, setShowHostPanel] = useState(false);
   const phoneInputRef = useRef<HTMLInputElement>(null);
 
@@ -156,6 +160,14 @@ export default function PlayPage() {
     timerRef.current = setInterval(tick, 500);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [room?.questionStartTime, room?.questionDuration]);
+
+  // Reset image guess when imageGuessActive changes
+  useEffect(() => {
+    if (!room?.imageGuessActive) {
+      setImageGuessInput("");
+      setImageGuessSubmitted(false);
+    }
+  }, [room?.imageGuessActive]);
 
   // Reset phone tile input when active word or active team changes
   const crTeamId  = room?.chainState?.currentTeamId;
@@ -1215,6 +1227,100 @@ export default function PlayPage() {
             </div>
           )}
 
+        </div>
+      </div>
+    );
+  }
+
+  // ── PICTURE REVEAL: image guess override ────────────────────────
+  if (room.gameMode === "reveal" && room.imageGuessActive) {
+    const isActiveTeam = myTeamInfo?.id === room.imageGuessTeamId;
+    const handleImageGuessSubmit = async () => {
+      if (!imageGuessInput.trim() || imageGuessSubmitted) return;
+      setImageGuessSubmitted(true);
+      sendAction("submit_image_guess", {
+        guess: imageGuessInput.trim(),
+        name: studentName,
+        teamId: myTeamInfo?.id || studentId,
+      });
+    };
+    return (
+      <div className={styles.screen}>
+        {renderGameChrome()}
+        <div className={styles.buzzBody}>
+          {isActiveTeam ? (
+            <>
+              <div style={{
+                fontSize: 13, fontWeight: 700, color: "#ff7d3b",
+                fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
+                letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4,
+              }}>
+                What&apos;s the image?
+              </div>
+              {!imageGuessSubmitted ? (
+                <>
+                  <input
+                    type="text"
+                    value={imageGuessInput}
+                    onChange={e => setImageGuessInput(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && handleImageGuessSubmit()}
+                    placeholder="Type your guess..."
+                    autoFocus
+                    style={{
+                      background: "rgba(255,125,59,0.08)",
+                      border: "2px solid rgba(255,125,59,0.4)",
+                      borderRadius: 12,
+                      padding: "14px 18px",
+                      color: "#dce8f5",
+                      fontSize: 18,
+                      fontWeight: 700,
+                      outline: "none",
+                      width: "100%",
+                      maxWidth: 300,
+                      textAlign: "center",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                  <button
+                    onClick={handleImageGuessSubmit}
+                    disabled={!imageGuessInput.trim()}
+                    style={{
+                      marginTop: 8,
+                      background: imageGuessInput.trim() ? "#ff7d3b" : "rgba(255,125,59,0.2)",
+                      color: imageGuessInput.trim() ? "#07090f" : "#4a637d",
+                      border: "none",
+                      borderRadius: 12,
+                      padding: "14px 32px",
+                      fontSize: 15,
+                      fontWeight: 800,
+                      fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
+                      letterSpacing: "0.08em",
+                      cursor: imageGuessInput.trim() ? "pointer" : "default",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    Lock In Guess
+                  </button>
+                </>
+              ) : (
+                <div style={{
+                  fontSize: 14, fontWeight: 700, color: "#ff7d3b",
+                  fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
+                  letterSpacing: "0.08em",
+                }}>
+                  Guess locked! Waiting for teacher.
+                </div>
+              )}
+            </>
+          ) : (
+            <div style={{
+              fontSize: 14, fontWeight: 700, color: "#4a637d",
+              fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
+              letterSpacing: "0.08em", textAlign: "center",
+            }}>
+              {room.imageGuessTeamName || "A team"} is guessing...
+            </div>
+          )}
         </div>
       </div>
     );
