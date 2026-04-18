@@ -30,7 +30,7 @@ type GamePhase = "setup" | "loading" | "playing";
 export default function ChainReaction() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, getActiveApiKey, getActiveModel, llmProvider } = useClassroomStore();
+  const { currentTeams, updateTeamScore, getActiveApiKey, getActiveModel, llmProvider, activeRoomCode } = useClassroomStore();
 
   // Setup options
   const [topic, setTopic]               = useState("");
@@ -67,8 +67,9 @@ export default function ChainReaction() {
   currentInputRef.current  = currentInput;
   chainCompleteRef.current = chainComplete;
 
-  const handleSubmitRef  = useRef<() => void>(() => {});
-  const handleTimeoutRef = useRef<() => void>(() => {});
+  const handleSubmitRef      = useRef<(ans?: string) => void>(() => {});
+  const handleTimeoutRef     = useRef<() => void>(() => {});
+  const lastChainSubmitTsRef = useRef<number>(0);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -86,6 +87,50 @@ export default function ChainReaction() {
       handleTimeoutRef.current();
     }
   }, [timeLeft, timerActive, timerDuration]);
+
+  // ── Room sync helpers ─────────────────────────────────────────────────────────
+
+  const syncChainState = useCallback((
+    w: WordState[], wIdx: number, cIdx: number, totalC: number,
+    complete: boolean, teamId: string | null
+  ) => {
+    if (!activeRoomCode) return;
+    fetch("/api/room/action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code: activeRoomCode,
+        action: "set_chain_state",
+        payload: { words: w, currentWordIdx: wIdx, currentChainIdx: cIdx, totalChains: totalC, chainComplete: complete, currentTeamId: teamId },
+      }),
+    }).catch(() => {});
+  }, [activeRoomCode]);
+
+  // Poll for phone submits while game is active
+  useEffect(() => {
+    if (!activeRoomCode || phase !== "playing") return;
+    const poll = async () => {
+      if (chainCompleteRef.current) return;
+      const res = await fetch(`/api/room/get?code=${activeRoomCode}`).catch(() => null);
+      if (!res?.ok) return;
+      const data = await res.json();
+      const sub = data?.chainSubmit;
+      if (sub && sub.ts > lastChainSubmitTsRef.current) {
+        lastChainSubmitTsRef.current = sub.ts;
+        // Override current input and submit
+        (handleSubmitRef.current as (ans: string) => void)(sub.answer);
+        // Clear the submit flag
+        fetch("/api/room/action", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: activeRoomCode, action: "clear_chain_submit", payload: {} }),
+        }).catch(() => {});
+      }
+    };
+    poll();
+    const id = setInterval(poll, 1000);
+    return () => clearInterval(id);
+  }, [activeRoomCode, phase]);
 
   // Global keyboard handler — set up once per phase entry
   useEffect(() => {
@@ -170,10 +215,10 @@ export default function ChainReaction() {
 
   // ── Submit (auto-check typed word) ───────────────────────────────────────────
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback((overrideAnswer?: string) => {
     const w = words[currentWordIdx];
     if (!w || w.isGiven || w.solved || chainComplete) return;
-    const typed = currentInput.toUpperCase();
+    const typed = (overrideAnswer ?? currentInput).toUpperCase();
     if (typed.length === 0) return;
 
     if (typed === w.word) {
@@ -195,21 +240,25 @@ export default function ChainReaction() {
         setWords(newWords);
         setChainComplete(true);
         setTimerActive(false);
+        syncChainState(newWords, currentWordIdx, currentChainIdx, chains.length, true, teamId ?? null);
       } else {
         setWords(newWords);
         setCurrentWordIdx(nextIdx);
         resetTimer();
+        const nextTeamId = currentTeams[currentTeamIdx]?.id ?? null;
+        syncChainState(newWords, nextIdx, currentChainIdx, chains.length, false, nextTeamId);
       }
-      // Same team continues on correct guess
     } else {
       const newWords = revealNextLetter([...words], currentWordIdx);
       showFeedback("wrong", "✗ Wrong — next letter revealed");
       setWords(newWords);
       setCurrentInput("");
-      setCurrentTeamIdx(i => (i + 1) % Math.max(currentTeams.length, 1));
+      const nextTeamIdx = (currentTeamIdx + 1) % Math.max(currentTeams.length, 1);
+      setCurrentTeamIdx(nextTeamIdx);
       resetTimer();
+      syncChainState(newWords, currentWordIdx, currentChainIdx, chains.length, false, currentTeams[nextTeamIdx]?.id ?? null);
     }
-  }, [words, currentWordIdx, currentInput, currentTeams, currentTeamIdx, chainComplete, resetTimer]);
+  }, [words, currentWordIdx, currentInput, currentTeams, currentTeamIdx, chainComplete, resetTimer, syncChainState, currentChainIdx, chains.length]);
 
   handleSubmitRef.current = handleSubmit;
 
@@ -220,9 +269,11 @@ export default function ChainReaction() {
     showFeedback("wrong", "⏱ Time's up!");
     setWords(newWords);
     setCurrentInput("");
-    setCurrentTeamIdx(i => (i + 1) % Math.max(currentTeams.length, 1));
+    const nextTeamIdx = (currentTeamIdx + 1) % Math.max(currentTeams.length, 1);
+    setCurrentTeamIdx(nextTeamIdx);
     resetTimer();
-  }, [words, currentWordIdx, currentTeams, chainComplete, resetTimer]);
+    syncChainState(newWords, currentWordIdx, currentChainIdx, chains.length, false, currentTeams[nextTeamIdx]?.id ?? null);
+  }, [words, currentWordIdx, currentTeams, currentTeamIdx, chainComplete, resetTimer, syncChainState, currentChainIdx, chains.length]);
 
   handleTimeoutRef.current = handleTimeout;
 
@@ -267,6 +318,9 @@ export default function ChainReaction() {
       setTimeLeft(timerDuration);
       setTimerActive(timerDuration > 0);
       setPhase("playing");
+      // Sync initial state to phones
+      const firstTeamId = currentTeams[0]?.id ?? null;
+      syncChainState(firstWords, firstActiveIdx === -1 ? 0 : firstActiveIdx, 0, chainList.length, firstActiveIdx === -1, firstTeamId);
     } catch (err: any) {
       alert("Failed: " + err.message);
       setPhase("setup");
@@ -288,6 +342,8 @@ export default function ChainReaction() {
     setTimeLeft(timerDuration);
     setTimerActive(timerDuration > 0);
     // Team rotation + tally persist across chains
+    const nextTeamId = currentTeams[currentTeamIdx]?.id ?? null;
+    syncChainState(nextWords, firstActiveIdx === -1 ? 0 : firstActiveIdx, nextIdx, chains.length, firstActiveIdx === -1, nextTeamId);
   };
 
   const handlePush = () => {

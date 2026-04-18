@@ -99,6 +99,24 @@ export async function POST(req: Request) {
       room.buzzes = [];
     }
 
+    // Chain Reaction state sync (projector → phones)
+    if (action === "set_chain_state") {
+      room.chainState = payload;
+      room.chainSubmit = null;
+    }
+
+    // Phone submits a word guess
+    if (action === "submit_chain_answer") {
+      if (room.chainState?.currentTeamId === payload.teamId) {
+        room.chainSubmit = { answer: payload.answer, teamId: payload.teamId, ts: Date.now() };
+      }
+    }
+
+    // Projector clears after processing phone submit
+    if (action === "clear_chain_submit") {
+      room.chainSubmit = null;
+    }
+
     await redis.set(roomCode, room, { ex: 14400 });
 
     return NextResponse.json({ success: true, room });
