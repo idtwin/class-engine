@@ -567,7 +567,7 @@ export default function PlayPage() {
 
   // ── Active game ──────────────────────────────────
   const me = room.students?.find((s: any) => s.id === studentId);
-  const isPassive = room.gameMode === "hotseat" || room.gameMode === "story";
+  const isPassive = room.gameMode === "hotseat" || room.gameMode === "story" || room.gameMode === "chainreaction";
 
   // Show feedback after submit
   if (showFeedback) {
