@@ -92,7 +92,8 @@ export default function ChainReaction() {
 
   const syncChainState = useCallback((
     w: WordState[], wIdx: number, cIdx: number, totalC: number,
-    complete: boolean, teamId: string | null
+    complete: boolean, teamId: string | null,
+    lastGuess?: { teamName: string; answer: string; correct: boolean } | null
   ) => {
     if (!activeRoomCode) return;
     fetch("/api/room/action", {
@@ -101,7 +102,11 @@ export default function ChainReaction() {
       body: JSON.stringify({
         code: activeRoomCode,
         action: "set_chain_state",
-        payload: { words: w, currentWordIdx: wIdx, currentChainIdx: cIdx, totalChains: totalC, chainComplete: complete, currentTeamId: teamId },
+        payload: {
+          words: w, currentWordIdx: wIdx, currentChainIdx: cIdx,
+          totalChains: totalC, chainComplete: complete, currentTeamId: teamId,
+          lastGuess: lastGuess ?? null,
+        },
       }),
     }).catch(() => {});
   }, [activeRoomCode]);
@@ -231,24 +236,27 @@ export default function ChainReaction() {
       const newWords = [...words];
       newWords[currentWordIdx] = { ...w, revealed: newRevealed, solved: true };
 
+      const teamName = currentTeams[currentTeamIdx]?.name ?? "";
       if (teamId) addTally(teamId, pts);
       showFeedback("correct", pts === PTS_CLEAN ? `★ PERFECT! +${pts}` : `✓ +${pts} pts`);
       setCurrentInput("");
 
       const nextIdx = newWords.findIndex((ww, i) => i > currentWordIdx && !ww.solved && !ww.isGiven);
+      const guess = { teamName, answer: typed, correct: true };
       if (nextIdx === -1) {
         setWords(newWords);
         setChainComplete(true);
         setTimerActive(false);
-        syncChainState(newWords, currentWordIdx, currentChainIdx, chains.length, true, teamId ?? null);
+        syncChainState(newWords, currentWordIdx, currentChainIdx, chains.length, true, teamId ?? null, guess);
       } else {
         setWords(newWords);
         setCurrentWordIdx(nextIdx);
         resetTimer();
         const nextTeamId = currentTeams[currentTeamIdx]?.id ?? null;
-        syncChainState(newWords, nextIdx, currentChainIdx, chains.length, false, nextTeamId);
+        syncChainState(newWords, nextIdx, currentChainIdx, chains.length, false, nextTeamId, guess);
       }
     } else {
+      const teamName = currentTeams[currentTeamIdx]?.name ?? "";
       const newWords = revealNextLetter([...words], currentWordIdx);
       showFeedback("wrong", "✗ Wrong — next letter revealed");
       setWords(newWords);
@@ -256,7 +264,8 @@ export default function ChainReaction() {
       const nextTeamIdx = (currentTeamIdx + 1) % Math.max(currentTeams.length, 1);
       setCurrentTeamIdx(nextTeamIdx);
       resetTimer();
-      syncChainState(newWords, currentWordIdx, currentChainIdx, chains.length, false, currentTeams[nextTeamIdx]?.id ?? null);
+      const guess = { teamName, answer: typed, correct: false };
+      syncChainState(newWords, currentWordIdx, currentChainIdx, chains.length, false, currentTeams[nextTeamIdx]?.id ?? null, guess);
     }
   }, [words, currentWordIdx, currentInput, currentTeams, currentTeamIdx, chainComplete, resetTimer, syncChainState, currentChainIdx, chains.length]);
 

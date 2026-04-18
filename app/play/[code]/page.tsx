@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import styles from "../play.module.css";
 import { useParams } from "next/navigation";
 
@@ -59,6 +60,11 @@ export default function PlayPage() {
   const [timerDisplay, setTimerDisplay] = useState<string>("");
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const feedbackProcessed = useRef(false);
+
+  // ── Chain Reaction phone state ───────────────────
+  const [phoneInput, setPhoneInput] = useState("");
+  const [showHostPanel, setShowHostPanel] = useState(false);
+  const phoneInputRef = useRef<HTMLInputElement>(null);
 
   // ── Initialise from localStorage + start polling ─
   useEffect(() => {
@@ -150,6 +156,18 @@ export default function PlayPage() {
     timerRef.current = setInterval(tick, 500);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [room?.questionStartTime, room?.questionDuration]);
+
+  // Reset phone tile input when active word or active team changes
+  const crTeamId  = room?.chainState?.currentTeamId;
+  const crWordIdx = room?.chainState?.currentWordIdx;
+  useEffect(() => { setPhoneInput(""); }, [crTeamId, crWordIdx]);
+
+  // Auto-focus hidden input when it becomes our turn
+  useEffect(() => {
+    if (crTeamId === myTeamInfo?.id) {
+      setTimeout(() => phoneInputRef.current?.focus(), 100);
+    }
+  }, [crTeamId, myTeamInfo?.id]);
 
   // ── Action helper ────────────────────────────────
   const sendAction = useCallback(async (action: string, payload: any) => {
@@ -281,23 +299,134 @@ export default function PlayPage() {
   const gameInfo  = GAME_LABELS[room?.gameMode] || { emoji: "🎮", label: "Game", badgeColor: "#00c8f0", badgeBg: "rgba(0,200,240,0.12)" };
 
   // ── Team strip + game header (shared top chrome) ─
-  const renderGameChrome = () => (
-    <>
-      <div className={styles.teamStrip} style={{ background: teamColor }} />
-      <div className={styles.gameHeader}>
-        <div
-          className={styles.gameBadge}
-          style={{ color: gameInfo.badgeColor, background: gameInfo.badgeBg }}
-        >
-          <div className={styles.gameBadgeDot} style={{ background: gameInfo.badgeColor }} />
-          {gameInfo.label}
+  const renderGameChrome = () => {
+    const joinUrl = typeof window !== "undefined"
+      ? `${window.location.origin}/join?code=${code}`
+      : "";
+    const connectedStudents: any[] = room?.students || [];
+
+    return (
+      <>
+        <div className={styles.teamStrip} style={{ background: teamColor }} />
+        <div className={styles.gameHeader}>
+          <div
+            className={styles.gameBadge}
+            style={{ color: gameInfo.badgeColor, background: gameInfo.badgeBg }}
+          >
+            <div className={styles.gameBadgeDot} style={{ background: gameInfo.badgeColor }} />
+            {gameInfo.label}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {timerDisplay && (
+              <div className={styles.gameTimer}>{timerDisplay}</div>
+            )}
+            <button
+              onClick={() => setShowHostPanel(true)}
+              style={{
+                padding: "5px 10px", borderRadius: 8,
+                background: "rgba(0,200,240,0.1)",
+                border: "1px solid rgba(0,200,240,0.3)",
+                color: "#00c8f0", fontSize: 10,
+                fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
+                fontWeight: 700, letterSpacing: "0.06em", cursor: "pointer",
+              }}
+            >
+              👤 LIVE
+            </button>
+          </div>
         </div>
-        {timerDisplay && (
-          <div className={styles.gameTimer}>{timerDisplay}</div>
+
+        {/* Host panel overlay */}
+        {showHostPanel && (
+          <div
+            onClick={() => setShowHostPanel(false)}
+            style={{
+              position: "fixed", inset: 0, background: "rgba(7,9,15,0.92)",
+              zIndex: 999, display: "flex", flexDirection: "column",
+              alignItems: "center", padding: "40px 20px 20px", overflowY: "auto",
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: "#0e1420", border: "1px solid #1c2a40",
+                borderRadius: 16, padding: 24, width: "100%", maxWidth: 360,
+              }}
+            >
+              <div style={{
+                fontSize: 11, color: "#4a637d", letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
+                marginBottom: 16, textAlign: "center",
+              }}>
+                Live Session — Room {code}
+              </div>
+
+              {/* QR Code */}
+              <div style={{
+                background: "#fff", borderRadius: 12, padding: 16,
+                display: "flex", justifyContent: "center", marginBottom: 20,
+              }}>
+                <QRCodeSVG value={joinUrl} size={180} />
+              </div>
+
+              {/* Connected students */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{
+                  fontSize: 10, color: "#4a637d", letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
+                  marginBottom: 10,
+                }}>
+                  Connected ({connectedStudents.length})
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {connectedStudents.map((s: any, i: number) => (
+                    <div key={s.id || i} style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "8px 12px", borderRadius: 8,
+                      background: "rgba(255,255,255,0.03)",
+                      border: "1px solid rgba(255,255,255,0.06)",
+                    }}>
+                      <div style={{
+                        width: 8, height: 8, borderRadius: "50%",
+                        background: "#00e87a", flexShrink: 0,
+                      }} />
+                      <span style={{ color: "#dce8f5", fontSize: 14, fontWeight: 600 }}>
+                        {s.name}
+                      </span>
+                      {s.teamName && (
+                        <span style={{ fontSize: 11, color: "#4a637d", marginLeft: "auto" }}>
+                          {s.teamName}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                  {connectedStudents.length === 0 && (
+                    <div style={{ color: "#4a637d", fontSize: 13, textAlign: "center", padding: 12 }}>
+                      No students connected yet
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowHostPanel(false)}
+                style={{
+                  width: "100%", padding: "12px", borderRadius: 10,
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  color: "#dce8f5", fontSize: 14, fontWeight: 600, cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
         )}
-      </div>
-    </>
-  );
+      </>
+    );
+  };
 
   // ── Teammate blocked notice ───────────────────────
   const renderTeammateBlock = () =>
@@ -602,23 +731,45 @@ export default function PlayPage() {
     const currentTeam = room.teams?.find((t: any) => t.id === chainState.currentTeamId);
     const currentTeamColor = currentTeam?.color || "#00c8f0";
 
-    const handleChainSubmit = async () => {
-      if (!textInput.trim() || !myTeamInfo) return;
-      await sendAction("submit_chain_answer", {
-        answer: textInput.toUpperCase(),
-        teamId: myTeamInfo.id,
-      });
-      setTextInput("");
+    // Blank positions = indices in active word that are not yet revealed/given
+    const blankPositions: number[] = activeWord
+      ? activeWord.word.split("").reduce((acc: number[], _: string, i: number) => {
+          if (!activeWord.revealed?.[i]) acc.push(i);
+          return acc;
+        }, [])
+      : [];
+
+    // Reconstruct full answer: locked letters + typed chars in blank slots
+    const buildFullAnswer = () => {
+      if (!activeWord) return "";
+      return activeWord.word.split("").map((ch: string, i: number) => {
+        const bIdx = blankPositions.indexOf(i);
+        return activeWord.revealed?.[i] ? ch : (bIdx >= 0 && bIdx < phoneInput.length ? phoneInput[bIdx] : "");
+      }).join("");
     };
 
-    const renderCrTiles = (wordState: any, mini: boolean) => {
+    const handleChainSubmit = async () => {
+      const answer = buildFullAnswer();
+      if (answer.length !== (activeWord?.word?.length || 0) || answer.includes("")) return;
+      if (!myTeamInfo) return;
+      await sendAction("submit_chain_answer", {
+        answer: answer.toUpperCase(),
+        teamId: myTeamInfo.id,
+      });
+      setPhoneInput("");
+    };
+
+    const renderCrTiles = (wordState: any, mini: boolean, showInput = false) => {
       if (!wordState) return null;
       const size = mini ? 28 : 44;
       const fontSize = mini ? 13 : 20;
       return (
         <div style={{ display: "flex", gap: mini ? 4 : 6, flexWrap: "wrap", justifyContent: "center" }}>
           {wordState.word.split("").map((ch: string, i: number) => {
-            const shown = wordState.revealed?.[i] || wordState.solved || wordState.isGiven;
+            const isLocked = wordState.revealed?.[i] || wordState.solved || wordState.isGiven;
+            const bIdx = blankPositions.indexOf(i);
+            const typedChar = showInput && bIdx >= 0 && bIdx < phoneInput.length ? phoneInput[bIdx] : "";
+            const isCursor = showInput && bIdx === phoneInput.length && bIdx >= 0;
             return (
               <div
                 key={i}
@@ -627,12 +778,20 @@ export default function PlayPage() {
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize, fontWeight: 700,
                   fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
-                  background: shown ? "rgba(0,200,240,0.18)" : "rgba(255,255,255,0.05)",
-                  border: `1.5px solid ${shown ? "#00c8f0" : "rgba(255,255,255,0.1)"}`,
-                  color: shown ? "#00c8f0" : "transparent",
+                  background: isLocked
+                    ? "rgba(0,200,240,0.18)"
+                    : typedChar
+                    ? "rgba(220,232,245,0.12)"
+                    : "rgba(255,255,255,0.05)",
+                  border: isLocked
+                    ? `1.5px solid #00c8f0`
+                    : isCursor
+                    ? `1.5px solid rgba(0,200,240,0.6)`
+                    : `1.5px solid rgba(255,255,255,0.1)`,
+                  color: isLocked ? "#00c8f0" : typedChar ? "#dce8f5" : "transparent",
                 }}
               >
-                {shown ? ch : ""}
+                {isLocked ? ch : typedChar}
               </div>
             );
           })}
@@ -677,13 +836,17 @@ export default function PlayPage() {
             {prevWord && <div style={{ opacity: 0.5 }}>{renderCrTiles(prevWord, true)}</div>}
 
             {activeWord && (
-              <div style={{
-                padding: "16px 12px", borderRadius: 12,
-                background: "rgba(0,200,240,0.06)",
-                border: "1.5px solid rgba(0,200,240,0.25)",
-                width: "100%", display: "flex", justifyContent: "center",
-              }}>
-                {renderCrTiles(activeWord, false)}
+              <div
+                onClick={() => phoneInputRef.current?.focus()}
+                style={{
+                  padding: "16px 12px", borderRadius: 12,
+                  background: "rgba(0,200,240,0.06)",
+                  border: "1.5px solid rgba(0,200,240,0.25)",
+                  width: "100%", display: "flex", justifyContent: "center",
+                  cursor: isMyTurn ? "text" : "default",
+                }}
+              >
+                {renderCrTiles(activeWord, false, isMyTurn && !isComplete)}
               </div>
             )}
 
@@ -697,35 +860,74 @@ export default function PlayPage() {
             )}
           </div>
 
-          {/* Input for active team */}
+          {/* Hidden input + GO button for active team */}
           {isMyTurn && !isComplete && (
-            <div style={{ display: "flex", gap: 8, width: "100%" }}>
+            <div style={{ display: "flex", gap: 8, width: "100%", alignItems: "center" }}>
+              {/* Hidden input captures physical + virtual keyboard */}
               <input
+                ref={phoneInputRef}
                 type="text"
-                value={textInput}
-                onChange={(e) => setTextInput(e.target.value.toUpperCase())}
+                inputMode="text"
+                value={phoneInput}
+                onChange={(e) => {
+                  const raw = e.target.value.toUpperCase().replace(/[^A-Z]/g, "");
+                  setPhoneInput(raw.slice(0, blankPositions.length));
+                }}
                 onKeyDown={(e) => { if (e.key === "Enter") handleChainSubmit(); }}
-                placeholder="Type the word..."
-                autoFocus
                 style={{
-                  flex: 1, padding: "14px 16px", borderRadius: 10,
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1.5px solid rgba(0,200,240,0.4)",
-                  color: "#dce8f5", fontSize: 18,
-                  fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
-                  fontWeight: 700, outline: "none", letterSpacing: "0.1em",
+                  position: "absolute", opacity: 0, width: 1, height: 1,
+                  padding: 0, border: "none", pointerEvents: "none",
                 }}
               />
+              <div style={{
+                flex: 1, padding: "12px 16px", borderRadius: 10,
+                background: "rgba(0,200,240,0.05)",
+                border: "1px solid rgba(0,200,240,0.2)",
+                color: "#4a637d", fontSize: 12,
+                fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
+                textAlign: "center",
+              }}>
+                {phoneInput.length === 0
+                  ? "Tap tiles above, then type →"
+                  : `${phoneInput.length} / ${blankPositions.length} letters`}
+              </div>
               <button
                 onClick={handleChainSubmit}
+                disabled={phoneInput.length !== blankPositions.length}
                 style={{
                   padding: "14px 20px", borderRadius: 10,
-                  background: "#00c8f0", border: "none",
-                  color: "#07090f", fontSize: 16, fontWeight: 800, cursor: "pointer",
+                  background: phoneInput.length === blankPositions.length ? "#00c8f0" : "rgba(0,200,240,0.15)",
+                  border: "none",
+                  color: phoneInput.length === blankPositions.length ? "#07090f" : "#4a637d",
+                  fontSize: 16, fontWeight: 800,
+                  cursor: phoneInput.length === blankPositions.length ? "pointer" : "default",
+                  transition: "all 0.2s",
                 }}
               >
                 GO
               </button>
+            </div>
+          )}
+
+          {/* Last guess (visible to all teams) */}
+          {chainState.lastGuess && (
+            <div style={{
+              padding: "10px 14px", borderRadius: 8,
+              background: chainState.lastGuess.correct
+                ? "rgba(0,232,122,0.08)" : "rgba(255,68,68,0.08)",
+              border: `1px solid ${chainState.lastGuess.correct ? "#00e87a" : "#ff4444"}40`,
+              display: "flex", alignItems: "center", gap: 10, fontSize: 13,
+            }}>
+              <span style={{ fontSize: 16 }}>
+                {chainState.lastGuess.correct ? "✓" : "✗"}
+              </span>
+              <span style={{ color: "#4a637d" }}>{chainState.lastGuess.teamName}:</span>
+              <span style={{
+                fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
+                fontWeight: 700, color: "#dce8f5", letterSpacing: "0.08em",
+              }}>
+                {chainState.lastGuess.answer}
+              </span>
             </div>
           )}
 

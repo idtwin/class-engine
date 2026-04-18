@@ -69,7 +69,7 @@ All words must be lowercase. No markdown.`;
 
     const isRandom = circleCount === "random";
     const wordCountRule = isRandom
-      ? `choose a DIFFERENT number of words (between 4 and 7) for EACH of the ${finalCount} chains independently. Diversity in length is required.`
+      ? `choose a DIFFERENT number of words (between 5 and 7) for EACH of the ${finalCount} chains independently. Diversity in length is required.`
       : `EVERY chain in the "chains" array must have EXACTLY ${circleCount || 5} words in its "words" array. No exceptions.`;
 
     const systemPrompt = `You are creating a "Chain Reaction" word puzzle game for ESL students.
