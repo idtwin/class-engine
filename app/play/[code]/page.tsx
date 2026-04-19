@@ -176,10 +176,12 @@ export default function PlayPage() {
   const crWordIdx = room?.chainState?.currentWordIdx;
   useEffect(() => { setPhoneInput(""); }, [crTeamId, crWordIdx]);
 
-  // Auto-focus hidden input when it becomes our turn
+  // Auto-focus hidden input when it becomes our turn; blur when it doesn't
   useEffect(() => {
     if (crTeamId === myTeamInfo?.id) {
       setTimeout(() => phoneInputRef.current?.focus(), 100);
+    } else {
+      phoneInputRef.current?.blur();
     }
   }, [crTeamId, myTeamInfo?.id]);
 
