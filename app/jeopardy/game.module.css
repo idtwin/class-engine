@@ -477,6 +477,8 @@
   border-radius: 10px;
   margin-bottom: 12px;
   text-align: center;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 .answeringLabel {
   font-size: 10px;

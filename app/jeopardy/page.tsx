@@ -465,8 +465,9 @@ export default function JeopardyPage() {
                 <div className={styles.buzzPanel}>
                   {(() => {
                     const first = sortedBuzzes[0];
-                    const firstTeam = currentTeams.find(t => t.name === first.name || t.students.some((s: any) => s.name === first.name));
-                    const firstColor = firstTeam ? (TEAM_COLORS[currentTeams.indexOf(firstTeam)] || '#00c8f0') : '#00c8f0';
+                    const firstTeam = currentTeams.find(t => t.name === first.teamName);
+                    const teamIdx = firstTeam ? currentTeams.indexOf(firstTeam) : -1;
+                    const firstColor = teamIdx >= 0 ? TEAM_COLORS[teamIdx] : '#00c8f0';
                     const firstStudent = roomStudents.find((s: any) => s.id === first.studentId);
                     const typedAnswer = firstStudent?.lastAnswer;
                     return (
