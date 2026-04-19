@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./reveal.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
 import { ImageOff, Loader, Sparkles } from "lucide-react";
@@ -12,7 +13,6 @@ const TEAM_COLORS = [
   "#ff4d8f", "#b06eff", "#ff7d3b", "#e2e8f0",
 ];
 
-const TOTAL_ROUNDS = 3;
 const QUESTION_TIME = 30;
 
 function buildImageUrl(answer: string, prompt: string) {
@@ -23,6 +23,7 @@ function buildImageUrl(answer: string, prompt: string) {
 }
 
 export default function PictureRevealMode() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const {
     getActiveApiKey, mistralModel, llmProvider,
@@ -32,6 +33,8 @@ export default function PictureRevealMode() {
 
   // ── Setup / generate ──────────────────────────────
   const [topic, setTopic] = useState("");
+  const [totalRounds, setTotalRounds] = useState(3);
+  const [level, setLevel] = useState("Mixed Level");
   const [isGenerating, setIsGenerating] = useState(false);
   const [gameData, setGameData] = useState<{
     imagePrompt: string;
@@ -177,7 +180,7 @@ export default function PictureRevealMode() {
           mistralModel,
           provider: llmProvider,
           topic: t,
-          level: "Mixed Level",
+          level,
         }),
       });
       const data = await res.json();
@@ -256,7 +259,7 @@ export default function PictureRevealMode() {
   // ── Round / Game management ───────────────────────
 
   const startNextRound = async () => {
-    if (currentRound >= TOTAL_ROUNDS) {
+    if (currentRound >= totalRounds) {
       resetGame();
       return;
     }
@@ -294,17 +297,29 @@ export default function PictureRevealMode() {
         <div className={styles.setupOverlay}>
           <div className={styles.setupModal}>
             <div className={styles.setupTitleRow}>
+              <button
+                onClick={() => router.push("/games")}
+                style={{
+                  background: "transparent", border: "1px solid var(--border2,#243347)",
+                  borderRadius: 8, padding: "6px 12px", cursor: "pointer",
+                  fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
+                  fontSize: 11, fontWeight: 700, color: "var(--muted,#4a637d)",
+                  letterSpacing: "0.06em", flexShrink: 0,
+                }}
+              >
+                ← Back
+              </button>
               <div className={styles.setupTitleIcon}>🖼️</div>
               <div>
                 <div className={styles.setupTitleText}>Picture Reveal</div>
                 <div className={styles.setupTitleSub}>
                   {currentRound > 1
-                    ? `Round ${currentRound} of ${TOTAL_ROUNDS}`
-                    : `Image Tile Reveal · ${TOTAL_ROUNDS} Rounds`}
+                    ? `Round ${currentRound} of ${totalRounds}`
+                    : "Image Tile Reveal"}
                 </div>
               </div>
               <div style={{ marginLeft: "auto" }}>
-                <MultiplayerHost gameMode="reveal" />
+                <MultiplayerHost gameMode="reveal" forceShow />
               </div>
             </div>
             {isGenerating ? (
@@ -329,6 +344,37 @@ export default function PictureRevealMode() {
                     autoFocus
                   />
                 </div>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <div className={styles.setupField} style={{ flex: 1 }}>
+                    <div className={styles.setupLabel}>Level</div>
+                    <select
+                      className={styles.setupInput}
+                      value={level}
+                      onChange={e => setLevel(e.target.value)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <option value="Low (A1)">Low (A1)</option>
+                      <option value="Low-Mid (A1-A2)">Low-Mid (A1-A2)</option>
+                      <option value="Mid (A2)">Mid (A2)</option>
+                      <option value="Mid-High (A2-B1)">Mid-High (A2-B1)</option>
+                      <option value="High (B1)">High (B1)</option>
+                      <option value="Mixed Level">Mixed Level</option>
+                    </select>
+                  </div>
+                  <div className={styles.setupField} style={{ flex: 1 }}>
+                    <div className={styles.setupLabel}>Rounds</div>
+                    <select
+                      className={styles.setupInput}
+                      value={totalRounds}
+                      onChange={e => setTotalRounds(Number(e.target.value))}
+                      style={{ cursor: "pointer" }}
+                    >
+                      {[1, 2, 3, 4, 5].map(n => (
+                        <option key={n} value={n}>{n} Round{n !== 1 ? "s" : ""}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
                 <button
                   className={styles.btnGenerate}
                   onClick={handleGenerate}
@@ -347,7 +393,7 @@ export default function PictureRevealMode() {
         <div className={styles.reviewContainer}>
           <div className={styles.reviewHeader}>
             <h2 className={styles.reviewTitle}>
-              REVIEW PUZZLE — ROUND {currentRound} OF {TOTAL_ROUNDS}
+              REVIEW PUZZLE — ROUND {currentRound} OF {totalRounds}
             </h2>
             <button
               onClick={async () => {
@@ -513,7 +559,7 @@ export default function PictureRevealMode() {
           <div className={styles.gameHeader}>
             <div className={styles.gameTitle}>Picture Reveal</div>
             <div className={styles.headerDivider} />
-            <div className={styles.roundBadge}>Round {currentRound} / {TOTAL_ROUNDS}</div>
+            <div className={styles.roundBadge}>Round {currentRound} / {totalRounds}</div>
             {activeTeam && (
               <>
                 <div className={styles.headerDivider} />
@@ -613,7 +659,7 @@ export default function PictureRevealMode() {
                         +{openGuessWon.points} pts
                       </div>
                       <div className={styles.roundEndBtns}>
-                        {currentRound < TOTAL_ROUNDS ? (
+                        {currentRound < totalRounds ? (
                           <button className={styles.btnNextRound} onClick={startNextRound}>
                             Next Round →
                           </button>
@@ -639,7 +685,7 @@ export default function PictureRevealMode() {
                   <div className={styles.roundEndOverlay}>
                     <div className={styles.roundEndCard}>
                       <div className={styles.roundEndLabel}>
-                        {currentRound >= TOTAL_ROUNDS
+                        {currentRound >= totalRounds
                           ? "Game Complete!"
                           : `Round ${currentRound} Complete!`}
                       </div>
@@ -647,7 +693,7 @@ export default function PictureRevealMode() {
                         {roundEndAnswer.toUpperCase()}
                       </div>
                       <div className={styles.roundEndBtns}>
-                        {currentRound < TOTAL_ROUNDS ? (
+                        {currentRound < totalRounds ? (
                           <button className={styles.btnNextRound} onClick={startNextRound}>
                             Next Round →
                           </button>
@@ -679,10 +725,21 @@ export default function PictureRevealMode() {
       {activeQuestion && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
-            {/* Badge */}
-            <div className={styles.qBadge}>
-              Tile {activeQuestion.index + 1}
-              <span className={styles.qBadgePts}>&nbsp;· 100 pts</span>
+            {/* Badge + active team */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+              <div className={styles.qBadge}>
+                Tile {activeQuestion.index + 1}
+                <span className={styles.qBadgePts}>&nbsp;· 100 pts</span>
+              </div>
+              {activeTeam && (
+                <div style={{
+                  fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
+                  fontSize: 12, fontWeight: 700, letterSpacing: "0.12em",
+                  textTransform: "uppercase", color: activeTeamColor,
+                }}>
+                  {activeTeam.name}&apos;s Turn
+                </div>
+              )}
             </div>
 
             {/* Question */}
@@ -758,16 +815,23 @@ export default function PictureRevealMode() {
                   Reveal Answer
                 </button>
               )}
-              {/* Award active team when no buzzes (teacher-controlled mode) */}
-              {buzzes.length === 0 && activeTeam && (
-                <button
-                  className={`${styles.awardBtn} ${styles.awardBtnFull}`}
-                  style={{ background: activeTeamColor }}
-                  onClick={() => awardTileCorrect(activeTeam.id)}
-                >
-                  Award {activeTeam.name} · +100 pts
-                </button>
-              )}
+              {/* Correct button — always visible once answer revealed */}
+              {showAnswer && (() => {
+                const winner = buzzes.length > 0
+                  ? buzzes[0]
+                  : activeTeam
+                  ? { teamId: activeTeam.id, teamName: activeTeam.name }
+                  : null;
+                return (
+                  <button
+                    className={`${styles.awardBtn} ${styles.awardBtnFull}`}
+                    style={{ background: "#00e87a", color: "#07090f", fontSize: 14 }}
+                    onClick={() => winner ? awardTileCorrect(winner.teamId) : handleWrongTile()}
+                  >
+                    ✓ Correct{winner ? ` — ${winner.teamName || winner.teamId}` : ""} · +100 pts
+                  </button>
+                );
+              })()}
               <button className={styles.btnSkip} onClick={handleWrongTile}>
                 Wrong / Next Team
               </button>
