@@ -36,10 +36,11 @@ export default function PictureRevealMode() {
   const [totalRounds, setTotalRounds] = useState(3);
   const [level, setLevel] = useState("Mixed Level");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [usedAnswers, setUsedAnswers] = useState<string[]>([]);
   const [gameData, setGameData] = useState<{
     imagePrompt: string;
     imageAnswer: string;
-    questions: { q: string; a: string }[];
+    questions: { q: string; a: string; options?: Record<string, string>; correctLetter?: string }[];
   } | null>(null);
   const [reviewMode, setReviewMode] = useState(false);
 
@@ -51,6 +52,7 @@ export default function PictureRevealMode() {
   // ── Question modal ────────────────────────────────
   const [activeQuestion, setActiveQuestion] = useState<{
     q: string; a: string; index: number;
+    options?: Record<string, string>; correctLetter?: string;
   } | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
   const [timeLeft, setTimeLeft] = useState(QUESTION_TIME);
@@ -160,7 +162,7 @@ export default function PictureRevealMode() {
 
   // ── Generate ──────────────────────────────────────
 
-  const generatePuzzle = async (t: string) => {
+  const generatePuzzle = async (t: string, exclude: string[] = []) => {
     setIsGenerating(true);
     setImageUrl("");
     setImageLoading(false);
@@ -181,11 +183,22 @@ export default function PictureRevealMode() {
           provider: llmProvider,
           topic: t,
           level,
+          usedAnswers: exclude,
         }),
       });
       const data = await res.json();
       if (res.ok && data.questions) {
-        setGameData(data);
+        // Enrich questions with shuffled A/B/C/D options
+        const letters = ["A", "B", "C", "D"];
+        const enriched = data.questions.map((q: any) => {
+          if (!q.wrongOptions?.length) return q;
+          const all = [q.a, ...q.wrongOptions].sort(() => Math.random() - 0.5);
+          const options: Record<string, string> = {};
+          all.forEach((opt: string, i: number) => { options[letters[i]] = opt; });
+          const correctLetter = Object.entries(options).find(([, v]) => v === q.a)?.[0] || "A";
+          return { q: q.q, a: q.a, options, correctLetter };
+        });
+        setGameData({ ...data, questions: enriched });
         const url = buildImageUrl(data.imageAnswer, data.imagePrompt);
         setImageUrl(url);
         setImageLoading(true);
@@ -220,7 +233,8 @@ export default function PictureRevealMode() {
       setPressingTile(null);
       setShowAnswer(false);
       setActiveAwardAmount(100);
-      setActiveQuestion({ ...gameData.questions[index], index });
+      const q = gameData.questions[index];
+      setActiveQuestion({ q: q.q, a: q.a, index, options: q.options, correctLetter: q.correctLetter });
       // Signal phones: new question active, reset buzz state
       sendRoomAction("set_question", { text: gameData.questions[index].q, tileIndex: index });
       sendRoomAction("clear_buzzes", {});
@@ -263,10 +277,12 @@ export default function PictureRevealMode() {
       resetGame();
       return;
     }
+    const newUsed = [...usedAnswers, ...(gameData?.imageAnswer ? [gameData.imageAnswer] : [])];
+    setUsedAnswers(newUsed);
     setCurrentRound(prev => prev + 1);
     setOpenGuessWon(null);
     sendRoomAction("clear_open_guesses", {});
-    await generatePuzzle(topic);
+    await generatePuzzle(topic, newUsed);
   };
 
   const resetGame = () => {
@@ -279,6 +295,7 @@ export default function PictureRevealMode() {
     setCurrentRound(1);
     setCurrentTeamIdx(0);
     setActiveAwardAmount(0);
+    setUsedAnswers([]);
     sendRoomAction("clear_open_guesses", {});
   };
 
@@ -744,6 +761,48 @@ export default function PictureRevealMode() {
 
             {/* Question */}
             <div className={styles.questionText}>{activeQuestion.q}</div>
+
+            {/* Multiple choice options (shown before reveal) */}
+            {activeQuestion.options && (
+              <div style={{
+                display: "grid", gridTemplateColumns: "1fr 1fr",
+                gap: 10, width: "100%",
+              }}>
+                {(["A", "B", "C", "D"] as const).map(letter => {
+                  const isCorrect = showAnswer && letter === activeQuestion.correctLetter;
+                  const isWrong = showAnswer && letter !== activeQuestion.correctLetter;
+                  return (
+                    <div key={letter} style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "10px 14px", borderRadius: 10,
+                      background: isCorrect
+                        ? "rgba(0,232,122,0.12)"
+                        : isWrong ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.04)",
+                      border: isCorrect
+                        ? "1.5px solid #00e87a"
+                        : isWrong ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(255,255,255,0.1)",
+                      transition: "all 0.3s",
+                    }}>
+                      <span style={{
+                        fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
+                        fontSize: 13, fontWeight: 800,
+                        color: isCorrect ? "#00e87a" : "rgba(255,255,255,0.35)",
+                        minWidth: 18,
+                      }}>
+                        {letter}
+                      </span>
+                      <span style={{
+                        fontSize: 14, fontWeight: 600,
+                        color: isCorrect ? "#00e87a" : isWrong ? "rgba(220,232,245,0.4)" : "#dce8f5",
+                        transition: "color 0.3s",
+                      }}>
+                        {activeQuestion.options![letter]}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Timer */}
             <div className={styles.timerRow}>
