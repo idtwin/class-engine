@@ -547,7 +547,7 @@ export default function ChainReaction() {
             <div className={styles.headerDivider} />
             <div className={styles.modePill}>{easyMode ? "EASY" : "HARD"}</div>
             <div className={styles.headerSpacer} />
-            <MultiplayerHost gameMode="chainreaction" />
+            <MultiplayerHost gameMode="chainreaction" forceShow />
             <button className={styles.btnNewGame} onClick={reset}>← New Game</button>
           </div>
 

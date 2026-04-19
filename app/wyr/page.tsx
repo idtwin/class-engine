@@ -165,6 +165,7 @@ export default function WouldYouRatherMode() {
                 {roomStudents.filter(s => s.lastAnswer).length} / {roomStudents.length} voted
               </div>
             )}
+            <MultiplayerHost gameMode="wyr" forceShow />
             <button
               style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 8, padding: '6px 14px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer' }}
               onClick={() => setPrompts([])}

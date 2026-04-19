@@ -369,7 +369,7 @@ export default function JeopardyPage() {
               </div>
               <button className={styles.headerBtn} onClick={() => setShowSetupModal(true)}>New Board</button>
               <button className={styles.headerBtn} onClick={() => setReviewMode(true)}>Edit Board</button>
-              <MultiplayerHost gameMode="jeopardy" />
+              <MultiplayerHost gameMode="jeopardy" forceShow />
             </div>
           </div>
           <div className={styles.gameContent} style={{ padding: '20px 32px', alignItems: 'stretch', justifyContent: 'flex-start', overflow: 'auto' }}>
