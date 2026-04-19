@@ -109,6 +109,16 @@ export default function MultiplayerHost({ gameMode, forceShow = false }: { gameM
     return () => clearInterval(intervalId);
   }, [activeRoomCode]);
 
+  // Auto-sync game mode to phones when navigating to this game page
+  useEffect(() => {
+    if (!activeRoomCode) return;
+    fetch("/api/room/action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: activeRoomCode, action: "set_game_mode", payload: { gameMode } })
+    }).catch(() => {});
+  }, [activeRoomCode, gameMode]);
+
   if (!isOpen) {
     return (
       <button 

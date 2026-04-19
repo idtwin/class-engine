@@ -253,6 +253,7 @@ export default function StoryChainMode() {
             >
               ← New Story
             </button>
+            <MultiplayerHost gameMode="story" forceShow />
           </div>
 
           {/* Body */}

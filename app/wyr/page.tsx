@@ -76,6 +76,17 @@ export default function WouldYouRatherMode() {
       if (res.ok && data.prompts) {
         setPrompts(data.prompts);
         setCurrentIndex(0);
+        if (activeRoomCode && data.prompts.length > 0) {
+          fetch("/api/room/action", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: activeRoomCode, action: "clear_answers", payload: {} })
+          }).then(() => {
+            fetch("/api/room/action", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ code: activeRoomCode, action: "set_question", payload: { question: data.prompts[0] } })
+            });
+          }).catch(() => {});
+        }
       } else {
         alert("Error: " + (data.error || "Unknown Error"));
       }
@@ -154,6 +165,7 @@ export default function WouldYouRatherMode() {
                 {roomStudents.filter(s => s.lastAnswer).length} / {roomStudents.length} voted
               </div>
             )}
+            <MultiplayerHost gameMode="wyr" forceShow />
             <button
               style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 8, padding: '6px 14px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer' }}
               onClick={() => setPrompts([])}

@@ -401,13 +401,15 @@
 
 .hsTargetWord {
   font-family: 'Syne', sans-serif;
-  font-size: clamp(2.5rem, 11vw, 13rem);
+  font-size: clamp(2.5rem, 11vw, 13rem); /* overridden by inline style per word length */
   font-weight: 900; line-height: 0.9;
   letter-spacing: -0.02em; text-transform: uppercase;
   color: #ff7d3b;
   text-shadow: 0 0 60px rgba(255,125,59,0.35);
   text-align: center;
-  white-space: nowrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
 .hsForbiddenRow {

@@ -198,6 +198,7 @@ export default function HotSeatMode() {
                 {timeLeft}
               </div>
             </div>
+            <MultiplayerHost gameMode="hotseat" forceShow />
             <button
               style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 8, padding: '6px 14px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer' }}
               onClick={() => setWords([])}
@@ -210,7 +211,12 @@ export default function HotSeatMode() {
             {/* ── PLAYING ── */}
             {currentIndex < words.length && timeLeft > 0 && (
               <div key={currentIndex} className={styles.hsCard}>
-                <div className={styles.hsTargetWord}>{currentWord?.word}</div>
+                <div
+                  className={styles.hsTargetWord}
+                  style={{ fontSize: `clamp(2rem, ${Math.min(11, Math.floor(80 / Math.max(currentWord?.word?.length ?? 1, 1)))}vw, 13rem)` }}
+                >
+                  {currentWord?.word}
+                </div>
                 <div className={styles.hsForbiddenRow}>
                   {currentWord?.forbidden.map((f: string, i: number) => (
                     <span key={i} className={styles.hsForbiddenChip}>❌ {f}</span>

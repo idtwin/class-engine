@@ -626,38 +626,102 @@
 
 .wyrOption {
   flex: 1;
-  min-height: 100px;
+  min-height: 120px;
   border-radius: 20px;
   border: 2px solid transparent;
   font-family: var(--font-phone), 'Nunito', sans-serif;
-  font-size: 16px;
-  font-weight: 800;
   color: #fff;
   cursor: pointer;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 20px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 18px 20px;
   line-height: 1.35;
   transition: all 0.15s ease;
+  position: relative;
+  overflow: hidden;
+  text-align: left;
 }
 
 .wyrOption:active:not(:disabled) { transform: scale(0.98); }
 .wyrOption:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.wyrOptionA { background: rgba(255, 77, 77, 0.85); }
-.wyrOptionA:hover:not(:disabled) { background: rgba(255, 77, 77, 1); }
-.wyrOptionB { background: rgba(77, 159, 255, 0.85); }
-.wyrOptionB:hover:not(:disabled) { background: rgba(77, 159, 255, 1); }
+.wyrOptionA {
+  background: linear-gradient(150deg, rgba(255,77,143,0.18) 0%, transparent 70%);
+  border-color: rgba(255,77,143,0.45);
+}
+.wyrOptionA:hover:not(:disabled) {
+  background: linear-gradient(150deg, rgba(255,77,143,0.28) 0%, transparent 70%);
+}
+
+.wyrOptionB {
+  background: linear-gradient(210deg, rgba(0,200,240,0.12) 0%, transparent 70%);
+  border-color: rgba(0,200,240,0.38);
+}
+.wyrOptionB:hover:not(:disabled) {
+  background: linear-gradient(210deg, rgba(0,200,240,0.22) 0%, transparent 70%);
+}
 
 .wyrVsLabel {
-  text-align: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
   font-weight: 900;
-  font-size: 18px;
-  color: rgba(255, 255, 255, 0.2);
-  letter-spacing: 0.1em;
+  color: #ff4d8f;
+  padding: 0 8px;
   flex-shrink: 0;
+}
+
+.wyrGhostLetter {
+  position: absolute;
+  top: 6px;
+  right: 14px;
+  font-family: 'Syne', sans-serif;
+  font-size: 70px;
+  font-weight: 900;
+  line-height: 1;
+  opacity: 0.08;
+  pointer-events: none;
+  user-select: none;
+}
+.wyrOptionA .wyrGhostLetter { color: #ff4d8f; }
+.wyrOptionB .wyrGhostLetter { color: #00c8f0; }
+
+.wyrOptionTag {
+  font-family: var(--font-mono, 'JetBrains Mono'), monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+}
+.wyrOptionA .wyrOptionTag { background: #ff4d8f; color: #000; }
+.wyrOptionB .wyrOptionTag { background: #00c8f0; color: #000; }
+
+.wyrOptionText {
+  font-size: 15px;
+  font-weight: 800;
+  color: #dce8f5;
+  position: relative;
+  z-index: 1;
+}
+
+.wyrVsRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.wyrVsDivider {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255,77,143,0.4), transparent);
 }
 
 /* WYR vote bar */
@@ -679,13 +743,13 @@
 .wyrBarPctA {
   font-size: 20px;
   font-weight: 900;
-  color: #ff4d4d;
+  color: #ff4d8f;
 }
 
 .wyrBarPctB {
   font-size: 20px;
   font-weight: 900;
-  color: #4d9fff;
+  color: #00c8f0;
 }
 
 .wyrBarCount {
@@ -705,12 +769,12 @@
 }
 
 .wyrBarFillA {
-  background: #ff4d4d;
+  background: #ff4d8f;
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .wyrBarFillB {
-  background: #4d9fff;
+  background: #00c8f0;
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

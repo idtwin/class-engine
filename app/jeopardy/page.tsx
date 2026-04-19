@@ -369,7 +369,7 @@ export default function JeopardyPage() {
               </div>
               <button className={styles.headerBtn} onClick={() => setShowSetupModal(true)}>New Board</button>
               <button className={styles.headerBtn} onClick={() => setReviewMode(true)}>Edit Board</button>
-              <MultiplayerHost gameMode="jeopardy" />
+              <MultiplayerHost gameMode="jeopardy" forceShow />
             </div>
           </div>
           <div className={styles.gameContent} style={{ padding: '20px 32px', alignItems: 'stretch', justifyContent: 'flex-start', overflow: 'auto' }}>
@@ -463,6 +463,23 @@ export default function JeopardyPage() {
               {/* Buzz panel */}
               {activeRoomCode && sortedBuzzes.length > 0 && (
                 <div className={styles.buzzPanel}>
+                  {(() => {
+                    const first = sortedBuzzes[0];
+                    const firstTeam = currentTeams.find(t => t.name === first.teamName);
+                    const teamIdx = firstTeam ? currentTeams.indexOf(firstTeam) : -1;
+                    const firstColor = teamIdx >= 0 ? TEAM_COLORS[teamIdx] : '#00c8f0';
+                    const firstStudent = roomStudents.find((s: any) => s.id === first.studentId);
+                    const typedAnswer = firstStudent?.lastAnswer;
+                    return (
+                      <div className={styles.answeringBanner} style={{ borderColor: firstColor, color: firstColor }}>
+                        <span className={styles.answeringLabel}>NOW ANSWERING</span>
+                        <span className={styles.answeringTeam}>{firstTeam?.name || first.name}</span>
+                        {typedAnswer && (
+                          <span className={styles.answeringAnswer}>"{typedAnswer}"</span>
+                        )}
+                      </div>
+                    );
+                  })()}
                   <div className={styles.buzzHeader}>Buzz order</div>
                   {sortedBuzzes.map((b: any, i: number) => {
                     const team = currentTeams.find(t => t.name === b.name || t.students.some((s: any) => s.name === b.name));
