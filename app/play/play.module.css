@@ -646,10 +646,10 @@
 .wyrOption:active:not(:disabled) { transform: scale(0.98); }
 .wyrOption:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.wyrOptionA { background: rgba(255, 77, 77, 0.85); }
-.wyrOptionA:hover:not(:disabled) { background: rgba(255, 77, 77, 1); }
-.wyrOptionB { background: rgba(77, 159, 255, 0.85); }
-.wyrOptionB:hover:not(:disabled) { background: rgba(77, 159, 255, 1); }
+.wyrOptionA { background: rgba(255, 77, 143, 0.85); }
+.wyrOptionA:hover:not(:disabled) { background: rgba(255, 77, 143, 1); }
+.wyrOptionB { background: rgba(0, 200, 240, 0.85); }
+.wyrOptionB:hover:not(:disabled) { background: rgba(0, 200, 240, 1); }
 
 .wyrVsLabel {
   text-align: center;
@@ -679,13 +679,13 @@
 .wyrBarPctA {
   font-size: 20px;
   font-weight: 900;
-  color: #ff4d4d;
+  color: #ff4d8f;
 }
 
 .wyrBarPctB {
   font-size: 20px;
   font-weight: 900;
-  color: #4d9fff;
+  color: #00c8f0;
 }
 
 .wyrBarCount {
@@ -705,12 +705,12 @@
 }
 
 .wyrBarFillA {
-  background: #ff4d4d;
+  background: #ff4d8f;
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .wyrBarFillB {
-  background: #4d9fff;
+  background: #00c8f0;
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
