@@ -453,6 +453,8 @@ export default function OddOneOut() {
                 </div>
               </div>
             )}
+            <div style={{ flex: 1 }} />
+            <MultiplayerHost gameMode="oddoneout" forceShow />
           </div>
 
           {/* Progress bar */}

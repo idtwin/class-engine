@@ -431,6 +431,8 @@ export default function FixIt() {
               </div>
             </div>
           )}
+          <div style={{ flex: 1 }} />
+          <MultiplayerHost gameMode="fixit" forceShow />
         </div>
 
         {/* Row 2: Progress bar */}

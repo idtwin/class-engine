@@ -529,6 +529,7 @@ export default function RapidFire() {
               <div className={styles.rfQCounter}>
                 Q <span className={styles.rfQCounterNum}>{cursor + 1}</span> / {questions.length}
               </div>
+              <MultiplayerHost gameMode="rapidfire" forceShow />
               <button
                 style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 6, padding: '5px 12px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 10, cursor: 'pointer', letterSpacing: '0.08em' }}
                 onClick={() => setGameState("SETUP")}
