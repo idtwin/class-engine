@@ -76,6 +76,17 @@ export default function WouldYouRatherMode() {
       if (res.ok && data.prompts) {
         setPrompts(data.prompts);
         setCurrentIndex(0);
+        if (activeRoomCode && data.prompts.length > 0) {
+          fetch("/api/room/action", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: activeRoomCode, action: "clear_answers", payload: {} })
+          }).then(() => {
+            fetch("/api/room/action", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ code: activeRoomCode, action: "set_question", payload: { question: data.prompts[0] } })
+            });
+          }).catch(() => {});
+        }
       } else {
         alert("Error: " + (data.error || "Unknown Error"));
       }
