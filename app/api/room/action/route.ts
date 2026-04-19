@@ -117,27 +117,44 @@ export async function POST(req: Request) {
       room.chainSubmit = null;
     }
 
-    // Picture Reveal: teacher offers image guess to active team
-    if (action === "trigger_image_guess") {
-      room.imageGuessActive = true;
-      room.imageGuessTeamId = payload.teamId;
-      room.imageGuessTeamName = payload.teamName;
-      room.imageGuess = null;
+    // Picture Reveal: projector sets answer when game starts
+    if (action === "set_reveal_answer") {
+      room.revealImageAnswer = payload.answer;
     }
 
-    // Phone submits image guess
-    if (action === "submit_image_guess") {
-      if (room.imageGuessActive) {
-        room.imageGuess = { guess: payload.guess, name: payload.name, teamId: payload.teamId };
+    // Projector syncs tile count on each reveal
+    if (action === "set_tiles_revealed") {
+      room.tilesRevealed = payload.count;
+    }
+
+    // Phone submits open guess — server auto-checks
+    if (action === "submit_open_guess") {
+      const guess = (payload.guess || "").toLowerCase().trim();
+      const answer = (room.revealImageAnswer || "").toLowerCase().trim();
+      if (!room.openGuesses) room.openGuesses = [];
+      room.openGuesses = [
+        ...room.openGuesses.slice(-9),
+        { teamId: payload.teamId, teamName: payload.teamName, guess: payload.guess, ts: Date.now() },
+      ];
+      if (guess && answer && guess === answer && !room.openGuessWon) {
+        const count = room.tilesRevealed || 0;
+        const points = count <= 4 ? 500 : count <= 10 ? 400 : 300;
+        room.openGuessWon = {
+          teamId: payload.teamId,
+          teamName: payload.teamName,
+          guess: payload.guess,
+          tilesRevealed: count,
+          points,
+        };
       }
     }
 
-    // Projector clears after judging guess
-    if (action === "clear_image_guess") {
-      room.imageGuessActive = false;
-      room.imageGuessTeamId = null;
-      room.imageGuessTeamName = null;
-      room.imageGuess = null;
+    // Projector clears between rounds
+    if (action === "clear_open_guesses") {
+      room.openGuessWon = null;
+      room.openGuesses = [];
+      room.revealImageAnswer = null;
+      room.tilesRevealed = 0;
     }
 
     await redis.set(roomCode, room, { ex: 14400 });

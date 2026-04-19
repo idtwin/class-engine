@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./reveal.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
 import { ImageOff, Loader, Sparkles } from "lucide-react";
@@ -12,7 +13,6 @@ const TEAM_COLORS = [
   "#ff4d8f", "#b06eff", "#ff7d3b", "#e2e8f0",
 ];
 
-const TOTAL_ROUNDS = 3;
 const QUESTION_TIME = 30;
 
 function buildImageUrl(answer: string, prompt: string) {
@@ -22,9 +22,8 @@ function buildImageUrl(answer: string, prompt: string) {
   return `https://image.pollinations.ai/prompt/${encodeURIComponent(combined)}?width=768&height=768&nologo=true&seed=${seed}`;
 }
 
-type GuessMode = "offering" | "waiting" | "teacher_only" | null;
-
 export default function PictureRevealMode() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const {
     getActiveApiKey, mistralModel, llmProvider,
@@ -34,6 +33,8 @@ export default function PictureRevealMode() {
 
   // ── Setup / generate ──────────────────────────────
   const [topic, setTopic] = useState("");
+  const [totalRounds, setTotalRounds] = useState(3);
+  const [level, setLevel] = useState("Mixed Level");
   const [isGenerating, setIsGenerating] = useState(false);
   const [gameData, setGameData] = useState<{
     imagePrompt: string;
@@ -59,10 +60,9 @@ export default function PictureRevealMode() {
   const [currentTeamIdx, setCurrentTeamIdx] = useState(0);
   const [currentRound, setCurrentRound] = useState(1);
 
-  // ── Image guess ───────────────────────────────────
-  const [imageGuessMode, setImageGuessMode] = useState<GuessMode>(null);
-  const [submittedGuess, setSubmittedGuess] = useState<{
-    guess: string; name: string; teamId: string;
+  // ── Open guess win ────────────────────────────────
+  const [openGuessWon, setOpenGuessWon] = useState<{
+    teamId: string; teamName: string; guess: string; tilesRevealed: number; points: number;
   } | null>(null);
 
   // ── Round end ─────────────────────────────────────
@@ -95,8 +95,8 @@ export default function PictureRevealMode() {
     }
   }, [debouncedAnswer, gameData?.imagePrompt]);
 
-  // Poll room when modal open or waiting for guess
-  const shouldPoll = activeQuestion !== null || imageGuessMode === "waiting";
+  // Poll room during active game (buzz panel + openGuessWon detection)
+  const shouldPoll = gameData !== null && !reviewMode && !isGenerating;
   useEffect(() => {
     if (!activeRoomCode || !shouldPoll) return;
     const poll = async () => {
@@ -110,12 +110,16 @@ export default function PictureRevealMode() {
     return () => clearInterval(id);
   }, [activeRoomCode, shouldPoll]);
 
-  // Sync submitted guess from room polling
+  // Detect openGuessWon from polling — award points + reveal board
   useEffect(() => {
-    if (imageGuessMode === "waiting" && roomData?.imageGuess) {
-      setSubmittedGuess(roomData.imageGuess);
+    if (roomData?.openGuessWon && !openGuessWon) {
+      const won = roomData.openGuessWon;
+      setOpenGuessWon(won);
+      updateTeamScore(won.teamId, won.points);
+      setRevealedTiles(Array(16).fill(true));
+      setBoardRevealed(true);
     }
-  }, [roomData?.imageGuess, imageGuessMode]);
+  }, [roomData?.openGuessWon]);
 
   // Timer for question modal
   useEffect(() => {
@@ -164,8 +168,7 @@ export default function PictureRevealMode() {
     setRevealedTiles(Array(16).fill(false));
     setBoardRevealed(false);
     setRoundEndAnswer(null);
-    setImageGuessMode(null);
-    setSubmittedGuess(null);
+    setOpenGuessWon(null);
     setActiveQuestion(null);
 
     try {
@@ -177,7 +180,7 @@ export default function PictureRevealMode() {
           mistralModel,
           provider: llmProvider,
           topic: t,
-          level: "Mixed Level",
+          level,
         }),
       });
       const data = await res.json();
@@ -210,7 +213,7 @@ export default function PictureRevealMode() {
     if (
       !gameData || revealedTiles[index] ||
       pressingTile !== null || activeQuestion !== null ||
-      roundEndAnswer !== null || imageGuessMode !== null
+      roundEndAnswer !== null || openGuessWon !== null
     ) return;
     setPressingTile(index);
     setTimeout(() => {
@@ -234,7 +237,8 @@ export default function PictureRevealMode() {
     setActiveQuestion(null);
     setActiveAwardAmount(0);
     sendRoomAction("set_question", {});  // clear question on phones → lobby
-    setImageGuessMode("offering");
+    sendRoomAction("set_tiles_revealed", { count: newTiles.filter(Boolean).length });
+    advanceTurn();
   };
 
   const handleWrongTile = () => {
@@ -244,63 +248,24 @@ export default function PictureRevealMode() {
     advanceTurn();
   };
 
-  // ── Image guess ───────────────────────────────────
-
-  const offerImageGuess = async () => {
-    const team = currentTeams[currentTeamIdx];
-    setSubmittedGuess(null);
-    setImageGuessMode("waiting");
-    if (team && activeRoomCode) {
-      await sendRoomAction("trigger_image_guess", {
-        teamId: team.id,
-        teamName: team.name,
-      });
-    }
-  };
-
-  const judgeTeacherOnly = () => {
-    setImageGuessMode("teacher_only");
-  };
-
-  const skipImageGuess = async () => {
-    setImageGuessMode(null);
-    advanceTurn();
-    await sendRoomAction("clear_image_guess", {});
-  };
-
-  const judgeGuess = async (correct: boolean) => {
-    await sendRoomAction("clear_image_guess", {});
-    if (correct) {
-      const team = currentTeams[currentTeamIdx];
-      if (team) updateTeamScore(team.id, 300);
-      setRevealedTiles(Array(16).fill(true));
-      setBoardRevealed(true);
-      setRoundEndAnswer(gameData?.imageAnswer || "");
-      setImageGuessMode(null);
-    } else {
-      setImageGuessMode(null);
-      advanceTurn();
-    }
-  };
-
   // ── Full reveal (header button) ───────────────────
 
   const handleFullReveal = () => {
     setRevealedTiles(Array(16).fill(true));
     setBoardRevealed(true);
     setRoundEndAnswer(gameData?.imageAnswer || "");
-    setImageGuessMode(null);
   };
 
   // ── Round / Game management ───────────────────────
 
   const startNextRound = async () => {
-    if (currentRound >= TOTAL_ROUNDS) {
-      // Game over — just reset
+    if (currentRound >= totalRounds) {
       resetGame();
       return;
     }
     setCurrentRound(prev => prev + 1);
+    setOpenGuessWon(null);
+    sendRoomAction("clear_open_guesses", {});
     await generatePuzzle(topic);
   };
 
@@ -309,12 +274,12 @@ export default function PictureRevealMode() {
     setRevealedTiles(Array(16).fill(false));
     setBoardRevealed(false);
     setActiveQuestion(null);
-    setImageGuessMode(null);
-    setSubmittedGuess(null);
+    setOpenGuessWon(null);
     setRoundEndAnswer(null);
     setCurrentRound(1);
     setCurrentTeamIdx(0);
     setActiveAwardAmount(0);
+    sendRoomAction("clear_open_guesses", {});
   };
 
   // ── Derived ───────────────────────────────────────
@@ -332,17 +297,29 @@ export default function PictureRevealMode() {
         <div className={styles.setupOverlay}>
           <div className={styles.setupModal}>
             <div className={styles.setupTitleRow}>
+              <button
+                onClick={() => router.push("/games")}
+                style={{
+                  background: "transparent", border: "1px solid var(--border2,#243347)",
+                  borderRadius: 8, padding: "6px 12px", cursor: "pointer",
+                  fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
+                  fontSize: 11, fontWeight: 700, color: "var(--muted,#4a637d)",
+                  letterSpacing: "0.06em", flexShrink: 0,
+                }}
+              >
+                ← Back
+              </button>
               <div className={styles.setupTitleIcon}>🖼️</div>
               <div>
                 <div className={styles.setupTitleText}>Picture Reveal</div>
                 <div className={styles.setupTitleSub}>
                   {currentRound > 1
-                    ? `Round ${currentRound} of ${TOTAL_ROUNDS}`
-                    : `Image Tile Reveal · ${TOTAL_ROUNDS} Rounds`}
+                    ? `Round ${currentRound} of ${totalRounds}`
+                    : "Image Tile Reveal"}
                 </div>
               </div>
               <div style={{ marginLeft: "auto" }}>
-                <MultiplayerHost gameMode="reveal" />
+                <MultiplayerHost gameMode="reveal" forceShow />
               </div>
             </div>
             {isGenerating ? (
@@ -367,6 +344,37 @@ export default function PictureRevealMode() {
                     autoFocus
                   />
                 </div>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <div className={styles.setupField} style={{ flex: 1 }}>
+                    <div className={styles.setupLabel}>Level</div>
+                    <select
+                      className={styles.setupInput}
+                      value={level}
+                      onChange={e => setLevel(e.target.value)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <option value="Low (A1)">Low (A1)</option>
+                      <option value="Low-Mid (A1-A2)">Low-Mid (A1-A2)</option>
+                      <option value="Mid (A2)">Mid (A2)</option>
+                      <option value="Mid-High (A2-B1)">Mid-High (A2-B1)</option>
+                      <option value="High (B1)">High (B1)</option>
+                      <option value="Mixed Level">Mixed Level</option>
+                    </select>
+                  </div>
+                  <div className={styles.setupField} style={{ flex: 1 }}>
+                    <div className={styles.setupLabel}>Rounds</div>
+                    <select
+                      className={styles.setupInput}
+                      value={totalRounds}
+                      onChange={e => setTotalRounds(Number(e.target.value))}
+                      style={{ cursor: "pointer" }}
+                    >
+                      {[1, 2, 3, 4, 5].map(n => (
+                        <option key={n} value={n}>{n} Round{n !== 1 ? "s" : ""}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
                 <button
                   className={styles.btnGenerate}
                   onClick={handleGenerate}
@@ -385,10 +393,14 @@ export default function PictureRevealMode() {
         <div className={styles.reviewContainer}>
           <div className={styles.reviewHeader}>
             <h2 className={styles.reviewTitle}>
-              REVIEW PUZZLE — ROUND {currentRound} OF {TOTAL_ROUNDS}
+              REVIEW PUZZLE — ROUND {currentRound} OF {totalRounds}
             </h2>
             <button
-              onClick={() => setReviewMode(false)}
+              onClick={async () => {
+                setReviewMode(false);
+                await sendRoomAction("set_reveal_answer", { answer: gameData.imageAnswer });
+                await sendRoomAction("set_tiles_revealed", { count: 0 });
+              }}
               className={styles.btnGenerate}
               style={{ padding: "10px 20px", fontSize: 12 }}
             >
@@ -547,7 +559,7 @@ export default function PictureRevealMode() {
           <div className={styles.gameHeader}>
             <div className={styles.gameTitle}>Picture Reveal</div>
             <div className={styles.headerDivider} />
-            <div className={styles.roundBadge}>Round {currentRound} / {TOTAL_ROUNDS}</div>
+            <div className={styles.roundBadge}>Round {currentRound} / {totalRounds}</div>
             {activeTeam && (
               <>
                 <div className={styles.headerDivider} />
@@ -630,106 +642,50 @@ export default function PictureRevealMode() {
                   ))}
                 </div>
 
-                {/* Image Guess Prompt */}
-                {imageGuessMode === "offering" && (
-                  <div className={styles.guessPromptOverlay}>
-                    <div className={styles.guessPromptCard}>
-                      <div className={styles.guessPromptLabel}>
-                        Image Guess Opportunity
+                {/* Open Guess Win Overlay */}
+                {openGuessWon && (
+                  <div className={styles.roundEndOverlay}>
+                    <div className={styles.roundEndCard}>
+                      <div className={styles.roundEndLabel}>
+                        🎉 {openGuessWon.teamName} cracked it!
                       </div>
-                      {activeTeam && (
-                        <div
-                          className={styles.guessPromptTeam}
-                          style={{ color: activeTeamColor }}
-                        >
-                          {activeTeam.name}
-                        </div>
-                      )}
-                      <div className={styles.guessPromptSub}>Worth 300 pts if correct</div>
-                      <div className={styles.guessPromptActions}>
-                        <button className={styles.btnOfferGuess} onClick={offerImageGuess}>
-                          Offer via Phone
-                        </button>
-                        <button className={styles.btnTeacherOnly} onClick={judgeTeacherOnly}>
-                          Judge Verbally
-                        </button>
-                        <button className={styles.btnSkipGuess} onClick={skipImageGuess}>
-                          Skip
-                        </button>
+                      <div className={styles.roundEndAnswer}>
+                        {openGuessWon.guess.toUpperCase()}
                       </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Waiting for phone guess */}
-                {imageGuessMode === "waiting" && (
-                  <div className={styles.guessPromptOverlay}>
-                    <div className={styles.imageGuessWaitCard}>
-                      <div className={styles.waitingLabel}>
-                        {submittedGuess
-                          ? "Guess Received"
-                          : activeTeam
-                          ? `Waiting for ${activeTeam.name}...`
-                          : "Waiting for guess..."}
-                      </div>
-                      {submittedGuess ? (
-                        <div className={styles.submittedGuessText}>
-                          &ldquo;{submittedGuess.guess}&rdquo;
-                        </div>
-                      ) : (
-                        <div className={styles.spinner} style={{ width: 24, height: 24 }} />
-                      )}
-                      <div className={styles.judgeRow}>
-                        <button className={styles.btnCorrect} onClick={() => judgeGuess(true)}>
-                          Correct — 300 pts
-                        </button>
-                        <button className={styles.btnWrong} onClick={() => judgeGuess(false)}>
-                          Wrong
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Teacher-only verbal judge */}
-                {imageGuessMode === "teacher_only" && (
-                  <div className={styles.guessPromptOverlay}>
-                    <div className={styles.imageGuessWaitCard}>
-                      <div className={styles.waitingLabel}>Judge Verbally</div>
-                      {activeTeam && (
-                        <div
-                          className={styles.submittedGuessText}
-                          style={{ color: activeTeamColor }}
-                        >
-                          {activeTeam.name} is guessing...
-                        </div>
-                      )}
                       <div style={{
-                        fontSize: 11,
-                        color: "var(--muted,#4a637d)",
                         fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
-                        letterSpacing: "0.06em",
+                        fontSize: 13, color: "#00e87a", fontWeight: 700, letterSpacing: "0.1em",
                       }}>
-                        Ask the team to say their answer aloud
+                        +{openGuessWon.points} pts
                       </div>
-                      <div className={styles.judgeRow}>
-                        <button className={styles.btnCorrect} onClick={() => judgeGuess(true)}>
-                          Correct — 300 pts
-                        </button>
-                        <button className={styles.btnWrong} onClick={() => judgeGuess(false)}>
-                          Wrong
+                      <div className={styles.roundEndBtns}>
+                        {currentRound < totalRounds ? (
+                          <button className={styles.btnNextRound} onClick={startNextRound}>
+                            Next Round →
+                          </button>
+                        ) : (
+                          <button
+                            className={styles.btnNextRound}
+                            style={{ background: "#00e87a" }}
+                            onClick={resetGame}
+                          >
+                            New Game
+                          </button>
+                        )}
+                        <button className={styles.btnEndGame} onClick={resetGame}>
+                          End Game
                         </button>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Round End Overlay */}
+                {/* Round End Overlay (manual full reveal) */}
                 {roundEndAnswer !== null && (
                   <div className={styles.roundEndOverlay}>
                     <div className={styles.roundEndCard}>
                       <div className={styles.roundEndLabel}>
-                        {currentRound >= TOTAL_ROUNDS
+                        {currentRound >= totalRounds
                           ? "Game Complete!"
                           : `Round ${currentRound} Complete!`}
                       </div>
@@ -737,7 +693,7 @@ export default function PictureRevealMode() {
                         {roundEndAnswer.toUpperCase()}
                       </div>
                       <div className={styles.roundEndBtns}>
-                        {currentRound < TOTAL_ROUNDS ? (
+                        {currentRound < totalRounds ? (
                           <button className={styles.btnNextRound} onClick={startNextRound}>
                             Next Round →
                           </button>
@@ -769,10 +725,21 @@ export default function PictureRevealMode() {
       {activeQuestion && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
-            {/* Badge */}
-            <div className={styles.qBadge}>
-              Tile {activeQuestion.index + 1}
-              <span className={styles.qBadgePts}>&nbsp;· 100 pts</span>
+            {/* Badge + active team */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+              <div className={styles.qBadge}>
+                Tile {activeQuestion.index + 1}
+                <span className={styles.qBadgePts}>&nbsp;· 100 pts</span>
+              </div>
+              {activeTeam && (
+                <div style={{
+                  fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
+                  fontSize: 12, fontWeight: 700, letterSpacing: "0.12em",
+                  textTransform: "uppercase", color: activeTeamColor,
+                }}>
+                  {activeTeam.name}&apos;s Turn
+                </div>
+              )}
             </div>
 
             {/* Question */}
@@ -848,16 +815,23 @@ export default function PictureRevealMode() {
                   Reveal Answer
                 </button>
               )}
-              {/* Award active team when no buzzes (teacher-controlled mode) */}
-              {buzzes.length === 0 && activeTeam && (
-                <button
-                  className={`${styles.awardBtn} ${styles.awardBtnFull}`}
-                  style={{ background: activeTeamColor }}
-                  onClick={() => awardTileCorrect(activeTeam.id)}
-                >
-                  Award {activeTeam.name} · +100 pts
-                </button>
-              )}
+              {/* Correct button — always visible once answer revealed */}
+              {showAnswer && (() => {
+                const winner = buzzes.length > 0
+                  ? buzzes[0]
+                  : activeTeam
+                  ? { teamId: activeTeam.id, teamName: activeTeam.name }
+                  : null;
+                return (
+                  <button
+                    className={`${styles.awardBtn} ${styles.awardBtnFull}`}
+                    style={{ background: "#00e87a", color: "#07090f", fontSize: 14 }}
+                    onClick={() => winner ? awardTileCorrect(winner.teamId) : handleWrongTile()}
+                  >
+                    ✓ Correct{winner ? ` — ${winner.teamName || winner.teamId}` : ""} · +100 pts
+                  </button>
+                );
+              })()}
               <button className={styles.btnSkip} onClick={handleWrongTile}>
                 Wrong / Next Team
               </button>
