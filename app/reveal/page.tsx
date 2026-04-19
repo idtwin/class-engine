@@ -35,6 +35,7 @@ export default function PictureRevealMode() {
   const [topic, setTopic] = useState("");
   const [totalRounds, setTotalRounds] = useState(3);
   const [level, setLevel] = useState("Mixed Level");
+  const [quizMode, setQuizMode] = useState<"easy" | "hard">("easy");
   const [isGenerating, setIsGenerating] = useState(false);
   const [usedAnswers, setUsedAnswers] = useState<string[]>([]);
   const [gameData, setGameData] = useState<{
@@ -75,6 +76,8 @@ export default function PictureRevealMode() {
   const [imageLoading, setImageLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [debouncedAnswer, setDebouncedAnswer] = useState("");
+  const [isManualUrl, setIsManualUrl] = useState(false);
+  const [imageRetry, setImageRetry] = useState(0);
 
   // ── Room data (buzz panel + submitted guess) ──────
   const [roomData, setRoomData] = useState<any>(null);
@@ -90,12 +93,13 @@ export default function PictureRevealMode() {
   }, [gameData?.imageAnswer]);
 
   useEffect(() => {
-    if (debouncedAnswer && gameData?.imagePrompt) {
+    if (!isManualUrl && debouncedAnswer && gameData?.imagePrompt) {
       setImageLoading(true);
       setImageError(false);
+      setImageRetry(0);
       setImageUrl(buildImageUrl(debouncedAnswer, gameData.imagePrompt));
     }
-  }, [debouncedAnswer, gameData?.imagePrompt]);
+  }, [debouncedAnswer, gameData?.imagePrompt, isManualUrl]);
 
   // Poll room during active game (buzz panel + openGuessWon detection)
   const shouldPoll = gameData !== null && !reviewMode && !isGenerating;
@@ -167,6 +171,8 @@ export default function PictureRevealMode() {
     setImageUrl("");
     setImageLoading(false);
     setImageError(false);
+    setIsManualUrl(false);
+    setImageRetry(0);
     setRevealedTiles(Array(16).fill(false));
     setBoardRevealed(false);
     setRoundEndAnswer(null);
@@ -392,6 +398,34 @@ export default function PictureRevealMode() {
                     </select>
                   </div>
                 </div>
+                {/* Easy / Hard toggle */}
+                <div className={styles.setupField}>
+                  <div className={styles.setupLabel}>Quiz Mode</div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {(["easy", "hard"] as const).map(mode => (
+                      <button
+                        key={mode}
+                        onClick={() => setQuizMode(mode)}
+                        style={{
+                          flex: 1, padding: "10px 0", borderRadius: 10,
+                          border: quizMode === mode
+                            ? "1.5px solid #ff7d3b"
+                            : "1px solid var(--border2,#243347)",
+                          background: quizMode === mode
+                            ? "rgba(255,125,59,0.1)"
+                            : "var(--surface2,#131b2b)",
+                          color: quizMode === mode ? "#ff7d3b" : "var(--muted,#4a637d)",
+                          fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
+                          fontSize: 11, fontWeight: 700,
+                          letterSpacing: "0.1em", textTransform: "uppercase",
+                          cursor: "pointer", transition: "all 0.15s",
+                        }}
+                      >
+                        {mode === "easy" ? "Easy — A/B/C/D" : "Hard — No Options"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <button
                   className={styles.btnGenerate}
                   onClick={handleGenerate}
@@ -464,13 +498,22 @@ export default function PictureRevealMode() {
                 </h3>
                 <input
                   placeholder="Paste a direct image URL..."
-                  value={imageUrl.startsWith("https://image.pollinations.ai") ? "" : imageUrl}
+                  value={isManualUrl ? imageUrl : ""}
                   onChange={e => {
                     const val = e.target.value.trim();
                     if (val) {
+                      setIsManualUrl(true);
                       setImageUrl(val);
                       setImageError(false);
                       setImageLoading(true);
+                      setImageRetry(0);
+                    } else {
+                      setIsManualUrl(false);
+                      if (gameData) {
+                        setImageUrl(buildImageUrl(gameData.imageAnswer, gameData.imagePrompt));
+                        setImageLoading(true);
+                        setImageError(false);
+                      }
                     }
                   }}
                   className={styles.reviewInput}
@@ -499,12 +542,11 @@ export default function PictureRevealMode() {
                     className={styles.btnGenerate}
                     style={{ marginTop: "1rem", fontSize: 11, padding: "8px 16px" }}
                     onClick={() => {
+                      setIsManualUrl(false);
                       setImageError(false);
                       setImageLoading(true);
-                      setImageUrl(
-                        buildImageUrl(gameData.imageAnswer, gameData.imagePrompt) +
-                        "&retry=" + Date.now()
-                      );
+                      setImageRetry(0);
+                      setImageUrl(buildImageUrl(gameData.imageAnswer, gameData.imagePrompt));
                     }}
                   >
                     Retry
@@ -518,8 +560,18 @@ export default function PictureRevealMode() {
                   alt="Preview"
                   className={styles.reviewImagePreview}
                   style={{ display: imageError ? "none" : "block" }}
-                  onLoad={() => setImageLoading(false)}
-                  onError={() => { setImageLoading(false); setImageError(true); }}
+                  onLoad={() => { setImageLoading(false); setImageRetry(0); }}
+                  onError={() => {
+                    if (!isManualUrl && imageRetry < 3) {
+                      setImageRetry(prev => prev + 1);
+                      setImageUrl(buildImageUrl(
+                        gameData?.imageAnswer || "", gameData?.imagePrompt || ""
+                      ));
+                    } else {
+                      setImageLoading(false);
+                      setImageError(true);
+                    }
+                  }}
                 />
               )}
             </div>
@@ -651,10 +703,15 @@ export default function PictureRevealMode() {
                         revealedTiles[i] ? styles.tileRevealed : "",
                         pressingTile === i ? styles.pressing : "",
                       ].join(" ")}
+                      style={revealedTiles[i] ? {
+                        background: (imageUrl && !imageLoading && !imageError)
+                          ? `url("${imageUrl}") ${(i % 4) * (100 / 3)}% ${Math.floor(i / 4) * (100 / 3)}% / 400% 400% no-repeat`
+                          : "transparent",
+                      } : {}}
                       onClick={() => handleTileClick(i)}
                       disabled={revealedTiles[i]}
                     >
-                      {i + 1}
+                      {revealedTiles[i] ? "" : i + 1}
                     </button>
                   ))}
                 </div>
@@ -762,8 +819,8 @@ export default function PictureRevealMode() {
             {/* Question */}
             <div className={styles.questionText}>{activeQuestion.q}</div>
 
-            {/* Multiple choice options (shown before reveal) */}
-            {activeQuestion.options && (
+            {/* Multiple choice options — Easy mode only */}
+            {quizMode === "easy" && activeQuestion.options && (
               <div style={{
                 display: "grid", gridTemplateColumns: "1fr 1fr",
                 gap: 10, width: "100%",
