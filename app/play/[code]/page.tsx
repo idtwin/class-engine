@@ -1091,12 +1091,20 @@ export default function PlayPage() {
           </div>
 
           {tilesRevealed === 0 ? (
-            <div style={{
-              fontSize: 13, color: "#4a637d", textAlign: "center",
-              fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
-              letterSpacing: "0.06em",
-            }}>
-              Guess slots unlock as tiles are revealed
+            <div style={{ textAlign: "center" }}>
+              <div style={{
+                fontSize: 13, color: "#4a637d",
+                fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
+                letterSpacing: "0.06em", marginBottom: 8,
+              }}>
+                Guess slots unlock as tiles are revealed
+              </div>
+              <div style={{
+                fontSize: 11, color: "#2e4a5c", lineHeight: 1.5,
+                fontFamily: "var(--font-mono,'JetBrains Mono',monospace)",
+              }}>
+                Each correct tile answer = +1 guess slot for ALL teams
+              </div>
             </div>
           ) : canGuess ? (
             <>
