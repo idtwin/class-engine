@@ -1624,18 +1624,26 @@ export default function PlayPage() {
                   className={`${styles.wyrOption} ${styles.wyrOptionA}`}
                   onClick={() => handleVote("A")}
                   disabled={hasVoted}
-                  style={hasVoted && me?.lastAnswer === "A" ? { outline: "3px solid rgba(255,255,255,0.4)" } : {}}
+                  style={hasVoted && me?.lastAnswer === "A" ? { outline: "3px solid rgba(255,77,143,0.6)" } : {}}
                 >
-                  {room.currentQuestion.optionA}
+                  <span className={styles.wyrGhostLetter}>A</span>
+                  <span className={styles.wyrOptionTag}>Option A</span>
+                  <span className={styles.wyrOptionText}>{room.currentQuestion.optionA}</span>
                 </button>
-                <div className={styles.wyrVsLabel}>VS</div>
+                <div className={styles.wyrVsRow}>
+                  <div className={styles.wyrVsDivider} />
+                  <span className={styles.wyrVsLabel}>VS</span>
+                  <div className={styles.wyrVsDivider} />
+                </div>
                 <button
                   className={`${styles.wyrOption} ${styles.wyrOptionB}`}
                   onClick={() => handleVote("B")}
                   disabled={hasVoted}
-                  style={hasVoted && me?.lastAnswer === "B" ? { outline: "3px solid rgba(255,255,255,0.4)" } : {}}
+                  style={hasVoted && me?.lastAnswer === "B" ? { outline: "3px solid rgba(0,200,240,0.6)" } : {}}
                 >
-                  {room.currentQuestion.optionB}
+                  <span className={styles.wyrGhostLetter}>B</span>
+                  <span className={styles.wyrOptionTag}>Option B</span>
+                  <span className={styles.wyrOptionText}>{room.currentQuestion.optionB}</span>
                 </button>
               </div>
 
