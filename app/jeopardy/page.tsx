@@ -463,6 +463,22 @@ export default function JeopardyPage() {
               {/* Buzz panel */}
               {activeRoomCode && sortedBuzzes.length > 0 && (
                 <div className={styles.buzzPanel}>
+                  {(() => {
+                    const first = sortedBuzzes[0];
+                    const firstTeam = currentTeams.find(t => t.name === first.name || t.students.some((s: any) => s.name === first.name));
+                    const firstColor = firstTeam ? (TEAM_COLORS[currentTeams.indexOf(firstTeam)] || '#00c8f0') : '#00c8f0';
+                    const firstStudent = roomStudents.find((s: any) => s.id === first.studentId);
+                    const typedAnswer = firstStudent?.lastAnswer;
+                    return (
+                      <div className={styles.answeringBanner} style={{ borderColor: firstColor, color: firstColor }}>
+                        <span className={styles.answeringLabel}>NOW ANSWERING</span>
+                        <span className={styles.answeringTeam}>{firstTeam?.name || first.name}</span>
+                        {typedAnswer && (
+                          <span className={styles.answeringAnswer}>"{typedAnswer}"</span>
+                        )}
+                      </div>
+                    );
+                  })()}
                   <div className={styles.buzzHeader}>Buzz order</div>
                   {sortedBuzzes.map((b: any, i: number) => {
                     const team = currentTeams.find(t => t.name === b.name || t.students.some((s: any) => s.name === b.name));
