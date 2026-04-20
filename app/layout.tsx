@@ -34,10 +34,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${syne.variable} ${jetbrainsMono.variable} ${nunito.variable} bg-[#0a0a14]`}>
+    <html lang="en" className={`${syne.variable} ${jetbrainsMono.variable} ${nunito.variable} bg-black`}>
       <body>
         <TopNav />
-        {children}
+        <main className="main-content">
+          <div className="radar-sweep" />
+          {children}
+        </main>
         <TwistOverlay />
         <ScoreboardOverlay />
       </body>

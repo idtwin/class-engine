@@ -22,8 +22,8 @@
 }
 
 .modeBtnActive {
-  background: rgba(0, 200, 240, 0.15);
-  color: var(--cyan, #00c8f0);
+  background: rgba(var(--ice-blue-rgb), 0.15);
+  color: var(--ice-blue);
 }
 
 .modeHint {
@@ -268,9 +268,9 @@
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.15em;
-  color: var(--cyan, #00c8f0);
-  background: rgba(0, 200, 240, 0.1);
-  border: 1px solid rgba(0, 200, 240, 0.25);
+  color: var(--ice-blue);
+  background: rgba(var(--ice-blue-rgb), 0.1);
+  border: 1px solid rgba(var(--ice-blue-rgb), 0.25);
   border-radius: 4px;
   padding: 3px 7px;
 }
@@ -322,8 +322,8 @@
 }
 
 .wordRowActive {
-  background: rgba(0, 200, 240, 0.06);
-  border-left: 3px solid var(--cyan, #00c8f0);
+  background: rgba(var(--ice-blue-rgb), 0.06);
+  border-left: 3px solid var(--ice-blue);
 }
 
 .wordRowSolved {
@@ -400,10 +400,10 @@
 }
 
 .tileRevealed {
-  background: rgba(0, 200, 240, 0.15);
-  border-color: var(--cyan, #00c8f0);
-  color: var(--cyan, #00c8f0);
-  box-shadow: 0 0 12px rgba(0, 200, 240, 0.25);
+  background: rgba(var(--ice-blue-rgb), 0.15);
+  border-color: var(--ice-blue);
+  color: var(--ice-blue);
+  box-shadow: 0 0 12px rgba(var(--ice-blue-rgb), 0.25);
 }
 
 .wordRowActive .tileRevealed {

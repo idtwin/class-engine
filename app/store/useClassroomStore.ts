@@ -5,6 +5,8 @@ import { playSFX } from "../lib/audio";
 
 export type Level = "Low" | "Mid" | "High";
 export type Energy = "Passive" | "Normal" | "Active";
+export type Rank = 1 | 2 | 3;
+export type Tier = "Bronze" | "Silver" | "Gold";
 
 export interface Student {
   id: string;
@@ -12,6 +14,9 @@ export interface Student {
   level: Level;
   confidence: Level;
   energy: Energy;
+  gender: "male" | "female";
+  rank: Rank;
+  tier: Tier;
 }
 
 export interface ClassData {
@@ -53,6 +58,7 @@ interface ClassroomState {
   folders: string[];
   classes: ClassData[];
   activeClassId: string | null;
+  presentStudentIds: string[]; // Global tracking for roster presence
   currentTeams: Team[];
   sessionHistory: SessionEntry[];
   
@@ -99,10 +105,12 @@ interface ClassroomState {
   removeFolder: (name: string) => void;
   renameFolder: (oldName: string, newName: string) => void;
 
-  addStudent: (classId: string, name: string) => void;
+  addStudent: (classId: string, name: string, gender: "male" | "female") => void;
   removeStudent: (classId: string, studentId: string) => void;
   updateStudent: (classId: string, studentId: string, updates: Partial<Student>) => void;
-  bulkAddStudents: (classId: string, names: string[]) => void;
+  bulkAddStudents: (classId: string, names: string[], gender: "male" | "female") => void;
+  togglePresence: (studentId: string) => void;
+  markAllPresent: (classId: string) => void;
   
   generateTeams: (classId: string, numberOfTeams: number, presentStudentIds?: string[]) => void;
   updateTeamScore: (teamId: string, delta: number) => void;
@@ -130,16 +138,16 @@ interface ClassroomState {
 }
 
 const DEMO_STUDENTS: Student[] = [
-  { id: uuidv4(), name: "Ahmad Rizqi Arrayan", level: "Low", confidence: "Mid", energy: "Normal" },
-  { id: uuidv4(), name: "Aeni Putri", level: "Mid", confidence: "Low", energy: "Passive" },
-  { id: uuidv4(), name: "Al Vinzha Febriano", level: "Low", confidence: "High", energy: "Active" },
-  { id: uuidv4(), name: "Dimas Pratama Yulianto", level: "High", confidence: "High", energy: "Active" },
-  { id: uuidv4(), name: "Dinar Arya Putra", level: "High", confidence: "High", energy: "Active" },
-  { id: uuidv4(), name: "Fakhri Ramadhan", level: "Mid", confidence: "Mid", energy: "Normal" },
-  { id: uuidv4(), name: "Ibnu Akhdaan", level: "Mid", confidence: "Mid", energy: "Active" },
-  { id: uuidv4(), name: "Keyla Wati Lestari", level: "High", confidence: "High", energy: "Normal" },
-  { id: uuidv4(), name: "Levy Cipta Astinto", level: "Mid", confidence: "Low", energy: "Passive" },
-  { id: uuidv4(), name: "Muhammad Ibnu Kamil", level: "Low", confidence: "Low", energy: "Normal" },
+  { id: uuidv4(), name: "Ahmad Rizqi Arrayan", level: "Low", confidence: "Mid", energy: "Normal", gender: "male", rank: 1, tier: "Bronze" },
+  { id: uuidv4(), name: "Aeni Putri", level: "Mid", confidence: "Low", energy: "Passive", gender: "female", rank: 1, tier: "Bronze" },
+  { id: uuidv4(), name: "Al Vinzha Febriano", level: "Low", confidence: "High", energy: "Active", gender: "male", rank: 1, tier: "Bronze" },
+  { id: uuidv4(), name: "Dimas Pratama Yulianto", level: "High", confidence: "High", energy: "Active", gender: "male", rank: 1, tier: "Bronze" },
+  { id: uuidv4(), name: "Dinar Arya Putra", level: "High", confidence: "High", energy: "Active", gender: "male", rank: 1, tier: "Bronze" },
+  { id: uuidv4(), name: "Fakhri Ramadhan", level: "Mid", confidence: "Mid", energy: "Normal", gender: "male", rank: 1, tier: "Bronze" },
+  { id: uuidv4(), name: "Ibnu Akhdaan", level: "Mid", confidence: "Mid", energy: "Active", gender: "male", rank: 1, tier: "Bronze" },
+  { id: uuidv4(), name: "Keyla Wati Lestari", level: "High", confidence: "High", energy: "Normal", gender: "female", rank: 1, tier: "Bronze" },
+  { id: uuidv4(), name: "Levy Cipta Astinto", level: "Mid", confidence: "Low", energy: "Passive", gender: "male", rank: 1, tier: "Bronze" },
+  { id: uuidv4(), name: "Muhammad Ibnu Kamil", level: "Low", confidence: "Low", energy: "Normal", gender: "male", rank: 1, tier: "Bronze" },
 ];
 
 export const useClassroomStore = create<ClassroomState>()(
@@ -160,6 +168,7 @@ export const useClassroomStore = create<ClassroomState>()(
         }
       ],
       activeClassId: "demo-class-1",
+      presentStudentIds: DEMO_STUDENTS.map(s => s.id),
       currentTeams: [],
       sessionHistory: [],
 
@@ -221,7 +230,15 @@ export const useClassroomStore = create<ClassroomState>()(
         sessionHistory: state.sessionHistory.filter(s => s.classId !== classId)
       })),
 
-      setActiveClass: (classId) => set({ activeClassId: classId }),
+      setActiveClass: (id) => set((state) => {
+        const activeC = state.classes.find(c => c.id === id);
+        return { 
+          activeClassId: id,
+          presentStudentIds: (state.presentStudentIds.length === 0 && activeC) 
+            ? activeC.students.map(s => s.id) 
+            : state.presentStudentIds
+        };
+      }),
 
       updateClass: (classId, name) => set((state) => ({
         classes: state.classes.map(c => c.id === classId ? { ...c, name } : c)
@@ -246,11 +263,35 @@ export const useClassroomStore = create<ClassroomState>()(
         classes: state.classes.map(c => c.category === oldName ? { ...c, category: newName } : c)
       })),
 
+      togglePresence: (studentId) => set((state) => ({
+        presentStudentIds: state.presentStudentIds.includes(studentId)
+          ? state.presentStudentIds.filter(id => id !== studentId)
+          : [...state.presentStudentIds, studentId]
+      })),
+
+      markAllPresent: (classId) => set((state) => {
+        const cls = state.classes.find(c => c.id === classId);
+        if (!cls) return state;
+        const studentIds = cls.students.map(s => s.id);
+        return { 
+          presentStudentIds: Array.from(new Set([...state.presentStudentIds, ...studentIds]))
+        };
+      }),
+
       // --- Student Actions ---
-      addStudent: (classId, name) => set((state) => ({
+      addStudent: (classId, name, gender) => set((state) => ({
         classes: state.classes.map((c) => 
           c.id === classId 
-            ? { ...c, students: [...c.students, { id: uuidv4(), name, level: "Mid", confidence: "Mid", energy: "Normal" }] } 
+            ? { ...c, students: [...c.students, { 
+                id: uuidv4(), 
+                name, 
+                gender,
+                level: "Mid", 
+                energy: "Normal", 
+                confidence: "Mid",
+                rank: 1, 
+                tier: "Bronze"
+              }] } 
             : c
         )
       })),
@@ -271,10 +312,19 @@ export const useClassroomStore = create<ClassroomState>()(
         )
       })),
 
-      bulkAddStudents: (classId, names) => set((state) => ({
+      bulkAddStudents: (classId, names, gender) => set((state) => ({
         classes: state.classes.map((c) => {
           if (c.id !== classId) return c;
-          const newStudents = names.map(n => ({ id: uuidv4(), name: n, level: "Mid" as Level, confidence: "Mid" as Level, energy: "Normal" as Energy }));
+          const newStudents = names.map(n => ({ 
+            id: uuidv4(), 
+            name: n, 
+            level: "Mid" as Level, 
+            confidence: "Mid" as Level, 
+            energy: "Normal" as Energy, 
+            gender: gender, 
+            rank: 1, 
+            tier: "Bronze"
+          }));
           return { ...c, students: [...c.students, ...newStudents] };
         })
       })),

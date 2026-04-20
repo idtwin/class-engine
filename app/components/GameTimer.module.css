@@ -55,10 +55,10 @@
   left: 0;
   width: 100%;
   z-index: 900;
-  background: rgba(10, 10, 20, 0.95);
+  background: var(--surface);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 93, 0, 0.2);
+  border-bottom: 1px solid var(--border);
 }
 
 .timerBarInner {

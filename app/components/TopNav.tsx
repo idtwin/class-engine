@@ -10,7 +10,7 @@ const HIDDEN_PATHS = new Set(["/", "/join", "/play"]);
 export default function TopNav() {
   const router = useRouter();
   const pathname = usePathname();
-  const { soundEnabled, setSoundEnabled } = useClassroomStore();
+  const { soundEnabled, setSoundEnabled, classes, activeClassId, presentStudentIds } = useClassroomStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -20,6 +20,7 @@ export default function TopNav() {
   const isHidden = Array.from(HIDDEN_PATHS).some(path => 
     pathname === path || pathname.startsWith("/play/")
   );
+  
   if (isHidden) return null;
 
   // Route markers
@@ -27,6 +28,8 @@ export default function TopNav() {
   const isArcade = pathname.startsWith("/games") || GAME_PATHS.some(p => pathname === p);
   const isTeams = pathname === "/teams";
   const isAnalytics = pathname === "/dashboard";
+
+  const activeClass = classes.find(c => c.id === activeClassId);
 
   return (
     <nav className={styles.nav}>
@@ -81,13 +84,43 @@ export default function TopNav() {
       </ul>
 
       <div className={styles.navRight}>
-        <div className={styles.statusPanel}>
-          <span className={styles.statusLabel}>Agent Comms</span>
-          <span className={styles.statusValue}>
-            <span className={soundEnabled ? styles.statusDot : styles.statusDotOff} />
-            {soundEnabled ? "SYSTEM: ACTIVE" : "SYSTEM: MUTED"}
-          </span>
+        <div className={styles.statusGroup}>
+          {/* 1. Squad Strength */}
+          <div className={styles.statusPanel}>
+            <span className={styles.statusLabel}>SQUAD_STRENGTH</span>
+            <span className={styles.statusValue}>
+              <span className={styles.statusDot} />
+              {activeClass ? `${activeClass.students.filter(s => presentStudentIds.includes(s.id)).length} PERSONNEL` : "OFFLINE"}
+            </span>
+          </div>
+
+          {/* 2. Uplink Status */}
+          <div className={styles.statusPanel}>
+            <span className={styles.statusLabel}>UPLINK_STATUS</span>
+            <span className={styles.statusValue}>
+              <span className={styles.statusDot} style={{ background: '#00ffd5', boxShadow: '0 0 8px #00ffd5' }} />
+              STABLE
+            </span>
+          </div>
+
+          {/* 3. Session Time */}
+          <div className={styles.statusPanel}>
+            <span className={styles.statusLabel}>SESSION_TIME</span>
+            <span className={styles.statusValue}>
+              <SessionTimer />
+            </span>
+          </div>
+
+          {/* 4. Agent Comms (Sound) */}
+          <div className={styles.statusPanel}>
+            <span className={styles.statusLabel}>Agent Comms</span>
+            <span className={styles.statusValue}>
+              <span className={soundEnabled ? styles.statusDot : styles.statusDotOff} />
+              {soundEnabled ? "ACTIVE" : "MUTED"}
+            </span>
+          </div>
         </div>
+
         <button 
           className={styles.soundToggle}
           onClick={() => setSoundEnabled(!soundEnabled)}
@@ -111,4 +144,22 @@ export default function TopNav() {
       <div className={styles.hudCornerRight} />
     </nav>
   );
+}
+function SessionTimer() {
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSeconds(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = (s: number) => {
+    const mins = Math.floor(s / 60);
+    const secs = s % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return <span>{formatTime(seconds)}</span>;
 }

@@ -24,8 +24,8 @@
   right: 0;
   width: 440px;
   height: 100vh;
-  background: rgba(10, 10, 20, 0.98);
-  border-left: 1px solid rgba(255, 93, 0, 0.2);
+  background: var(--surface);
+  border-left: 1px solid var(--border);
   box-shadow: -20px 0 60px rgba(0, 0, 0, 0.9);
   z-index: 1001;
   display: flex;
@@ -95,8 +95,8 @@
 }
 
 .closeBtn {
-  background: rgba(255, 93, 0, 0.1);
-  border: 1px solid rgba(255, 93, 0, 0.3);
+  background: rgba(var(--command-orange-rgb), 0.1);
+  border: 1px solid var(--border);
   color: var(--command-orange);
   width: 36px;
   height: 36px;
@@ -199,8 +199,8 @@
   left: -1px;
   width: 10px;
   height: 10px;
-  border-left: 1px solid rgba(255, 93, 0, 0.3);
-  border-top: 1px solid rgba(255, 93, 0, 0.3);
+  border-left: 1px solid rgba(var(--command-orange-rgb), 0.3);
+  border-top: 1px solid rgba(var(--command-orange-rgb), 0.3);
   pointer-events: none;
   transition: all 0.25s;
 }

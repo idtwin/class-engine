@@ -6,13 +6,11 @@
   left: 0;
   width: 100%;
   height: clamp(100px, 12vh, 120px);
-  background: rgba(10, 10, 20, 0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--surface);
   display: flex;
   z-index: 1000;
   overflow: hidden;
-  border-top: 1px solid rgba(255, 93, 0, 0.2);
+  border-top: 1px solid var(--border-hard);
 }
 
 /* HUD corners on scoreboard */
@@ -60,7 +58,7 @@
 }
 
 .teamTile:hover {
-  background: rgba(255, 93, 0, 0.03);
+  background: rgba(var(--command-orange-rgb), 0.05);
 }
 
 .topAccent {
@@ -116,7 +114,7 @@
   text-transform: uppercase;
   letter-spacing: 0.2em;
   margin-top: 0.2rem;
-  opacity: 0.7;
+  color: var(--muted);
 }
 
 .scoreFlash {
@@ -151,8 +149,8 @@
 }
 
 .adjustBtn {
-  background: rgba(10, 10, 20, 0.8);
-  border: 1px solid rgba(255, 93, 0, 0.4);
+  background: var(--surface-lifted);
+  border: 1px solid var(--border);
   color: var(--command-orange);
   width: 32px;
   height: 32px;
@@ -166,7 +164,7 @@
 }
 
 .adjustBtn:hover {
-  background: rgba(255, 93, 0, 0.15);
+  background: rgba(var(--command-orange-rgb), 0.15);
   border-color: var(--command-orange);
-  box-shadow: 0 0 15px rgba(255, 93, 0, 0.3);
+  box-shadow: 0 0 15px rgba(var(--command-orange-rgb), 0.3);
 }

@@ -9,8 +9,9 @@ export default function TeamsPage() {
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState(0); // 0: roster, 1: builder, 2: session
   const [rosterSearch, setRosterSearch] = useState("");
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [teamCount, setTeamCount] = useState(4);
+  const [genderFilter, setGenderFilter] = useState<"all" | "male" | "female">("all");
+  const [newStudentGender, setNewStudentGender] = useState<"male" | "female">("male");
 
   // Class management state
   const [showClassForm, setShowClassForm] = useState(false);
@@ -42,6 +43,9 @@ export default function TeamsPage() {
     updateTeamName,
     moveStudentToTeam,
     resetTeamsState,
+    presentStudentIds,
+    togglePresence,
+    markAllPresent,
     // Class CRUD
     addClass,
     removeClass,
@@ -61,10 +65,10 @@ export default function TeamsPage() {
   }, [classes, activeClassId, mounted]);
 
   useEffect(() => {
-    if (activeClass) {
-      setSelectedIds(activeClass.students.map(s => s.id));
+    if (activeClass && presentStudentIds.length === 0) {
+      markAllPresent(activeClass.id);
     }
-  }, [activeClass?.id]);
+  }, [activeClass?.id, markAllPresent, presentStudentIds.length]);
 
   useEffect(() => setMounted(true), []);
 
@@ -109,9 +113,8 @@ export default function TeamsPage() {
   const handleAddStudent = () => {
     const name = addStudentName.trim();
     if (!name || !activeClass) return;
-    addStudent(activeClass.id, name);
+    addStudent(activeClass.id, name, newStudentGender);
     setAddStudentName("");
-    // Keep input focused for rapid entry
     addStudentInputRef.current?.focus();
   };
 
@@ -119,7 +122,7 @@ export default function TeamsPage() {
     if (!activeClass) return;
     const names = bulkText.split("\n").map(n => n.trim()).filter(Boolean);
     if (names.length > 0) {
-      bulkAddStudents(activeClass.id, names);
+      bulkAddStudents(activeClass.id, names, newStudentGender);
       setBulkText("");
       setShowBulkAdd(false);
     }
@@ -129,23 +132,52 @@ export default function TeamsPage() {
     e.stopPropagation();
     if (!activeClass) return;
     removeStudent(activeClass.id, studentId);
-    setSelectedIds(prev => prev.filter(id => id !== studentId));
+    // Remove from presence if present
+    if (presentStudentIds.includes(studentId)) {
+      togglePresence(studentId);
+    }
   };
 
-  const handleCycleStat = (studentId: string, statType: 'level' | 'energy' | 'confidence', e: React.MouseEvent) => {
+  // ── Attendance Sync Helper ──
+  const syncAttendance = async (studentName: string, status: string, className: string) => {
+    // PASTE YOUR GOOGLE WEB APP URL HERE:
+    const GOOGLE_SCRIPT_URL = ""; 
+    
+    if (!GOOGLE_SCRIPT_URL) return;
+
+    try {
+      fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors', // Critical for Apps Script redirect handling
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentName, status, className })
+      });
+    } catch (err) {
+      console.error("Attendance Sync Failed:", err);
+    }
+  };
+
+
+  const handleCycleStat = (studentId: string, statType: 'level' | 'energy' | 'confidence' | 'gender', e: React.MouseEvent) => {
     e.stopPropagation();
     const levels: Level[] = ["Low", "Mid", "High"];
     const energies: Energy[] = ["Passive", "Normal", "Active"];
+    const genders: ("male" | "female")[] = ["male", "female"];
     const student = activeClass?.students.find(s => s.id === studentId);
     if (!student || !activeClass) return;
+    
     if (statType === 'level' || statType === 'confidence') {
       const current = student[statType] as Level;
       const nextIdx = (levels.indexOf(current) + 1) % levels.length;
       updateStudent(activeClass.id, studentId, { [statType]: levels[nextIdx] });
-    } else {
+    } else if (statType === 'energy') {
       const current = student.energy;
       const nextIdx = (energies.indexOf(current) + 1) % energies.length;
       updateStudent(activeClass.id, studentId, { energy: energies[nextIdx] });
+    } else if (statType === 'gender') {
+      const current = student.gender || 'male';
+      const nextIdx = (genders.indexOf(current) + 1) % genders.length;
+      updateStudent(activeClass.id, studentId, { gender: genders[nextIdx] });
     }
   };
 
@@ -186,11 +218,15 @@ export default function TeamsPage() {
   const enColor = { Passive: '#4a637d', Normal: '#00c8f0', Active: '#ff7d3b' };
   const coColor = { Low: '#ff8080', Mid: '#ffc843', High: '#b06eff' };
 
-  const filteredStudents = (activeClass?.students ?? []).filter(s =>
-    s.name.toLowerCase().includes(rosterSearch.toLowerCase())
-  );
+  const filteredStudents = (activeClass?.students ?? []).filter(s => {
+    const matchesSearch = s.name.toLowerCase().includes(rosterSearch.toLowerCase());
+    const matchesGender = genderFilter === "all" || (s.gender || 'male') === genderFilter;
+    return matchesSearch && matchesGender;
+  });
 
-  const presentCount = selectedIds.length;
+  const isSelected = (id: string) => presentStudentIds.includes(id);
+
+  const presentCount = (activeClass?.students ?? []).filter(s => isSelected(s.id)).length;
   const absentCount = (activeClass?.students.length ?? 0) - presentCount;
 
   const rosterStats = {
@@ -205,14 +241,15 @@ export default function TeamsPage() {
 
   return (
     <div className={styles.page}>
+      <div className={styles.headerBanner} />
 
       {/* ── Page Header ─────────────────────────────────────────────────────── */}
       <div className={styles.pageHeader}>
-        <div>
+        <div style={{ position: 'relative', zIndex: 2 }}>
           <div className={styles.breadcrumb}>PERSONNEL_COMMAND // <span>{activeClass?.name ?? "NO UNIT"}</span></div>
           <h1 className={styles.headerTitle}>SQUAD OPERATIONS</h1>
         </div>
-        <div className={styles.headerActions}>
+        <div className={styles.headerActions} style={{ position: 'relative', zIndex: 2 }}>
           {activeClass && (
             <span className={styles.tag + ' ' + styles.tagCyan}>{activeClass.students.length} Students</span>
           )}
@@ -346,12 +383,18 @@ export default function TeamsPage() {
                     <div className={styles.rstat}><div className={styles.rstatVal} style={{ color: '#00e87a' }}>{rosterStats.highFluency}</div><div className={styles.rstatLabel}>High Fluency</div></div>
                     <div className={styles.rstat}><div className={styles.rstatVal} style={{ color: '#ffc843' }}>{rosterStats.midFluency}</div><div className={styles.rstatLabel}>Mid Fluency</div></div>
                     <div className={styles.rstat}><div className={styles.rstatVal} style={{ color: '#ff8080' }}>{rosterStats.lowFluency}</div><div className={styles.rstatLabel}>Low Fluency</div></div>
-                    <div className={styles.rstat}><div className={styles.rstatVal} style={{ color: '#ff7d3b' }}>{rosterStats.activeEnergy}</div><div className={styles.rstatLabel}>Active Energy</div></div>
-                    <div className={styles.rstat}><div className={styles.rstatVal} style={{ color: '#b06eff' }}>{rosterStats.highConf}</div><div className={styles.rstatLabel}>High Conf</div></div>
+                    <div className={styles.rstat} style={{ borderLeft: '1px solid var(--border-subtle)', paddingLeft: '20px', marginLeft: '10px', display: 'flex', alignItems: 'center', gap: '15px' }}>
+                      <div className={styles.rstatLabel} style={{ marginBottom: '0', textAlign: 'left', whiteSpace: 'nowrap' }}>PERSONNEL FILTER</div>
+                      <div className={styles.genderFilterRow}>
+                        <button className={`${styles.genderBtn} ${genderFilter === 'all' ? styles.genderBtnActive : ''}`} onClick={() => setGenderFilter('all')}>All</button>
+                        <button className={`${styles.genderBtn} ${genderFilter === 'male' ? styles.genderBtnActive : ''}`} onClick={() => setGenderFilter('male')}>Boys</button>
+                        <button className={`${styles.genderBtn} ${genderFilter === 'female' ? styles.genderBtnActive : ''}`} onClick={() => setGenderFilter('female')}>Girls</button>
+                      </div>
+                    </div>
                   </div>
                   <button
                     className={`${styles.btn} ${styles.btnPrimary}`}
-                    onClick={() => { generateTeams(activeClass.id, teamCount, selectedIds); setStep(1); }}
+                    onClick={() => { generateTeams(activeClass.id, teamCount, presentStudentIds); setStep(1); }}
                     disabled={presentCount < 2}
                   >
                     → Generate Teams ({presentCount} present)
@@ -363,7 +406,13 @@ export default function TeamsPage() {
                   <div className={styles.absentBar}>
                     <span className={styles.absentBarIcon}>🚫</span>
                     <span>{absentCount} student{absentCount > 1 ? 's' : ''} marked absent — they will be excluded from teams.</span>
-                    <button className={styles.absentBarReset} onClick={() => setSelectedIds(activeClass.students.map(s => s.id))}>
+                    <button className={styles.absentBarReset} onClick={() => {
+                      if (activeClass) {
+                        activeClass.students.forEach(s => {
+                          if (!presentStudentIds.includes(s.id)) togglePresence(s.id);
+                        });
+                      }
+                    }}>
                       Mark All Present
                     </button>
                   </div>
@@ -371,61 +420,115 @@ export default function TeamsPage() {
 
                 <div className={styles.rosterGrid}>
                   {filteredStudents.map(s => {
-                    const isPresent = selectedIds.includes(s.id);
+                    const isPresent = isSelected(s.id);
                     return (
                       <div
                         key={s.id}
                         className={`${styles.studentCard} ${isPresent ? styles.studentCardActive : styles.studentCardAbsent}`}
                       >
                         {/* Card top: name + remove */}
-                        <div className={styles.studentCardTop}>
-                          <div className={`${styles.studentName} ${!isPresent ? styles.studentNameAbsent : ''}`}>{s.name}</div>
-                          <div className={styles.studentCardActions}>
+                        {/* Main Identity Area (Left) */}
+                        <div className={styles.studentCardMain}>
+                          <div className={`${styles.studentHeader} ${styles['tier' + (s.tier || 'Bronze')]}`}>
+                            <div className={styles.rankIconLarge}>
+                                <img 
+                                  src={`/ui/ranks/${(s.rank || 1) === 1 ? '1star' : (s.rank || 1) === 2 ? '2star' : '3star'}.svg`} 
+                                  alt="rank"
+                                />
+                            </div>
+                            
+                            <div className={styles.rankInfoSmall}>
+                              <div className={styles.nameWrapper}>
+                                <div className={`${styles.studentName} ${s.name.length > 14 ? styles.nameMarquee : ''} ${!isPresent ? styles.studentNameAbsent : ''}`}>
+                                  {s.name}
+                                </div>
+                              </div>
+                              <div className={`${styles.tierLabelSmall} ${styles['tier' + (s.tier || 'Bronze')]}`}>
+                                {(s.rank || 1) === 1 ? 'RIVAL' : (s.rank || 1) === 2 ? 'HERO' : 'LEGEND'} — {(s.tier || 'Bronze').toUpperCase()} TIER
+                              </div>
+                            </div>
+
                             <button
-                              className={`${styles.studentToggleBtn} ${isPresent ? styles.studentToggleBtnPresent : styles.studentToggleBtnAbsent}`}
-                              onClick={() => setSelectedIds(prev => isPresent ? prev.filter(id => id !== s.id) : [...prev, s.id])}
-                              title={isPresent ? "Mark absent today" : "Mark present"}
+                              className={`${styles.headerPresenceToggle} ${isPresent ? styles.presenceActive : styles.presenceInactive}`}
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                togglePresence(s.id);
+                                
+                                // Automatic Google Sheets Sync
+                                syncAttendance(s.name, !isPresent ? 'PRESENT' : 'ABSENT', activeClass.name);
+                              }}
                             >
-                              {isPresent ? '✓ Present' : '✗ Absent'}
+                              {isPresent ? '✓' : '✕'}
                             </button>
+                          </div>
+                          
+                          <div className={styles.cardBody}>
+                            <div className={styles.statsLayout}>
+                              {/* English Fluency — Segmented Bar */}
+                              <div className={styles.statLine} onClick={(e) => handleCycleStat(s.id, 'level', e)}>
+                                <div className={styles.statHeader}>
+                                  <span className={styles.statLabel}>FLUENCY</span>
+                                  <span className={styles.statValue}>{(s.level || 'Mid').toUpperCase()}</span>
+                                </div>
+                                <div className={styles.segmentedBar}>
+                                  <div className={`${styles.segment} ${styles.fluencyColor} ${['Low', 'Mid', 'High'].indexOf(s.level || 'Mid') >= 0 ? styles.lit : ''}`} />
+                                  <div className={`${styles.segment} ${styles.fluencyColor} ${['Mid', 'High'].indexOf(s.level || 'Mid') >= 0 ? styles.lit : ''}`} />
+                                  <div className={`${styles.segment} ${styles.fluencyColor} ${['High'].indexOf(s.level || 'Mid') >= 0 ? styles.lit : ''}`} />
+                                </div>
+                              </div>
+
+                              <div className={styles.statsSecondaryRow}>
+                                {/* Energy — Segmented Bar */}
+                                <div className={styles.statLineSmall} onClick={(e) => handleCycleStat(s.id, 'energy', e)}>
+                                  <div className={styles.statHeader}>
+                                    <span className={styles.statLabel}>ENERGY</span>
+                                  </div>
+                                  <div className={styles.segmentedBarSmall}>
+                                    <div className={`${styles.segment} ${styles.energyColor} ${['Passive', 'Normal', 'Active'].indexOf(s.energy || 'Normal') >= 0 ? styles.lit : ''}`} />
+                                    <div className={`${styles.segment} ${styles.energyColor} ${['Normal', 'Active'].indexOf(s.energy || 'Normal') >= 0 ? styles.lit : ''}`} />
+                                    <div className={`${styles.segment} ${styles.energyColor} ${['Active'].indexOf(s.energy || 'Normal') >= 0 ? styles.lit : ''}`} />
+                                  </div>
+                                </div>
+
+                                {/* Confidence — Segmented Bar */}
+                                <div className={styles.statLineSmall} onClick={(e) => handleCycleStat(s.id, 'confidence', e)}>
+                                  <div className={styles.statHeader}>
+                                    <span className={styles.statLabel}>CONFID.</span>
+                                  </div>
+                                  <div className={styles.segmentedBarSmall}>
+                                    <div className={`${styles.segment} ${styles.confColor} ${['Low', 'Mid', 'High'].indexOf(s.confidence || 'Mid') >= 0 ? styles.lit : ''}`} />
+                                    <div className={`${styles.segment} ${styles.confColor} ${['Mid', 'High'].indexOf(s.confidence || 'Mid') >= 0 ? styles.lit : ''}`} />
+                                    <div className={`${styles.segment} ${styles.confColor} ${['High'].indexOf(s.confidence || 'Mid') >= 0 ? styles.lit : ''}`} />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Action Sidebar (Right) — Now strictly for Avatar with Overlay Buttons */}
+                        <div className={styles.studentCardSide}>
+                          <div className={styles.studentCardActions}>
                             <button
                               className={styles.studentRemoveBtn}
                               onClick={(e) => handleRemoveStudent(s.id, e)}
-                              title="Remove from roster permanently"
+                              title="Remove"
                             >
                               🗑
                             </button>
                           </div>
-                        </div>
 
-                        {/* Stats tags */}
-                        <div>
-                          <div className={styles.stagLabel}>English Fluency</div>
-                          <span
-                            className={`${styles.stag} ${s.level === 'High' ? styles.stagHigh : s.level === 'Mid' ? styles.stagMid : styles.stagLow}`}
-                            onClick={(e) => handleCycleStat(s.id, 'level', e)}
-                          >
-                            {s.level.toUpperCase()} LVL
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                          <div>
-                            <div className={styles.stagLabel}>Energy</div>
-                            <span
-                              className={`${styles.stag} ${s.energy === 'Active' ? styles.stagActive : s.energy === 'Normal' ? styles.stagNorm : styles.stagPass}`}
-                              onClick={(e) => handleCycleStat(s.id, 'energy', e)}
-                            >
-                              {s.energy.toUpperCase()}
-                            </span>
-                          </div>
-                          <div>
-                            <div className={styles.stagLabel}>Confidence</div>
-                            <span
-                              className={`${styles.stag} ${s.confidence === 'High' ? styles.stagCoHigh : s.confidence === 'Mid' ? styles.stagCoMid : styles.stagCoLow}`}
-                              onClick={(e) => handleCycleStat(s.id, 'confidence', e)}
-                            >
-                              {s.confidence.toUpperCase()} CONF
-                            </span>
+                          <div className={styles.avatarFrame} onClick={(e) => handleCycleStat(s.id, 'gender', e)}>
+                            <div className={styles.avatarImgContainer}>
+                              <img 
+                                src={(s.gender || 'male') === 'female' ? '/ui/avatars/AvatarGirl.png?v=v3' : '/ui/avatars/AvatarBoy.png?v=v3'} 
+                                alt="avatar" 
+                                className={styles.avatarImg}
+                              />
+                            </div>
+                            <div className={styles.avatarGenderTag} style={{ background: (s.gender || 'male') === 'female' ? 'var(--pink)' : 'var(--radar-blue)' }}>
+                              {(s.gender || 'male') === 'female' ? '♀' : '♂'}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -435,6 +538,20 @@ export default function TeamsPage() {
                   {/* Add student card */}
                   <div className={styles.addStudentCard}>
                     <div className={styles.addStudentTitle}>＋ Add Student</div>
+                    <div className={styles.addStudentGenderToggle}>
+                      <button 
+                        className={`${styles.genderSelectBtn} ${newStudentGender === 'male' ? styles.genderSelectBtnActive : ''}`}
+                        onClick={() => setNewStudentGender('male')}
+                      >
+                        ♂ Male
+                      </button>
+                      <button 
+                        className={`${styles.genderSelectBtn} ${newStudentGender === 'female' ? styles.genderSelectBtnActive : ''}`}
+                        onClick={() => setNewStudentGender('female')}
+                      >
+                        ♀ Female
+                      </button>
+                    </div>
                     <input
                       ref={addStudentInputRef}
                       className={styles.addStudentInput}
@@ -462,6 +579,7 @@ export default function TeamsPage() {
                     </div>
                     {showBulkAdd && (
                       <>
+                        <div className={styles.bulkGenderInfo}>* Global gender for bulk add: {newStudentGender}</div>
                         <textarea
                           className={styles.bulkTextarea}
                           placeholder={"One name per line:\nAhmad\nSiti\nBudi"}
@@ -492,7 +610,7 @@ export default function TeamsPage() {
                 <div className={styles.builderHeader}>
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <button className={`${styles.btn} ${styles.btnGhost}`} onClick={() => setStep(0)}>← Roster</button>
-                    <button className={`${styles.btn} ${styles.btnCyan}`} onClick={() => generateTeams(activeClass.id, teamCount, selectedIds)}>↻ Re-generate</button>
+                    <button className={`${styles.btn} ${styles.btnCyan}`} onClick={() => generateTeams(activeClass.id, teamCount, presentStudentIds)}>↻ Re-generate</button>
                     <button className={`${styles.btn} ${styles.btnDanger}`} onClick={() => resetTeamsState()}>✕ Clear Scores</button>
                   </div>
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -505,7 +623,7 @@ export default function TeamsPage() {
                         onChange={e => {
                           const n = parseInt(e.target.value);
                           setTeamCount(n);
-                          generateTeams(activeClass.id, n, selectedIds);
+                          generateTeams(activeClass.id, n, presentStudentIds);
                         }}
                       >
                         {[2, 3, 4, 5, 6, 7].map(n => <option key={n} value={n}>{n} Teams</option>)}
@@ -555,12 +673,21 @@ export default function TeamsPage() {
                       <div className={styles.teamMembers}>
                         {team.students.map(s => (
                           <div key={s.id} className={styles.memberRow}>
-                            <div>
-                              <div className={styles.memberName}>{s.name}</div>
-                              <div className={styles.memberMiniTags} style={{ marginTop: '3px' }}>
-                                <div className={styles.miniTag} style={{ background: flColor[s.level] }}></div>
-                                <div className={styles.miniTag} style={{ background: enColor[s.energy] }}></div>
-                                <div className={styles.miniTag} style={{ background: coColor[s.confidence] }}></div>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <div className={styles.memberAvatar}>
+                                <img 
+                                  src={s.gender === 'female' ? '/AvatarGirl.png?v=v2' : '/AvatarBoy.png?v=v2'} 
+                                  alt=""
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                              </div>
+                              <div>
+                                <div className={styles.memberName}>{s.name}</div>
+                                <div className={styles.memberMiniTags} style={{ marginTop: '3px' }}>
+                                  <div className={styles.miniTag} style={{ background: flColor[s.level] }}></div>
+                                  <div className={styles.miniTag} style={{ background: enColor[s.energy] }}></div>
+                                  <div className={styles.miniTag} style={{ background: coColor[s.confidence] }}></div>
+                                </div>
                               </div>
                             </div>
                             {/* Move student dropdown */}

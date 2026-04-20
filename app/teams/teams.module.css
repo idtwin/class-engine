@@ -8,11 +8,27 @@
   z-index: 1;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 36px 32px 80px;
-  background: var(--bg);
+  padding: 60px 32px 80px;
   color: var(--text);
   font-family: var(--font-main), sans-serif;
   min-height: 100vh;
+}
+
+.headerBanner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 250px;
+  background-image: url('/ui/SquadBanner.png?v=1');
+  background-size: cover;
+  background-position: center 25%;
+  z-index: 0;
+  opacity: 0.6;
+  mask-image: linear-gradient(to top, transparent 0%, black 80%);
+  -webkit-mask-image: linear-gradient(to top, transparent 0%, black 80%);
+  border-radius: 4px 4px 0 0;
+  pointer-events: none;
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -23,8 +39,8 @@
   align-items: center;
   gap: 0;
   margin-bottom: 40px;
-  background: rgba(10, 10, 20, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
   padding: 4px;
   width: fit-content;
   position: relative;
@@ -72,7 +88,7 @@
 }
 
 .stepActive {
-  background: rgba(255, 93, 0, 0.1);
+  background: rgba(var(--command-orange-rgb), 0.15);
   color: var(--command-orange);
 }
 
@@ -125,7 +141,7 @@
 .breadcrumb {
   font-family: var(--font-mono), monospace;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--muted);
   letter-spacing: 0.15em;
   text-transform: uppercase;
   margin-bottom: 8px;
@@ -184,8 +200,9 @@
   color: #000; 
 }
 .btnPrimary:hover { 
-  background: #ff7020;
-  box-shadow: 0 0 30px rgba(255, 93, 0, 0.3);
+  background: #ffffff;
+  color: #000;
+  box-shadow: 0 0 30px rgba(var(--command-orange-rgb), 0.4);
 }
 .btnPrimary:disabled {
   opacity: 0.4;
@@ -239,7 +256,7 @@
 .rosterSearch::placeholder { color: rgba(255, 255, 255, 0.3); }
 .rosterSearch:focus { 
   border-color: var(--command-orange);
-  box-shadow: 0 0 20px rgba(255, 93, 0, 0.1);
+  box-shadow: 0 0 20px rgba(var(--command-orange-rgb), 0.2);
 }
 
 .rosterStats {
@@ -252,14 +269,14 @@
   font-family: var(--font-mono), monospace;
   font-size: 22px; 
   font-weight: 800; 
-  color: var(--text-bright); 
+  color: var(--data-silver); 
   line-height: 1; 
 }
 .rstatLabel {
   font-family: var(--font-mono), monospace;
   font-size: 9px;
   letter-spacing: 0.12em;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--muted);
   text-transform: uppercase;
   margin-top: 4px;
 }
@@ -272,14 +289,13 @@
 
 .studentCard {
   position: relative;
-  background: rgba(10, 10, 20, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 18px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  transition: all 0.25s;
-  cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--border-hard);
+  padding: 0; /* Remove padding to allow banner to span full width */
+  height: 154px; 
+  overflow: hidden;
+  display: flex !important;
+  flex-direction: row !important;
 }
 
 /* Card corner brackets */
@@ -303,15 +319,15 @@
   right: -1px;
   width: 10px;
   height: 10px;
-  border-right: 1px solid rgba(255, 93, 0, 0.3);
-  border-bottom: 1px solid rgba(255, 93, 0, 0.3);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   pointer-events: none;
   transition: all 0.25s;
 }
 
 .studentCard:hover { 
-  border-color: rgba(255, 93, 0, 0.3);
-  background: rgba(255, 93, 0, 0.03);
+  border-color: var(--border);
+  background: var(--surface-lifted);
 }
 
 .studentCard:hover::before,
@@ -323,16 +339,138 @@
 
 .studentCardActive { 
   border-color: var(--command-orange); 
-  background: rgba(255, 93, 0, 0.05); 
+  background: rgba(var(--command-orange-rgb), 0.05); 
+}
+
+.studentHeader {
+  display: flex;
+  align-items: stretch;
+  height: 50px;
+  position: relative;
+  overflow: visible; /* Allow rank icon to spill out */
+  padding: 0;
+  gap: 0;
+}
+
+/* Tactical Line HUD Gradient — Solid Left to Transparent Right */
+.studentHeader::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px; /* Thicker HUD line */
+  z-index: 10;
+  pointer-events: none;
+}
+
+.studentHeader.tierBronze { 
+  background: linear-gradient(90deg, rgba(80, 50, 30, 0.95) 0%, rgba(80, 50, 30, 0.7) 40%, transparent 100%); 
+}
+.studentHeader.tierBronze::after {
+  background: linear-gradient(90deg, #ff9d4d 0%, #ff9d4d 30%, transparent 100%);
+  box-shadow: 0 0 10px rgba(255, 157, 77, 0.3);
+}
+
+.studentHeader.tierSilver { 
+  background: linear-gradient(90deg, rgba(50, 50, 60, 0.95) 0%, rgba(50, 50, 60, 0.7) 40%, transparent 100%); 
+}
+.studentHeader.tierSilver::after {
+  background: linear-gradient(90deg, #e2e8f0 0%, #e2e8f0 30%, transparent 100%);
+  box-shadow: 0 0 10px rgba(226, 232, 240, 0.3);
+}
+
+.studentHeader.tierGold { 
+  background: linear-gradient(90deg, rgba(70, 55, 10, 0.95) 0%, rgba(70, 55, 10, 0.7) 40%, transparent 100%); 
+}
+.studentHeader.tierGold::after {
+  background: linear-gradient(90deg, #ffc843 0%, #ffc843 30%, transparent 100%);
+  box-shadow: 0 0 10px rgba(255, 200, 67, 0.3);
+}
+
+.rankIconLarge {
+  width: 60px;
+  height: 50px;
+  display: flex;
+  align-items: flex-start; /* Aligned to top so point hangs down */
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 20;
+}
+
+.rankIconLarge img {
+  width: 52px; 
+  height: auto;
+  min-height: 76px; 
+  object-fit: contain;
+  object-position: top center; /* Snap content to the top of the <img> box */
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.8));
+  position: absolute;
+  top: -1px; /* Overlap the 1px card border to be perfectly flush */
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .studentName { 
-  font-size: 15px; 
-  font-weight: 700; 
+  font-size: 14px; 
+  font-weight: 900; 
   color: var(--text-bright); 
   margin: 0;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.1em;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Tactical ellipsis while static */
+  transition: all 0.3s;
+}
+
+.nameWrapper {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Transitions to marquee only on hover */
+.nameMarquee {
+  display: inline-block;
+  animation: none; /* Off by default */
+  padding-right: 40px;
+}
+
+.studentCard:hover .nameMarquee {
+  text-overflow: clip; 
+  overflow: visible; /* Ensure full name is visible during scroll */
+  animation: marqueeScroll 6s linear infinite; /* Faster and immediate */
+}
+
+@keyframes marqueeScroll {
+  0% { transform: translateX(0); }
+  80% { transform: translateX(calc(-100% + 140px)); }
+  90% { transform: translateX(calc(-100% + 140px)); opacity: 1; }
+  100% { transform: translateX(0); }
+}
+
+.rankInfoSmall {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0;
+  flex: 1;
+  padding-left: 15px;
+  min-width: 0;
+}
+
+.tierLabelSmall {
+  font-family: var(--font-mono), monospace;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  opacity: 0.8;
+  margin-bottom: 4px; /* Shift up from the orange line */
 }
 
 .studentTags { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -353,23 +491,23 @@
 .stagLabel {
   font-family: var(--font-mono), monospace;
   font-size: 8px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--muted);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   margin-bottom: 4px;
 }
 
 /* Fluency */
-.stagLow  { background: rgba(255,51,51,0.1);   color: var(--alert-red); border-color: rgba(255,51,51,0.2); }
-.stagMid  { background: rgba(255,93,0,0.1);    color: var(--command-orange); border-color: rgba(255,93,0,0.2); }
-.stagHigh { background: rgba(190,239,0,0.1);   color: var(--team-green); border-color: rgba(190,239,0,0.2); }
+.stagLow  { background: rgba(var(--alert-red-rgb), 0.1);   color: var(--alert-red); border-color: rgba(var(--alert-red-rgb), 0.2); }
+.stagMid  { background: rgba(var(--command-orange-rgb), 0.1); color: var(--command-orange); border-color: rgba(var(--command-orange-rgb), 0.2); }
+.stagHigh { background: rgba(var(--team-green-rgb), 0.1);   color: var(--team-green); border-color: rgba(var(--team-green-rgb), 0.2); }
 /* Energy */
 .stagPass { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); border-color: rgba(255,255,255,0.1); }
-.stagNorm { background: rgba(0,200,240,0.1);    color: #00c8f0; border-color: rgba(0,200,240,0.2); }
-.stagActive { background: rgba(255,93,0,0.1);   color: var(--command-orange); border-color: rgba(255,93,0,0.2); }
+.stagNorm { background: rgba(var(--ice-blue-rgb), 0.1);    color: var(--ice-blue); border-color: rgba(var(--ice-blue-rgb), 0.2); }
+.stagActive { background: rgba(var(--command-orange-rgb), 0.15); color: var(--command-orange); border-color: rgba(var(--command-orange-rgb), 0.25); }
 /* Confidence */
-.stagCoLow  { background: rgba(255,51,51,0.1);   color: var(--alert-red); border-color: rgba(255,51,51,0.2); }
-.stagCoMid  { background: rgba(255,93,0,0.1);    color: var(--command-orange); border-color: rgba(255,93,0,0.2); }
+.stagCoLow  { background: rgba(var(--alert-red-rgb), 0.1);   color: var(--alert-red); border-color: rgba(var(--alert-red-rgb), 0.2); }
+.stagCoMid  { background: rgba(var(--command-orange-rgb), 0.1); color: var(--command-orange); border-color: rgba(var(--command-orange-rgb), 0.2); }
 .stagCoHigh { background: rgba(176,110,255,0.1); color: #b06eff; border-color: rgba(176,110,255,0.2); }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -449,8 +587,8 @@
 
 .teamCard {
   position: relative;
-  background: rgba(10, 10, 20, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--surface);
+  border: 1px solid var(--border-hard);
   overflow: hidden;
   transition: all 0.25s;
 }
@@ -507,13 +645,13 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid transparent;
+  background: var(--surface-lifted);
+  border: 1px solid var(--border-subtle);
   transition: all 0.2s;
 }
 .memberRow:hover { 
-  border-color: rgba(255, 93, 0, 0.2);
-  background: rgba(255, 93, 0, 0.03);
+  border-color: var(--border);
+  background: rgba(var(--command-orange-rgb), 0.05);
 }
 
 .memberName { 
@@ -557,8 +695,8 @@
 .scoreCard {
   position: relative;
   padding: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(10, 10, 20, 0.6);
+  border: 1px solid var(--border-hard);
+  background: var(--surface);
   overflow: hidden;
   transition: all 0.25s;
 }
@@ -636,8 +774,8 @@
 .gapSeg { height: 100%; transition: width 0.6s ease; }
 
 .dominantAlert {
-  background: rgba(255, 93, 0, 0.06);
-  border: 1px solid rgba(255, 93, 0, 0.2);
+  background: rgba(var(--command-orange-rgb), 0.08);
+  border: 1px solid rgba(var(--command-orange-rgb), 0.25);
   padding: 14px 18px;
   display: flex;
   align-items: center;
@@ -662,7 +800,7 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, rgba(255, 93, 0, 0.3), transparent);
+  background: linear-gradient(90deg, rgba(var(--command-orange-rgb), 0.3), transparent);
 }
 
 .historyGrid { display: flex; flex-direction: column; gap: 8px; }
@@ -748,8 +886,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  background: rgba(10, 10, 20, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--surface);
+  border: 1px solid var(--border-hard);
   padding: 12px 18px;
   margin-bottom: 28px;
   flex-wrap: wrap;
@@ -827,7 +965,7 @@
 .classChipActive {
   border-color: var(--command-orange);
   color: var(--command-orange);
-  background: rgba(255, 93, 0, 0.1);
+  background: rgba(var(--command-orange-rgb), 0.15);
 }
 
 .classChipAdd {
@@ -847,6 +985,151 @@
 .classChipAdd:hover { 
   color: var(--team-green); 
   border-color: var(--team-green); 
+}
+
+.studentCardMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: visible; /* Allow breakout elements like the large rank crest */
+}
+
+.cardBody {
+  padding: 10px 14px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.statsLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.statLine {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.statHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.statLabel {
+  font-family: var(--font-mono), monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.statValue {
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  font-weight: 900;
+  color: var(--text-bright);
+}
+
+.segmentedBar {
+  display: flex;
+  gap: 3px;
+  height: 6px;
+}
+
+.segment {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s;
+}
+
+.segment.lit {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Stat Colors */
+.fluencyColor.lit { 
+  background: var(--electric-mint); 
+  box-shadow: 0 0 8px rgba(var(--electric-mint-rgb), 0.4); 
+}
+.energyColor.lit { 
+  background: var(--radar-blue); 
+  box-shadow: 0 0 8px rgba(var(--radar-blue-rgb), 0.4); 
+}
+.confColor.lit { 
+  background: #ffc843; 
+  box-shadow: 0 0 8px rgba(255, 200, 67, 0.4); 
+}
+
+.statsSecondaryRow {
+  display: flex;
+  gap: 12px;
+}
+
+.statLineSmall {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  cursor: pointer;
+}
+
+.segmentedBarSmall {
+  display: flex;
+  gap: 2px;
+  height: 4px;
+}
+
+
+.rankIconSmall {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
+}
+
+.tierBronze { color: #ff9d4d; }
+.tierSilver { color: #e2e8f0; }
+.tierGold { color: #ffc843; }
+
+.studentCardSide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.2);
+  border-left: 2px solid var(--border-hard); /* Default state */
+  width: 110px;
+  min-width: 110px;
+  max-width: 110px;
+  flex-shrink: 0;
+  position: relative;
+  transition: border-color 0.25s;
+}
+
+.studentCardActive .studentCardSide {
+  border-left-color: var(--command-orange);
+}
+
+.studentCardAbsent .studentCardSide {
+  border-left-color: rgba(255, 255, 255, 0.03);
+}
+
+.studentCardActions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+  z-index: 10;
 }
 
 .classInlineForm {
@@ -935,11 +1218,34 @@
   background: rgba(10, 10, 20, 0.3) !important;
 }
 
-.studentCardTop {
+.studentCardMain {
+  flex: 1;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
+  flex-direction: column;
+}
+
+.rankIconSmall {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.2));
+}
+
+.tierBronze { color: #ff9d4d; text-shadow: 0 0 10px rgba(255, 157, 77, 0.4); }
+.tierSilver { color: #e2e8f0; text-shadow: 0 0 10px rgba(255, 255, 255, 0.4); }
+.tierGold { color: #ffc843; text-shadow: 0 0 10px rgba(255, 200, 67, 0.4); }
+
+.studentCardSide {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  width: 90px;
+  flex-shrink: 0;
+}
+
+.studentCardTop {
+  display: none; /* Replaced by studentCardMain/Side */
 }
 
 .studentNameAbsent {
@@ -950,21 +1256,24 @@
 .studentCardActions {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
 }
 
 .studentToggleBtn {
-  padding: 4px 10px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--font-mono), monospace;
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: 12px;
+  font-weight: 800;
   cursor: pointer;
   border: 1px solid transparent;
   transition: all 0.2s;
-  white-space: nowrap;
-  text-transform: uppercase;
+  flex-shrink: 0;
 }
 
 .studentToggleBtnPresent {
@@ -1042,11 +1351,12 @@
 .addStudentCard {
   background: rgba(10, 10, 20, 0.3);
   border: 1px dashed rgba(255, 255, 255, 0.1);
-  padding: 20px;
+  padding: 8px 10px; /* Reduced padding */
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 4px; /* Tighter gap */
   transition: all 0.2s;
+  height: 154px;
 }
 .addStudentCard:hover { border-color: rgba(255, 255, 255, 0.2); }
 
@@ -1057,12 +1367,13 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 2px;
 }
 
 .addStudentInput {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 10px 14px;
+  padding: 8px 12px; /* Reduced vertical padding */
   font-family: var(--font-mono), monospace;
   font-size: 12px;
   color: var(--text);
@@ -1173,7 +1484,7 @@
 
 .moveOption:hover {
   border-color: var(--command-orange);
-  background: rgba(255, 93, 0, 0.05);
+  background: rgba(var(--command-orange-rgb), 0.1);
 }
 
 .moveOptionDot {
@@ -1213,4 +1524,282 @@
 
 .view {
   position: relative;
+  background: rgba(var(--bg-rgb), 0.8);
+  border: 1px solid var(--border-subtle);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+/* Framed view corners */
+.view::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 30px;
+  height: 30px;
+  border-left: 2px solid var(--command-orange);
+  border-top: 2px solid var(--command-orange);
+  pointer-events: none;
+}
+
+.view::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 30px;
+  height: 30px;
+  border-right: 2px solid var(--command-orange);
+  border-bottom: 2px solid var(--command-orange);
+  pointer-events: none;
+}
+
+/* ── Gender Filter Styles ── */
+.genderFilterRow {
+  display: flex;
+  gap: 0;
+  background: rgba(10, 10, 20, 0.6);
+  border: 1px solid var(--border-hard);
+  padding: 4px;
+}
+
+.genderBtn {
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 8px 16px;
+  color: var(--muted);
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.genderBtn:hover {
+  color: var(--text-bright);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.genderBtnActive {
+  background: var(--command-orange) !important;
+  border-color: var(--command-orange);
+  color: #000 !important;
+  font-weight: 800;
+  box-shadow: 0 0 15px rgba(var(--command-orange-rgb), 0.3);
+}
+
+/* ── Student Card Avatar Styles ── */
+/* studentCardContent removed as it is replaced by Main/Side */
+.studentCardContent {
+  display: none;
+}
+
+.avatarFrame {
+  position: relative;
+  width: 110px; 
+  height: 154px;
+  background: rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.avatarImgContainer {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  opacity: 0.95;
+  transition: all 0.4s ease;
+}
+
+/* Tactical corners for avatar */
+.avatarFrame::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 8px;
+  height: 8px;
+  border-left: 1px solid var(--command-orange);
+  border-top: 1px solid var(--command-orange);
+  z-index: 5;
+}
+
+.avatarFrame::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-right: 1px solid var(--command-orange);
+  border-bottom: 1px solid var(--command-orange);
+  z-index: 5;
+}
+
+.avatarFrame:hover {
+  border-color: var(--command-orange);
+  box-shadow: 0 0 20px rgba(var(--command-orange-rgb), 0.3);
+}
+
+.avatarImgContainer {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  background: radial-gradient(circle at center, rgba(var(--command-orange-rgb), 0.05), transparent);
+}
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.9;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.avatarFrame:hover .avatarImg {
+  transform: scale(1.15);
+  opacity: 1;
+}
+
+.avatarGenderTag {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  font-weight: 900;
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.studentStatsColumn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Add Student Gender Toggle ── */
+.addStudentGenderToggle {
+  display: flex;
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.05);
+  margin-bottom: 6px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  overflow: hidden;
+  height: 28px;
+}
+
+.genderSelectBtn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 0 8px; /* Removed vertical padding */
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.genderSelectBtnActive {
+  background: var(--command-orange);
+  color: #000 !important;
+  font-weight: 700;
+}
+
+.bulkGenderInfo {
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.memberAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--border-hard);
+  background: rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.memberRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.2s;
+}
+
+.memberRow:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ── Header Presence Toggle ── */
+.headerPresenceToggle {
+  width: 26px;
+  height: 26px;
+  margin-right: 12px;
+  align-self: center;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--team-green);
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 2px;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.presenceActive {
+  background: rgba(190, 239, 0, 0.2) !important;
+  border-color: rgba(190, 239, 0, 0.5) !important;
+  box-shadow: 0 0 10px rgba(190, 239, 0, 0.2);
+  color: var(--team-green);
+}
+
+.presenceInactive {
+  opacity: 0.2;
+  color: var(--alert-red);
+}
+
+.presenceInactive:hover {
+  opacity: 1;
+  background: rgba(255, 51, 51, 0.1);
+  color: var(--alert-red);
 }

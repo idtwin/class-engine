@@ -10,7 +10,7 @@
   display: grid;
   grid-template-rows: 64px 1fr;
   overflow: hidden;
-  background: var(--bg);
+  background: rgba(var(--bg-rgb), 0.85);
 }
 
 /* ── Game header ── */
@@ -19,8 +19,8 @@
   align-items: center;
   gap: 20px;
   padding: 0 40px;
-  border-bottom: 1px solid rgba(255, 93, 0, 0.2);
-  background: rgba(10, 10, 20, 0.9);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   flex-shrink: 0;
@@ -90,8 +90,8 @@
 }
 
 .headerBtn {
-  background: rgba(255, 93, 0, 0.1);
-  border: 1px solid rgba(255, 93, 0, 0.3);
+  background: rgba(var(--command-orange-rgb), 0.1);
+  border: 1px solid rgba(var(--command-orange-rgb), 0.3);
   padding: 8px 16px;
   font-family: var(--font-mono), monospace;
   font-size: 10px;
@@ -151,8 +151,8 @@
 
 /* ── Category headers ── */
 .categoryHeader {
-  background: rgba(10, 10, 20, 0.9);
-  border: 1px solid rgba(255, 93, 0, 0.3);
+  background: var(--surface);
+  border: 1px solid rgba(var(--command-orange-rgb), 0.3);
   border-bottom: 2px solid var(--command-orange);
   text-align: center;
   padding: 14px 8px;
@@ -184,8 +184,8 @@
 /* ── Tiles ── */
 .tile {
   flex: 1;
-  background: rgba(10, 10, 20, 0.7);
-  border: 1px solid rgba(255, 93, 0, 0.15);
+  background: var(--surface);
+  border: 1px solid rgba(var(--command-orange-rgb), 0.15);
   display: flex;
   align-items: center;
   justify-content: center;

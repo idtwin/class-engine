@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./games.module.css";
 import BoardLibrary from "../components/BoardLibrary";
@@ -63,16 +63,39 @@ export default function GamesHub() {
   const [libOpen, setLibOpen] = useState(false);
   const [featIdx, setFeatIdx] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
 
   const router = useRouter();
-
   useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
 
-  const handleLaunch = (href: string) => {
+  const handleLaunch = useCallback((href: string) => {
     setIsLaunching(true);
     setTimeout(() => { router.push(href); }, 400);
-  };
+  }, [router]);
+
+  const nextGame = useCallback(() => {
+    setFeatIdx((prev) => (prev + 1) % GAMES_DATA.length);
+    setProgress(0);
+  }, []);
+
+  useEffect(() => {
+    if (isPaused) return;
+    
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 100) {
+          nextGame();
+          return 0;
+        }
+        return prev + 1; // 1% every 100ms = 10s cycle
+      });
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [isPaused, nextGame]);
+
+  if (!mounted) return null;
 
   const activeClass = classes.find(c => c.id === activeClassId);
   const featuredHistory = classHistory[activeClass?.name ?? 'global'] ?? classHistory['global'];
@@ -90,13 +113,14 @@ export default function GamesHub() {
   return (
     <div className={`${styles.page} ${isLaunching ? styles.launching : ''}`}>
       {isLaunching && <div className={styles.launchingOverlay} />}
+      <div className={styles.headerBanner} />
 
       <div className={styles.pageHeader}>
-        <div>
+        <div style={{ position: 'relative', zIndex: 2 }}>
           <div className={styles.breadcrumb}>SYSTEM_ONLINE // <span>MISSION_SELECT</span></div>
           <h1>TACTICAL OPERATIONS</h1>
         </div>
-        <div className={styles.headerActions}>
+        <div className={styles.headerActions} style={{ position: 'relative', zIndex: 2 }}>
            <button className={`${styles.btn} ${styles.btnGhost}`} onClick={() => setLibOpen(true)}>
              ⊞ Library
            </button>
@@ -147,7 +171,11 @@ export default function GamesHub() {
         </div>
 
         <div className={styles.featuredCard} onClick={() => handleLaunch(`/${featuredGame.id}`)}>
-          <div style={{ flex: 1 }}>
+          <div 
+            className={styles.featuredBanner} 
+            style={{ backgroundImage: `url(/games/${featuredGame.id}-large.png)` }} 
+          />
+          <div style={{ position: 'relative', zIndex: 5, flex: 1 }}>
             <div className={styles.featuredMeta}>
               <div className={styles.featuredIcon}>{featuredGame.icon}</div>
               <div>
@@ -193,12 +221,37 @@ export default function GamesHub() {
             </div>
           </div>
 
-          <div className={styles.featuredLaunch}>
+          <div className={styles.featuredLaunch} style={{ position: 'relative', zIndex: 5 }}>
             <button className={styles.launchBtn} onClick={(e) => { e.stopPropagation(); handleLaunch(`/${featuredGame.id}`); }}>
               <div className={styles.launchBtnIcon}>▶</div>
               <div className={styles.launchBtnText}>Launch</div>
             </button>
-            <button className={styles.reroll} onClick={(e) => { e.stopPropagation(); setFeatIdx((featIdx + 1) % GAMES_DATA.length); }}>↻ Cycle</button>
+            
+            <div 
+              className={`${styles.autoCycleControl} ${isPaused ? styles.paused : ''}`} 
+              onClick={(e) => { e.stopPropagation(); nextGame(); }}
+              title={isPaused ? "Paused" : "Click to Skip"}
+            >
+              <svg width="34" height="34" className={styles.cycleSvg}>
+                <circle cx="17" cy="17" r="15" className={styles.cycleCircleBg} />
+                <circle 
+                  cx="17" 
+                  cy="17" 
+                  r="15" 
+                  className={styles.cycleCircleFg} 
+                  style={{ strokeDashoffset: 94 - (94 * progress) / 100 }}
+                />
+              </svg>
+              <div className={styles.cycleIcon}>{isPaused ? '⏸' : '↻'}</div>
+            </div>
+
+            <button 
+              className={`${styles.cycleLock} ${isPaused ? styles.cycleLockActive : ''}`}
+              onClick={(e) => { e.stopPropagation(); setIsPaused(!isPaused); }}
+              title="Toggle Cycle Lock"
+            >
+              {isPaused ? '🔒' : '🔓'}
+            </button>
           </div>
         </div>
       </div>
@@ -230,12 +283,16 @@ export default function GamesHub() {
               <div className={styles.gamesGrid}>
                 {catGames.map(g => (
                   <div key={g.id} className={styles.gameCard} onClick={() => handleLaunch(`/${g.id}`)}>
-                    <div className={styles.gameCardIcon} style={{ background: g.iconBg, border: g.iconBorder }}>{g.icon}</div>
-                    <div>
+                    <div 
+                      className={styles.gameCardBanner} 
+                      style={{ backgroundImage: `url(/games/${g.id}-small.png)` }} 
+                    />
+                    <div className={styles.gameCardIcon} style={{ background: g.iconBg, border: g.iconBorder, position: 'relative', zIndex: 5 }}>{g.icon}</div>
+                    <div style={{ position: 'relative', zIndex: 5 }}>
                       <div className={styles.gameCardName}>{g.name}</div>
                       <div className={styles.gameCardDesc}>{g.desc}</div>
                     </div>
-                    <div className={styles.gameCardFooter}>
+                    <div className={styles.gameCardFooter} style={{ position: 'relative', zIndex: 5 }}>
                       <div className={styles.gameCardTags}>
                         <span className={`${styles.tag} ${g.energy === 'high' ? styles.tagEnergyHigh : (g.energy === 'mid' ? styles.tagEnergyMid : styles.tagEnergyLow)}`}>{g.energy}</span>
                         {g.phone && <span className={`${styles.tag} ${styles.tagPhone}`}>📱</span>}

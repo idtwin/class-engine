@@ -4,37 +4,62 @@
    ===================================================== */
 
 :root {
-  /* --- Command Surfaces --- */
-  --bg: #0a0a14;
-  --bg-rgb: 10, 10, 20;
-  --surface: rgba(10, 10, 20, 0.75);
-  --surface-solid: #0d0d1a;
-  --surface2: rgba(20, 20, 35, 0.6);
-  --border: rgba(255, 93, 0, 0.3);
-  --border2: rgba(255, 93, 0, 0.15);
+  /* --- Depth & Elevation Structure --- */
+  /* Level 0: The Void (Scanline background) */
+  --bg: #05070A;
+  --bg-rgb: 5, 7, 10;
+  /* Level 1: HUD Panels & Containers */
+  --surface: #0C121A;
+  --surface-rgb: 12, 18, 26;
+  /* Level 2: Interactive Tiles & Modals */
+  --surface-lifted: #151F2B;
+  --surface-lifted-rgb: 21, 31, 43;
+  
+  --depth-shadow: #000000;
+
+  /* --- Radar Signal Colors --- */
+  --electric-mint: #00FFD5;
+  --electric-mint-rgb: 0, 255, 213;
+  --radar-blue: #00D1FF;
+  --radar-blue-rgb: 0, 209, 255;
+
+  /* --- Borders --- */
+  --border: rgba(0, 255, 213, 0.4);
+  --border2: rgba(0, 255, 213, 0.2);
+  --border-rgb: 0, 255, 213;
   --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-hard: #1a2533;
 
-  /* --- Primary Command Colors --- */
-  --command-orange: #FF5D00;
-  --command-orange-rgb: 255, 93, 0;
-  --team-green: #BEEF00;
+  /* --- Design System Semantic Roles --- */
+  --command-orange: var(--electric-mint);
+  --command-orange-rgb: var(--electric-mint-rgb);
+  
+  --data-silver: #D1D9E6;
+  --data-silver-rgb: 209, 217, 230;
+  
+  --ice-blue: var(--radar-blue);
+  --ice-blue-rgb: var(--radar-blue-rgb);
+  
+  --titanium-silver: var(--data-silver);
+  --team-green: #BEEF00; /* Re-introduce green for positive signals */
   --team-green-rgb: 190, 239, 0;
-  --alert-red: #FF3333;
-  --terminal-white: rgba(255, 255, 255, 0.9);
-
-  /* --- Legacy Accent Mapping (for compatibility) --- */
-  --green: #BEEF00;
-  --cyan: #00c8f0;
-  --orange: #FF5D00;
+  
+  /* --- Semantic Mappings --- */
+  --text: #C8D2DD;
+  --text-bright: #FFFFFF;
+  --muted: #627284;
+  --dim: #324254;
+  --cyan: #AEE6FF;
+  --orange: var(--ice-blue);
   --purple: #b06eff;
-  --yellow: #BEEF00;
+  --yellow: var(--ice-blue);
   --pink: #ff4d8f;
-  --red: #FF3333;
+  --red: var(--alert-red);
 
   /* --- Team Colors --- */
-  --t1: #BEEF00;
-  --t2: #00c8f0;
-  --t3: #FF5D00;
+  --t1: var(--ice-blue);
+  --t2: #AEE6FF;
+  --t3: var(--ice-blue);
   --t4: #ff4d8f;
   --t5: #b06eff;
   --t6: #00e87a;
@@ -54,11 +79,6 @@
   --font-main: var(--font-syne);
   --font-mono: var(--font-jetbrains);
   --font-phone: var(--font-nunito);
-
-  /* --- Glassmorphism --- */
-  --glass-bg: rgba(10, 10, 20, 0.75);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-blur: 12px;
 
   /* --- HUD Elements --- */
   --hud-corner-size: 12px;
@@ -94,8 +114,8 @@ body::before {
   position: fixed;
   inset: 0;
   background-image:
-    linear-gradient(rgba(255, 93, 0, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 93, 0, 0.02) 1px, transparent 1px);
+    linear-gradient(rgba(var(--electric-mint-rgb), 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--electric-mint-rgb), 0.05) 1px, transparent 1px);
   background-size: 48px 48px;
   pointer-events: none;
   z-index: 0;
@@ -117,6 +137,52 @@ body::after {
   z-index: 9999;
 }
 
+/* Atmospheric Void Effect (Option C) */
+.radar-sweep {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.radar-sweep::before,
+.radar-sweep::after {
+  content: '';
+  position: absolute;
+  width: 150%;
+  height: 150%;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.4;
+}
+
+.radar-sweep::before {
+  background: radial-gradient(circle at center, rgba(var(--command-orange-rgb), 0.06), transparent 70%);
+  top: -25%;
+  left: -25%;
+  animation: drift-alpha 25s ease-in-out infinite alternate;
+}
+
+.radar-sweep::after {
+  background: radial-gradient(circle at center, rgba(var(--radar-blue-rgb), 0.04), transparent 70%);
+  bottom: -25%;
+  right: -25%;
+  animation: drift-beta 30s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes drift-alpha {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(10%, 15%) scale(1.1); }
+  100% { transform: translate(-5%, 5%) scale(0.9); }
+}
+
+@keyframes drift-beta {
+  0% { transform: translate(0, 0) scale(1.1); }
+  50% { transform: translate(-15%, -10%) scale(0.9); }
+  100% { transform: translate(5%, -15%) scale(1.05); }
+}
+
 /* ── Typography ── */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-main), sans-serif;
@@ -133,13 +199,19 @@ p, span, div, button {
   font-family: var(--font-mono), monospace;
 }
 
+.main-content {
+  position: relative;
+  z-index: 1;
+  background: var(--bg);
+  min-height: calc(100vh - var(--nav-h));
+}
+
 /* ── HUD Panel Base ── */
 .hud-panel {
   position: relative;
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
+  background: var(--surface);
+  border: 1px solid var(--border-hard);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
 }
 
 /* HUD Corner Brackets */
@@ -234,7 +306,7 @@ p, span, div, button {
 }
 
 .btn-primary:hover {
-  background: #ff7020;
+  background: #E0F5FF;
   box-shadow: 0 0 30px rgba(var(--command-orange-rgb), 0.4);
 }
 
@@ -382,7 +454,7 @@ p, span, div, button {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #ff7020;
+  background: var(--radar-blue);
 }
 
 /* ── Selection ── */

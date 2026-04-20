@@ -2,10 +2,8 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(10, 10, 20, 0.9);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(255, 93, 0, 0.2);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-hard);
   padding: 0 32px;
   height: 64px;
   display: flex;
@@ -125,8 +123,8 @@
 
 .navLink.active {
   color: var(--command-orange);
-  border-color: rgba(255, 93, 0, 0.3);
-  background: rgba(255, 93, 0, 0.08);
+  border-color: var(--border);
+  background: rgba(var(--command-orange-rgb), 0.1);
 }
 
 .linkText {
@@ -151,15 +149,27 @@
   gap: 16px;
 }
 
+.statusGroup {
+  display: flex;
+  gap: 1px;
+  background: var(--border-hard);
+  border: 1px solid var(--border-hard);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
 .statusPanel {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
+  gap: 1px;
+  padding: 6px 14px;
+  background: var(--surface-lifted);
+  transition: all 0.2s;
+}
+
+.statusPanel:not(:last-child) {
+  border-right: 1px solid var(--border-hard);
 }
 
 .statusLabel {
@@ -204,17 +214,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 93, 0, 0.1);
-  border: 1px solid rgba(255, 93, 0, 0.3);
+  background: rgba(var(--command-orange-rgb), 0.1);
+  border: 1px solid rgba(var(--command-orange-rgb), 0.3);
   cursor: pointer;
   color: var(--command-orange);
   transition: all 0.2s ease;
 }
 
 .soundToggle:hover {
-  background: rgba(255, 93, 0, 0.2);
+  background: rgba(var(--command-orange-rgb), 0.2);
   border-color: var(--command-orange);
-  box-shadow: 0 0 20px rgba(255, 93, 0, 0.3);
+  box-shadow: 0 0 20px rgba(var(--command-orange-rgb), 0.3);
 }
 
 .soundToggle svg {

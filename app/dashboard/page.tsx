@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import styles from "./dashboard.module.css";
-import { useClassroomStore, SessionEntry, ClassData } from "../store/useClassroomStore";
+import { useClassroomStore, SessionEntry, ClassData, Student } from "../store/useClassroomStore";
 
 const MOCK_TIME_RANGES = [
   { id: "week", label: "This Week" },
@@ -19,6 +19,11 @@ export default function Dashboard() {
 
   const [activeDrillId, setActiveDrillId] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState("month");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // --- Selectors ---
   
@@ -94,13 +99,14 @@ export default function Dashboard() {
 
   return (
     <div className={styles.page}>
+      <div className={styles.headerBanner} />
       {/* Header */}
       <div className={styles.pageHeader}>
-        <div>
+        <div style={{ position: 'relative', zIndex: 2 }}>
           <div className={styles.breadcrumb}>SYSTEM // <span>Analytics</span></div>
           <h1 className={styles.headerTitle}>Commander Dashboard</h1>
         </div>
-        <div className={styles.headerControls}>
+        <div className={styles.headerControls} style={{ position: 'relative', zIndex: 2 }}>
           <select 
             className={styles.timeSelect} 
             value={timeRange} 
@@ -225,10 +231,25 @@ export default function Dashboard() {
                   <tbody>
                     {activeClass.students.slice(0, 5).map((s, i) => (
                       <tr key={s.id}>
-                        <td style={{ fontWeight: 700 }}>{s.name}</td>
-                        <td style={{ color: "var(--muted)" }}>{Math.floor(Math.random() * 10) + 5} Cycles</td>
                         <td>
-                          <span style={{ color: "var(--green)", fontWeight: 700 }}>{80 + Math.floor(Math.random() * 15)}%</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div className={styles.tableAvatar}>
+                              <img 
+                                src={s.gender === 'female' ? '/AvatarGirl.png?v=v2' : '/AvatarBoy.png?v=v2'} 
+                                alt=""
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            </div>
+                            <span style={{ fontWeight: 700 }}>{s.name}</span>
+                          </div>
+                        </td>
+                        <td style={{ color: "var(--muted)" }}>
+                          {mounted ? Math.floor(Math.random() * 10) + 5 : "--"} Cycles
+                        </td>
+                        <td>
+                          <span style={{ color: "var(--green)", fontWeight: 700 }}>
+                            {mounted ? 80 + Math.floor(Math.random() * 15) : "--"}%
+                          </span>
                         </td>
                       </tr>
                     ))}
