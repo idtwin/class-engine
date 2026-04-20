@@ -120,8 +120,9 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Overview Stats */}
-      <div className={styles.sectionTitle}>Global Intelligence — {MOCK_TIME_RANGES.find(r => r.id === timeRange)?.label}</div>
+      <div className={styles.view}>
+        {/* Overview Stats */}
+        <div className={styles.sectionTitle}>Global Intelligence — {MOCK_TIME_RANGES.find(r => r.id === timeRange)?.label}</div>
       <div className={styles.overviewGrid}>
         <div className={styles.overviewCard}>
           <div className={styles.overviewCardGlow} style={{ background: "var(--cyan)" }}></div>
@@ -285,7 +286,7 @@ export default function Dashboard() {
           </div>
         )}
       </div>
-
     </div>
+  </div>
   );
 }

@@ -28,6 +28,40 @@
   pointer-events: none;
 }
 
+.view {
+  position: relative;
+  background: rgba(10, 10, 20, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 40px 32px;
+  margin-top: 20px;
+  border-radius: 4px;
+}
+
+/* Layer 3 HUD corners */
+.view::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 20px;
+  height: 20px;
+  border-left: 2px solid var(--cyan);
+  border-top: 2px solid var(--cyan);
+  pointer-events: none;
+}
+
+.view::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 20px;
+  height: 20px;
+  border-right: 2px solid var(--cyan);
+  border-bottom: 2px solid var(--cyan);
+  pointer-events: none;
+}
+
 /* Header */
 .pageHeader {
   display: flex;

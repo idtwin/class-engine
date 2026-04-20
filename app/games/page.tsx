@@ -144,8 +144,9 @@ export default function GamesHub() {
            <button className={`${styles.btn} ${styles.btnPurple}`} onClick={() => setShowSettings(true)}>⚙ Settings</button>
         </div>
       </div>
-
-      <div className={styles.featuredWrapper}>
+      
+      <div className={styles.view}>
+        <div className={styles.featuredWrapper}>
         <div className={styles.featuredLabel}>⏱ Last Played</div>
 
         <div className={styles.classChipRow}>
