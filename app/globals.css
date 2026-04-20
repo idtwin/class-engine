@@ -153,22 +153,22 @@ body::after {
   width: 150%;
   height: 150%;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.4;
+  filter: blur(100px);
+  opacity: 0.55; /* Increased base opacity */
 }
 
 .radar-sweep::before {
-  background: radial-gradient(circle at center, rgba(var(--command-orange-rgb), 0.06), transparent 70%);
+  background: radial-gradient(circle at center, rgba(var(--command-orange-rgb), 0.15), transparent 75%);
   top: -25%;
   left: -25%;
-  animation: drift-alpha 25s ease-in-out infinite alternate;
+  animation: drift-alpha 20s ease-in-out infinite alternate; /* Faster drift */
 }
 
 .radar-sweep::after {
-  background: radial-gradient(circle at center, rgba(var(--radar-blue-rgb), 0.04), transparent 70%);
+  background: radial-gradient(circle at center, rgba(var(--radar-blue-rgb), 0.12), transparent 75%);
   bottom: -25%;
   right: -25%;
-  animation: drift-beta 30s ease-in-out infinite alternate-reverse;
+  animation: drift-beta 25s ease-in-out infinite alternate-reverse;
 }
 
 @keyframes drift-alpha {
