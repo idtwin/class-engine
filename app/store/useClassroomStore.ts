@@ -286,11 +286,11 @@ export const useClassroomStore = create<ClassroomState>()(
                 id: uuidv4(), 
                 name, 
                 gender,
-                level: "Mid", 
-                energy: "Normal", 
-                confidence: "Mid",
-                rank: 1, 
-                tier: "Bronze"
+                level: "Mid" as Level, 
+                energy: "Normal" as Energy, 
+                confidence: "Mid" as Level,
+                rank: 1 as Rank, 
+                tier: "Bronze" as Tier
               }] } 
             : c
         )
@@ -322,8 +322,8 @@ export const useClassroomStore = create<ClassroomState>()(
             confidence: "Mid" as Level, 
             energy: "Normal" as Energy, 
             gender: gender, 
-            rank: 1, 
-            tier: "Bronze"
+            rank: 1 as Rank, 
+            tier: "Bronze" as Tier
           }));
           return { ...c, students: [...c.students, ...newStudents] };
         })
