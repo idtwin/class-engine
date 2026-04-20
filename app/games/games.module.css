@@ -40,8 +40,8 @@
   left: -1px;
   width: 20px;
   height: 20px;
-  border-left: 2px solid var(--radar-blue);
-  border-top: 2px solid var(--radar-blue);
+  border-left: 2px solid var(--command-orange);
+  border-top: 2px solid var(--command-orange);
   pointer-events: none;
 }
 
@@ -52,8 +52,8 @@
   right: -1px;
   width: 20px;
   height: 20px;
-  border-right: 2px solid var(--radar-blue);
-  border-bottom: 2px solid var(--radar-blue);
+  border-right: 2px solid var(--command-orange);
+  border-bottom: 2px solid var(--command-orange);
   pointer-events: none;
 }
 
