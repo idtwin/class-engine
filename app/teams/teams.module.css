@@ -11,6 +11,7 @@
   padding: 60px 32px 80px;
   color: var(--text);
   font-family: var(--font-main), sans-serif;
+  background: rgba(var(--bg-rgb), 0.7);
   min-height: 100vh;
 }
 
