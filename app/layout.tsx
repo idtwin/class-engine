@@ -24,8 +24,8 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "Ayo!",
-  description: "The Classroom Engine",
+  title: "ESL ARENA V2.0 | Command Bridge",
+  description: "Tactical Classroom Command System",
 };
 
 export default function RootLayout({
@@ -34,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${syne.variable} ${jetbrainsMono.variable} ${nunito.variable}`}>
+    <html lang="en" className={`${syne.variable} ${jetbrainsMono.variable} ${nunito.variable} bg-[#0a0a14]`}>
       <body>
         <TopNav />
         {children}

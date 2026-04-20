@@ -209,8 +209,8 @@ export default function TeamsPage() {
       {/* ── Page Header ─────────────────────────────────────────────────────── */}
       <div className={styles.pageHeader}>
         <div>
-          <div className={styles.breadcrumb}>PROJECT S.E.R.U // <span>{activeClass?.name ?? "No Class"}</span></div>
-          <h1 className={styles.headerTitle}>Teams & Roster</h1>
+          <div className={styles.breadcrumb}>PERSONNEL_COMMAND // <span>{activeClass?.name ?? "NO UNIT"}</span></div>
+          <h1 className={styles.headerTitle}>SQUAD OPERATIONS</h1>
         </div>
         <div className={styles.headerActions}>
           {activeClass && (

@@ -93,8 +93,8 @@ export default function GamesHub() {
 
       <div className={styles.pageHeader}>
         <div>
-          <div className={styles.breadcrumb}>SYSTEM_READY // <span>SELECT_MODULE</span></div>
-          <h1>ARCADE_COMMAND</h1>
+          <div className={styles.breadcrumb}>SYSTEM_ONLINE // <span>MISSION_SELECT</span></div>
+          <h1>TACTICAL OPERATIONS</h1>
         </div>
         <div className={styles.headerActions}>
            <button className={`${styles.btn} ${styles.btnGhost}`} onClick={() => setLibOpen(true)}>

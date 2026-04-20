@@ -1,103 +1,112 @@
 /* 
-  ARCADE_COMMAND — TEAMS & ROSTER — OFFICIAL STYLES
-  Source: teams_roster_redesign.html
-  Direct Mirroring [PIXEL PERFECT]
+  ESL ARENA V2.0 — SQUAD OPERATIONS — TACTICAL STYLES
+  Industrial Military Theme
 */
 
 .page {
   position: relative;
   z-index: 1;
-  max-width: 1100px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 36px 32px 80px;
-  background: #07090f;
-  color: #dce8f5;
-  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-main), sans-serif;
   min-height: 100vh;
 }
 
-/* Grid Background */
-.page::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(0,232,122,0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,232,122,0.015) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none;
-  z-index: -1;
-}
-
 /* ──────────────────────────────────────────────────────────────────────────
-   STEPPER
+   STEPPER - HUD STYLE
    ────────────────────────────────────────────────────────────────────────── */
 .stepper {
   display: flex;
   align-items: center;
   gap: 0;
   margin-bottom: 40px;
-  background: #0e1420;
-  border: 1px solid #1c2a40;
-  border-radius: 12px;
+  background: rgba(10, 10, 20, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 4px;
   width: fit-content;
+  position: relative;
+}
+
+/* HUD corners on stepper */
+.stepper::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 12px;
+  height: 12px;
+  border-left: 2px solid var(--command-orange);
+  border-top: 2px solid var(--command-orange);
+  pointer-events: none;
+}
+
+.stepper::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 12px;
+  height: 12px;
+  border-right: 2px solid var(--command-orange);
+  border-bottom: 2px solid var(--command-orange);
+  pointer-events: none;
 }
 
 .step {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 20px;
-  border-radius: 9px;
+  gap: 10px;
+  padding: 10px 24px;
   cursor: pointer;
   transition: all 0.2s;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #4a637d;
+  color: rgba(255, 255, 255, 0.4);
   white-space: nowrap;
 }
 
 .stepActive {
-  background: #131b2b;
-  color: #dce8f5;
+  background: rgba(255, 93, 0, 0.1);
+  color: var(--command-orange);
 }
 
 .stepDone {
-  color: #00e87a;
+  color: var(--team-green);
 }
 
 .stepNum {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 10px;
   font-weight: 700;
-  background: #1c2a40;
-  color: #4a637d;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.4);
   flex-shrink: 0;
 }
 
 .stepActive .stepNum {
-  background: #00c8f0;
+  background: var(--command-orange);
   color: #000;
 }
 
 .stepDone .stepNum {
-  background: #00e87a;
+  background: var(--team-green);
   color: #000;
 }
 
 .stepDivider {
-  width: 24px;
+  width: 32px;
   height: 1px;
-  background: #1c2a40;
+  background: rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
 }
 
@@ -109,32 +118,35 @@
   align-items: flex-end;
   justify-content: space-between;
   margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(255, 93, 0, 0.15);
 }
 
 .breadcrumb {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 11px;
-  color: #4a637d;
-  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.15em;
   text-transform: uppercase;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .breadcrumb span {
-  color: #00c8f0;
+  color: var(--command-orange);
 }
 
 .headerTitle {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 800;
-  letter-spacing: -0.02em;
-  color: #fff;
+  letter-spacing: 0.08em;
+  color: var(--text-bright);
   margin: 0;
+  text-transform: uppercase;
 }
 
 .headerActions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
 }
 
@@ -144,27 +156,61 @@
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 9px 18px;
-  border-radius: 8px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
+  gap: 8px;
+  padding: 10px 20px;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   cursor: pointer;
   border: none;
-  transition: all 0.15s;
+  transition: all 0.2s;
 }
 
-.btnGhost { background: transparent; border: 1px solid #243347; color: #4a637d; }
-.btnGhost:hover { border-color: #dce8f5; color: #dce8f5; }
-.btnPrimary { background: #00e87a; color: #000; }
-.btnPrimary:hover { background: #00ff88; }
-.btnCyan { background: rgba(0,200,240,0.15); border: 1px solid rgba(0,200,240,0.4); color: #00c8f0; }
-.btnCyan:hover { background: rgba(0,200,240,0.25); }
-.btnDanger { background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.3); color: #ff4444; }
-.btnDanger:hover { background: rgba(255,68,68,0.2); }
+.btnGhost { 
+  background: transparent; 
+  border: 1px solid rgba(255, 255, 255, 0.15); 
+  color: rgba(255, 255, 255, 0.5); 
+}
+.btnGhost:hover { 
+  border-color: var(--command-orange); 
+  color: var(--command-orange);
+  box-shadow: 0 0 20px rgba(255, 93, 0, 0.15);
+}
+
+.btnPrimary { 
+  background: var(--command-orange); 
+  color: #000; 
+}
+.btnPrimary:hover { 
+  background: #ff7020;
+  box-shadow: 0 0 30px rgba(255, 93, 0, 0.3);
+}
+.btnPrimary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btnCyan { 
+  background: rgba(0,200,240,0.1); 
+  border: 1px solid rgba(0,200,240,0.3); 
+  color: #00c8f0; 
+}
+.btnCyan:hover { 
+  background: rgba(0,200,240,0.2);
+  box-shadow: 0 0 20px rgba(0, 200, 240, 0.2);
+}
+
+.btnDanger { 
+  background: rgba(255,51,51,0.1); 
+  border: 1px solid rgba(255,51,51,0.3); 
+  color: var(--alert-red); 
+}
+.btnDanger:hover { 
+  background: rgba(255,51,51,0.2);
+  box-shadow: 0 0 20px rgba(255, 51, 51, 0.2);
+}
 
 /* ──────────────────────────────────────────────────────────────────────────
    VIEW 1: ROSTER
@@ -173,100 +219,157 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
-  gap: 12px;
+  margin-bottom: 24px;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
 .rosterSearch {
-  background: #0e1420;
-  border: 1px solid #243347;
-  border-radius: 8px;
-  padding: 8px 14px;
-  font-family: 'JetBrains Mono', monospace;
+  background: rgba(10, 10, 20, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 16px;
+  font-family: var(--font-mono), monospace;
   font-size: 12px;
-  color: #dce8f5;
+  color: var(--text);
   outline: none;
-  width: 260px;
+  width: 280px;
+  transition: all 0.2s;
 }
 
-.rosterSearch::placeholder { color: #4a637d; }
-.rosterSearch:focus { border-color: #00c8f0; }
+.rosterSearch::placeholder { color: rgba(255, 255, 255, 0.3); }
+.rosterSearch:focus { 
+  border-color: var(--command-orange);
+  box-shadow: 0 0 20px rgba(255, 93, 0, 0.1);
+}
 
 .rosterStats {
   display: flex;
-  gap: 20px;
+  gap: 24px;
 }
 
 .rstat { text-align: center; }
-.rstatVal { font-size: 20px; font-weight: 800; color: #fff; line-height: 1; }
+.rstatVal { 
+  font-family: var(--font-mono), monospace;
+  font-size: 22px; 
+  font-weight: 800; 
+  color: var(--text-bright); 
+  line-height: 1; 
+}
 .rstatLabel {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 9px;
-  letter-spacing: 0.1em;
-  color: #4a637d;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.4);
   text-transform: uppercase;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .rosterGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: 12px;
 }
 
 .studentCard {
-  background: #0e1420;
-  border: 1px solid #1c2a40;
-  border-radius: 10px;
-  padding: 14px 16px;
+  position: relative;
+  background: rgba(10, 10, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  transition: border-color 0.15s;
+  gap: 12px;
+  transition: all 0.25s;
   cursor: pointer;
 }
 
-.studentCard:hover { border-color: #243347; }
-.studentCardActive { border-color: #00c8f0; background: rgba(0,200,240,0.02); }
+/* Card corner brackets */
+.studentCard::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 10px;
+  height: 10px;
+  border-left: 1px solid rgba(255, 93, 0, 0.3);
+  border-top: 1px solid rgba(255, 93, 0, 0.3);
+  pointer-events: none;
+  transition: all 0.25s;
+}
 
-.studentName { font-size: 14px; font-weight: 700; color: #fff; margin: 0; }
+.studentCard::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 10px;
+  height: 10px;
+  border-right: 1px solid rgba(255, 93, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 93, 0, 0.3);
+  pointer-events: none;
+  transition: all 0.25s;
+}
 
-.studentTags { display: flex; gap: 5px; flex-wrap: wrap; }
+.studentCard:hover { 
+  border-color: rgba(255, 93, 0, 0.3);
+  background: rgba(255, 93, 0, 0.03);
+}
+
+.studentCard:hover::before,
+.studentCard:hover::after {
+  border-color: var(--command-orange);
+  width: 14px;
+  height: 14px;
+}
+
+.studentCardActive { 
+  border-color: var(--command-orange); 
+  background: rgba(255, 93, 0, 0.05); 
+}
+
+.studentName { 
+  font-size: 15px; 
+  font-weight: 700; 
+  color: var(--text-bright); 
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.studentTags { display: flex; gap: 6px; flex-wrap: wrap; }
 
 .stag {
-  padding: 3px 8px;
-  border-radius: 6px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  padding: 4px 10px;
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.2s;
   border: 1px solid transparent;
   user-select: none;
+  text-transform: uppercase;
 }
 
 .stagLabel {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9px;
-  color: #4a637d;
-  letter-spacing: 0.08em;
+  font-family: var(--font-mono), monospace;
+  font-size: 8px;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 /* Fluency */
-.stagLow  { background: rgba(255,68,68,0.1);   color: #ff8080; border-color: rgba(255,68,68,0.2); }
-.stagMid  { background: rgba(255,200,67,0.1);  color: #ffc843; border-color: rgba(255,200,67,0.2); }
-.stagHigh { background: rgba(0,232,122,0.1);   color: #00e87a; border-color: rgba(0,232,122,0.2); }
+.stagLow  { background: rgba(255,51,51,0.1);   color: var(--alert-red); border-color: rgba(255,51,51,0.2); }
+.stagMid  { background: rgba(255,93,0,0.1);    color: var(--command-orange); border-color: rgba(255,93,0,0.2); }
+.stagHigh { background: rgba(190,239,0,0.1);   color: var(--team-green); border-color: rgba(190,239,0,0.2); }
 /* Energy */
-.stagPass { background: rgba(74,99,125,0.15); color: #4a637d; border-color: #1c2a40; }
-.stagNorm { background: rgba(0,200,240,0.1);  color: #00c8f0; border-color: rgba(0,200,240,0.2); }
-.stagActive { background: rgba(255,125,59,0.1); color: #ff7d3b; border-color: rgba(255,125,59,0.2); }
+.stagPass { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); border-color: rgba(255,255,255,0.1); }
+.stagNorm { background: rgba(0,200,240,0.1);    color: #00c8f0; border-color: rgba(0,200,240,0.2); }
+.stagActive { background: rgba(255,93,0,0.1);   color: var(--command-orange); border-color: rgba(255,93,0,0.2); }
 /* Confidence */
-.stagCoLow  { background: rgba(255,68,68,0.1);   color: #ff8080; border-color: rgba(255,68,68,0.2); }
-.stagCoMid  { background: rgba(255,200,67,0.1);  color: #ffc843; border-color: rgba(255,200,67,0.2); }
+.stagCoLow  { background: rgba(255,51,51,0.1);   color: var(--alert-red); border-color: rgba(255,51,51,0.2); }
+.stagCoMid  { background: rgba(255,93,0,0.1);    color: var(--command-orange); border-color: rgba(255,93,0,0.2); }
 .stagCoHigh { background: rgba(176,110,255,0.1); color: #b06eff; border-color: rgba(176,110,255,0.2); }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -276,7 +379,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
   gap: 16px;
   flex-wrap: wrap;
 }
@@ -284,88 +387,162 @@
 .balanceSummary {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
 .bsCard {
-  background: #0e1420;
-  border: 1px solid #1c2a40;
-  border-radius: 10px;
-  padding: 14px;
+  position: relative;
+  background: rgba(10, 10, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 18px;
 }
 
-.bsTitle { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
-.bsDot { width: 8px; height: 8px; border-radius: 50%; }
-.bsName { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
-.bsRow { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-.bsLabel { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #4a637d; text-transform: uppercase; letter-spacing: 0.08em; }
-.bsVal { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; }
-.bsTrack { height: 3px; background: #243347; border-radius: 99px; overflow: hidden; margin-bottom: 8px; }
-.bsFill { height: 100%; border-radius: 99px; transition: width 0.4s; }
+/* HUD corners on balance cards */
+.bsCard::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 8px;
+  height: 8px;
+  border-left: 1px solid var(--command-orange);
+  border-top: 1px solid var(--command-orange);
+  pointer-events: none;
+}
+
+.bsTitle { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.bsDot { width: 10px; height: 10px; }
+.bsName { 
+  font-family: var(--font-mono), monospace;
+  font-size: 11px; 
+  font-weight: 700; 
+  text-transform: uppercase; 
+  letter-spacing: 0.1em; 
+}
+.bsRow { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.bsLabel { 
+  font-family: var(--font-mono), monospace; 
+  font-size: 9px; 
+  color: rgba(255, 255, 255, 0.4); 
+  text-transform: uppercase; 
+  letter-spacing: 0.1em; 
+}
+.bsVal { 
+  font-family: var(--font-mono), monospace; 
+  font-size: 10px; 
+  font-weight: 700; 
+}
+.bsTrack { 
+  height: 4px; 
+  background: rgba(255, 255, 255, 0.1); 
+  overflow: hidden; 
+  margin-bottom: 10px; 
+}
+.bsFill { height: 100%; transition: width 0.4s; }
 
 .teamsGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  gap: 16px;
 }
 
 .teamCard {
-  background: #0e1420;
-  border-radius: 12px;
-  border: 1px solid #1c2a40;
+  position: relative;
+  background: rgba(10, 10, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   overflow: hidden;
-  transition: border-color 0.2s;
+  transition: all 0.25s;
+}
+
+/* Team card HUD corners */
+.teamCard::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 12px;
+  height: 12px;
+  border-left: 2px solid var(--command-orange);
+  border-top: 2px solid var(--command-orange);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.teamCard::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 12px;
+  height: 12px;
+  border-right: 2px solid var(--command-orange);
+  border-bottom: 2px solid var(--command-orange);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .teamHeader {
-  padding: 14px 16px 12px;
+  padding: 16px 18px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #1c2a40;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.teamNameRow { display: flex; align-items: center; gap: 8px; }
-.teamDot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.teamName { font-size: 13px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.teamNameRow { display: flex; align-items: center; gap: 10px; }
+.teamDot { width: 12px; height: 12px; flex-shrink: 0; }
+.teamName { 
+  font-family: var(--font-mono), monospace;
+  font-size: 12px; 
+  font-weight: 800; 
+  letter-spacing: 0.1em; 
+  text-transform: uppercase; 
+}
 
-.teamMembers { padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+.teamMembers { padding: 10px; display: flex; flex-direction: column; gap: 6px; }
 
 .memberRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 10px;
-  border-radius: 7px;
-  background: #131b2b;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid transparent;
-  transition: background 0.15s;
+  transition: all 0.2s;
 }
-.memberRow:hover { border-color: #243347; }
+.memberRow:hover { 
+  border-color: rgba(255, 93, 0, 0.2);
+  background: rgba(255, 93, 0, 0.03);
+}
 
-.memberName { font-size: 12px; font-weight: 600; color: #dce8f5; }
-.memberMiniTags { display: flex; gap: 3px; }
+.memberName { 
+  font-size: 12px; 
+  font-weight: 600; 
+  color: var(--text); 
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.memberMiniTags { display: flex; gap: 4px; }
 .miniTag {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+  width: 8px;
+  height: 8px;
   flex-shrink: 0;
 }
 
 .moveBtn {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 9px;
-  letter-spacing: 0.08em;
-  color: #4a637d;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.4);
   background: none;
   border: none;
   cursor: pointer;
-  padding: 2px 4px;
+  padding: 4px 8px;
   text-transform: uppercase;
-  transition: color 0.15s;
+  transition: all 0.2s;
 }
-.moveBtn:hover { color: #00c8f0; }
+.moveBtn:hover { color: var(--command-orange); }
 
 /* ──────────────────────────────────────────────────────────────────────────
    VIEW 3: LIVE SESSION
@@ -373,142 +550,195 @@
 .sessionTop {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 16px;
+  margin-bottom: 28px;
 }
 
 .scoreCard {
-  border-radius: 12px;
-  padding: 20px;
-  border: 1px solid #1c2a40;
-  background: #0e1420;
   position: relative;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(10, 10, 20, 0.6);
   overflow: hidden;
-  transition: transform 0.2s;
+  transition: all 0.25s;
 }
-.scoreCard:hover { transform: translateY(-2px); }
 
-.scoreCardGlow {
+/* Score card HUD corners */
+.scoreCard::before {
+  content: '';
   position: absolute;
-  top: -40px;
-  right: -40px;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  opacity: 0.08;
+  top: -1px;
+  left: -1px;
+  width: 14px;
+  height: 14px;
+  border-left: 2px solid var(--command-orange);
+  border-top: 2px solid var(--command-orange);
   pointer-events: none;
 }
 
-.scoreCardHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.scoreTeamLabel { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
-.scoreRank { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #4a637d; }
-.scoreRankFirst { color: #ffc843; }
+.scoreCard:hover { 
+  transform: translateY(-3px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
 
-.scoreValue { font-size: 40px; font-weight: 800; line-height: 1; margin-bottom: 6px; color: #fff; }
+.scoreCardGlow {
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 140px;
+  height: 140px;
+  opacity: 0.1;
+  pointer-events: none;
+}
 
-.gapSection { margin-bottom: 24px; }
+.scoreCardHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.scoreTeamLabel { 
+  font-family: var(--font-mono), monospace; 
+  font-size: 10px; 
+  font-weight: 700; 
+  letter-spacing: 0.12em; 
+  text-transform: uppercase; 
+}
+.scoreRank { 
+  font-family: var(--font-mono), monospace; 
+  font-size: 10px; 
+  font-weight: 700; 
+  color: rgba(255, 255, 255, 0.4); 
+}
+.scoreRankFirst { color: var(--team-green); }
+
+.scoreValue { 
+  font-family: var(--font-mono), monospace;
+  font-size: 44px; 
+  font-weight: 800; 
+  line-height: 1; 
+  margin-bottom: 8px; 
+  color: var(--text-bright); 
+}
+
+.gapSection { margin-bottom: 28px; }
 .gapLabel {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10px;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: #4a637d;
-  margin-bottom: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 12px;
   display: flex;
   justify-content: space-between;
 }
-.gapTrack { height: 10px; background: #243347; border-radius: 99px; overflow: hidden; display: flex; }
+.gapTrack { 
+  height: 12px; 
+  background: rgba(255, 255, 255, 0.05); 
+  overflow: hidden; 
+  display: flex; 
+}
 .gapSeg { height: 100%; transition: width 0.6s ease; }
 
 .dominantAlert {
-  background: rgba(255,200,67,0.06);
-  border: 1px solid rgba(255,200,67,0.2);
-  border-radius: 10px;
-  padding: 12px 16px;
+  background: rgba(255, 93, 0, 0.06);
+  border: 1px solid rgba(255, 93, 0, 0.2);
+  padding: 14px 18px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin-bottom: 24px;
   font-size: 13px;
-  color: #94a3b8;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .sectionTitle {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10px;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: #4a637d;
-  margin-bottom: 14px;
+  color: var(--command-orange);
+  margin-bottom: 16px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 .sectionTitle::after {
   content: '';
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, #243347, transparent);
+  background: linear-gradient(90deg, rgba(255, 93, 0, 0.3), transparent);
 }
 
-.historyGrid { display: flex; flex-direction: column; gap: 6px; }
+.historyGrid { display: flex; flex-direction: column; gap: 8px; }
 .historyRow {
   display: grid;
   grid-template-columns: 120px repeat(4, 1fr) auto;
-  gap: 8px;
-  align-items: center;
-  background: #0e1420;
-  border: 1px solid #1c2a40;
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 13px;
-}
-.historyHeader { color: #4a637d; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; }
-
-.adjustGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-.adjustCard {
-  background: #0e1420;
-  border: 1px solid #1c2a40;
-  border-radius: 10px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
   gap: 10px;
   align-items: center;
+  background: rgba(10, 10, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 12px 16px;
+  font-size: 13px;
 }
-.adjustControls { display: flex; align-items: center; gap: 8px; }
+.historyHeader { 
+  color: rgba(255, 255, 255, 0.4); 
+  font-family: var(--font-mono), monospace; 
+  font-size: 9px; 
+  letter-spacing: 0.1em; 
+  text-transform: uppercase; 
+}
+
+.adjustGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.adjustCard {
+  background: rgba(10, 10, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+.adjustControls { display: flex; align-items: center; gap: 10px; }
 .adjBtn {
-  width: 30px;
-  height: 30px;
-  border-radius: 7px;
-  background: #131b2b;
-  border: 1px solid #243347;
-  font-size: 16px;
+  width: 34px;
+  height: 34px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 18px;
   font-weight: 700;
   cursor: pointer;
-  color: #dce8f5;
+  color: var(--text);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
+  transition: all 0.2s;
 }
-.adjBtn:hover { border-color: #00c8f0; color: #00c8f0; }
-.adjScore { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; min-width: 50px; text-align: center; }
+.adjBtn:hover { 
+  border-color: var(--command-orange); 
+  color: var(--command-orange);
+  background: rgba(255, 93, 0, 0.1);
+}
+.adjScore { 
+  font-family: var(--font-mono), monospace; 
+  font-size: 18px; 
+  font-weight: 700; 
+  min-width: 60px; 
+  text-align: center; 
+}
 
 .tag {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 99px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  gap: 4px;
+  padding: 5px 12px;
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   white-space: nowrap;
 }
-.tagCyan { background: rgba(0,200,240,0.1); color: #00c8f0; border: 1px solid rgba(0,200,240,0.25); }
+.tagCyan { 
+  background: rgba(0,200,240,0.1); 
+  color: #00c8f0; 
+  border: 1px solid rgba(0,200,240,0.25); 
+}
 
 /* ──────────────────────────────────────────────────────────────────────────
    CLASS MANAGEMENT BAR
@@ -517,214 +747,260 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  background: #0e1420;
-  border: 1px solid #1c2a40;
-  border-radius: 12px;
-  padding: 10px 14px;
-  margin-bottom: 24px;
+  gap: 16px;
+  background: rgba(10, 10, 20, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 12px 18px;
+  margin-bottom: 28px;
   flex-wrap: wrap;
+  position: relative;
+}
+
+/* HUD corners on class bar */
+.classBar::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 10px;
+  height: 10px;
+  border-left: 1px solid var(--command-orange);
+  border-top: 1px solid var(--command-orange);
+  pointer-events: none;
+}
+
+.classBar::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 10px;
+  height: 10px;
+  border-right: 1px solid var(--command-orange);
+  border-bottom: 1px solid var(--command-orange);
+  pointer-events: none;
 }
 
 .classBarLeft {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .classBarRight {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
 .classBarLabel {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10px;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: #4a637d;
+  color: rgba(255, 255, 255, 0.4);
   flex-shrink: 0;
 }
 
 .classChip {
   display: inline-flex;
   align-items: center;
-  padding: 4px 14px;
-  border-radius: 99px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
+  padding: 6px 16px;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   cursor: pointer;
-  border: 1px solid #243347;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   background: transparent;
-  color: #4a637d;
-  transition: all 0.15s;
+  color: rgba(255, 255, 255, 0.5);
+  transition: all 0.2s;
+  text-transform: uppercase;
 }
-.classChip:hover { color: #dce8f5; border-color: #4a637d; }
+.classChip:hover { 
+  color: rgba(255, 255, 255, 0.8); 
+  border-color: rgba(255, 255, 255, 0.2); 
+}
 
 .classChipActive {
-  border-color: #00c8f0;
-  color: #00c8f0;
-  background: rgba(0,200,240,0.08);
+  border-color: var(--command-orange);
+  color: var(--command-orange);
+  background: rgba(255, 93, 0, 0.1);
 }
 
 .classChipAdd {
   display: inline-flex;
   align-items: center;
-  padding: 4px 12px;
-  border-radius: 99px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
+  padding: 6px 14px;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
   font-weight: 700;
   cursor: pointer;
-  border: 1px dashed #243347;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
   background: transparent;
-  color: #4a637d;
-  transition: all 0.15s;
+  color: rgba(255, 255, 255, 0.4);
+  transition: all 0.2s;
+  text-transform: uppercase;
 }
-.classChipAdd:hover { color: #00e87a; border-color: #00e87a; }
+.classChipAdd:hover { 
+  color: var(--team-green); 
+  border-color: var(--team-green); 
+}
 
 .classInlineForm {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .classInlineInput {
-  background: #131b2b;
-  border: 1px solid #00c8f0;
-  border-radius: 6px;
-  padding: 4px 10px;
-  font-family: 'JetBrains Mono', monospace;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--command-orange);
+  padding: 6px 12px;
+  font-family: var(--font-mono), monospace;
   font-size: 11px;
-  color: #dce8f5;
+  color: var(--text);
   outline: none;
-  width: 160px;
+  width: 180px;
 }
 
 .classInlineBtn {
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
+  padding: 6px 12px;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
   font-weight: 700;
   cursor: pointer;
-  border: 1px solid #243347;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   background: transparent;
-  color: #4a637d;
-  transition: all 0.15s;
+  color: rgba(255, 255, 255, 0.5);
+  transition: all 0.2s;
 }
-.classInlineBtn:hover { color: #dce8f5; border-color: #4a637d; }
+.classInlineBtn:hover { 
+  color: var(--text); 
+  border-color: rgba(255, 255, 255, 0.3); 
+}
 
-.classInlineBtnConfirm { border-color: rgba(0,232,122,0.4); color: #00e87a; }
-.classInlineBtnConfirm:hover { background: rgba(0,232,122,0.1); color: #00e87a; }
+.classInlineBtnConfirm { 
+  border-color: rgba(190,239,0,0.4); 
+  color: var(--team-green); 
+}
+.classInlineBtnConfirm:hover { 
+  background: rgba(190,239,0,0.1); 
+}
 
-.classInlineBtnDanger { border-color: rgba(255,68,68,0.4); color: #ff4444; }
-.classInlineBtnDanger:hover { background: rgba(255,68,68,0.15); }
+.classInlineBtnDanger { 
+  border-color: rgba(255,51,51,0.4); 
+  color: var(--alert-red); 
+}
+.classInlineBtnDanger:hover { 
+  background: rgba(255,51,51,0.15); 
+}
 
 .classDeletePrompt {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 11px;
-  color: #ff4444;
+  color: var(--alert-red);
 }
 
 .classActionBtn {
-  padding: 4px 12px;
-  border-radius: 6px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  padding: 6px 14px;
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   cursor: pointer;
-  border: 1px solid #243347;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   background: transparent;
-  color: #4a637d;
-  transition: all 0.15s;
+  color: rgba(255, 255, 255, 0.5);
+  transition: all 0.2s;
   text-transform: uppercase;
 }
-.classActionBtn:hover { color: #dce8f5; border-color: #4a637d; }
-.classActionBtnDanger:hover { color: #ff4444; border-color: rgba(255,68,68,0.4); }
+.classActionBtn:hover { 
+  color: var(--text); 
+  border-color: rgba(255, 255, 255, 0.2); 
+}
+.classActionBtnDanger:hover { 
+  color: var(--alert-red); 
+  border-color: rgba(255,51,51,0.4); 
+}
 
 /* ──────────────────────────────────────────────────────────────────────────
    STUDENT CARD — ABSENT / PRESENT
    ────────────────────────────────────────────────────────────────────────── */
 .studentCardAbsent {
-  opacity: 0.5;
-  border-color: #1c2a40 !important;
-  background: #0b1019 !important;
+  opacity: 0.4;
+  border-color: rgba(255, 255, 255, 0.03) !important;
+  background: rgba(10, 10, 20, 0.3) !important;
 }
 
 .studentCardTop {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
 }
 
 .studentNameAbsent {
   text-decoration: line-through;
-  color: #4a637d !important;
+  color: rgba(255, 255, 255, 0.4) !important;
 }
 
 .studentCardActions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
 .studentToggleBtn {
-  padding: 2px 8px;
-  border-radius: 99px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9px;
+  padding: 4px 10px;
+  font-family: var(--font-mono), monospace;
+  font-size: 8px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   cursor: pointer;
   border: 1px solid transparent;
-  transition: all 0.15s;
+  transition: all 0.2s;
   white-space: nowrap;
+  text-transform: uppercase;
 }
 
 .studentToggleBtnPresent {
-  background: rgba(0,232,122,0.1);
-  color: #00e87a;
-  border-color: rgba(0,232,122,0.3);
+  background: rgba(190,239,0,0.1);
+  color: var(--team-green);
+  border-color: rgba(190,239,0,0.3);
 }
 .studentToggleBtnPresent:hover {
-  background: rgba(255,68,68,0.08);
-  color: #ff8080;
-  border-color: rgba(255,68,68,0.2);
+  background: rgba(255,51,51,0.08);
+  color: var(--alert-red);
+  border-color: rgba(255,51,51,0.2);
 }
 
 .studentToggleBtnAbsent {
-  background: rgba(255,68,68,0.08);
-  color: #ff8080;
-  border-color: rgba(255,68,68,0.2);
+  background: rgba(255,51,51,0.08);
+  color: var(--alert-red);
+  border-color: rgba(255,51,51,0.2);
 }
 .studentToggleBtnAbsent:hover {
-  background: rgba(0,232,122,0.1);
-  color: #00e87a;
-  border-color: rgba(0,232,122,0.3);
+  background: rgba(190,239,0,0.1);
+  color: var(--team-green);
+  border-color: rgba(190,239,0,0.3);
 }
 
 .studentRemoveBtn {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
   background: transparent;
   border: none;
   cursor: pointer;
   font-size: 11px;
   opacity: 0.3;
-  transition: opacity 0.15s;
+  transition: opacity 0.2s;
   padding: 0;
 }
 .studentRemoveBtn:hover { opacity: 1; }
@@ -733,15 +1009,14 @@
 .absentBar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: rgba(255,68,68,0.06);
-  border: 1px solid rgba(255,68,68,0.18);
-  border-radius: 8px;
-  padding: 8px 14px;
-  margin-bottom: 14px;
-  font-family: 'JetBrains Mono', monospace;
+  gap: 12px;
+  background: rgba(255,51,51,0.06);
+  border: 1px solid rgba(255,51,51,0.2);
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  font-family: var(--font-mono), monospace;
   font-size: 11px;
-  color: #ff8080;
+  color: var(--alert-red);
 }
 
 .absentBarIcon { font-size: 14px; }
@@ -749,118 +1024,193 @@
 .absentBarReset {
   margin-left: auto;
   background: transparent;
-  border: 1px solid rgba(0,232,122,0.3);
-  color: #00e87a;
-  border-radius: 6px;
-  padding: 3px 10px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  border: 1px solid rgba(190,239,0,0.3);
+  color: var(--team-green);
+  padding: 4px 12px;
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all 0.2s;
+  text-transform: uppercase;
 }
-.absentBarReset:hover { background: rgba(0,232,122,0.1); }
+.absentBarReset:hover { background: rgba(190,239,0,0.1); }
 
 /* ──────────────────────────────────────────────────────────────────────────
    ADD STUDENT CARD
    ────────────────────────────────────────────────────────────────────────── */
 .addStudentCard {
-  background: #0b1019;
-  border: 1px dashed #243347;
-  border-radius: 10px;
-  padding: 16px;
+  background: rgba(10, 10, 20, 0.3);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  transition: border-color 0.15s;
+  gap: 12px;
+  transition: all 0.2s;
 }
-.addStudentCard:hover { border-color: #4a637d; }
+.addStudentCard:hover { border-color: rgba(255, 255, 255, 0.2); }
 
 .addStudentTitle {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #4a637d;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .addStudentInput {
-  background: #131b2b;
-  border: 1px solid #243347;
-  border-radius: 7px;
-  padding: 8px 12px;
-  font-family: 'JetBrains Mono', monospace;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 14px;
+  font-family: var(--font-mono), monospace;
   font-size: 12px;
-  color: #dce8f5;
+  color: var(--text);
   outline: none;
   width: 100%;
   box-sizing: border-box;
+  transition: all 0.2s;
 }
-.addStudentInput:focus { border-color: #00c8f0; }
-.addStudentInput::placeholder { color: #4a637d; }
+.addStudentInput:focus { border-color: var(--command-orange); }
+.addStudentInput::placeholder { color: rgba(255, 255, 255, 0.3); }
 
 .addStudentButtons {
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
 .bulkTextarea {
-  background: #131b2b;
-  border: 1px solid #243347;
-  border-radius: 7px;
-  padding: 8px 12px;
-  font-family: 'JetBrains Mono', monospace;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 14px;
+  font-family: var(--font-mono), monospace;
   font-size: 11px;
-  color: #dce8f5;
+  color: var(--text);
   outline: none;
   width: 100%;
   box-sizing: border-box;
   resize: vertical;
+  transition: all 0.2s;
 }
-.bulkTextarea:focus { border-color: #00c8f0; }
-.bulkTextarea::placeholder { color: #4a637d; }
+.bulkTextarea:focus { border-color: var(--command-orange); }
+.bulkTextarea::placeholder { color: rgba(255, 255, 255, 0.3); }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   MOVE DROPDOWN
+   MOVE STUDENT MODAL
    ────────────────────────────────────────────────────────────────────────── */
-.moveDropdown {
+.moveOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 20, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.moveModal {
+  position: relative;
+  background: rgba(10, 10, 20, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 400px;
+  max-width: 92vw;
+  padding: 32px;
+}
+
+/* Modal HUD corners */
+.moveModal::before {
+  content: '';
   position: absolute;
-  right: 0;
-  top: calc(100% + 4px);
-  background: #131b2b;
-  border: 1px solid #243347;
-  border-radius: 8px;
-  padding: 4px;
-  z-index: 10;
-  min-width: 120px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  top: -1px;
+  left: -1px;
+  width: 20px;
+  height: 20px;
+  border-left: 2px solid var(--command-orange);
+  border-top: 2px solid var(--command-orange);
+  pointer-events: none;
 }
 
-.moveDropdownItem {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 6px 10px;
-  border-radius: 5px;
-  background: transparent;
-  border: none;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.12s;
+.moveModal::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 20px;
+  height: 20px;
+  border-right: 2px solid var(--command-orange);
+  border-bottom: 2px solid var(--command-orange);
+  pointer-events: none;
 }
-.moveDropdownItem:hover { background: rgba(255,255,255,0.05); }
 
-/* adjustTeamName */
-.adjustTeamName {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
+.moveTitle {
+  font-family: var(--font-mono), monospace;
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  color: var(--command-orange);
+  margin-bottom: 20px;
 }
 
-/* historySection */
-.historySection { margin-bottom: 24px; }
+.moveOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.moveOption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.moveOption:hover {
+  border-color: var(--command-orange);
+  background: rgba(255, 93, 0, 0.05);
+}
+
+.moveOptionDot {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.moveOptionName {
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.moveCancel {
+  margin-top: 20px;
+  width: 100%;
+  padding: 12px;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.moveCancel:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text);
+}
+
+.view {
+  position: relative;
+}

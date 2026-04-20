@@ -1,11 +1,11 @@
 /* =====================================================
-   ARCADE_COMMAND — Student Connect Screen
-   Font: Nunito · Dark Mobile · Cyan accent
+   ESL ARENA V2.0 — RECRUIT CONNECT SCREEN
+   Font: Nunito · Mobile Tactical Interface
    ===================================================== */
 
 .page {
   min-height: 100vh;
-  background: #060810;
+  background: #0a0a14;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -16,13 +16,27 @@
   overflow: hidden;
 }
 
-/* Radial glow from top */
+/* Tactical grid background */
 .page::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 93, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 93, 0, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+/* Radial glow from top */
+.page::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 50%;
-  background: radial-gradient(ellipse at 50% 0%, rgba(0, 200, 240, 0.08) 0%, transparent 65%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(255, 93, 0, 0.08) 0%, transparent 65%);
   pointer-events: none;
 }
 
@@ -42,22 +56,21 @@
 .logo {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--cyan, #00c8f0);
+  color: var(--command-orange, #FF5D00);
   margin-bottom: 28px;
 }
 
 .logoDot {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
-  background: var(--green, #00e87a);
-  box-shadow: 0 0 8px var(--green, #00e87a);
+  background: var(--team-green, #BEEF00);
+  box-shadow: 0 0 10px var(--team-green, #BEEF00);
   animation: blink 1.5s ease-in-out infinite;
 }
 
@@ -74,13 +87,14 @@
   text-align: center;
   line-height: 1.15;
   margin-bottom: 6px;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .subtitle {
   font-size: 14px;
   font-weight: 600;
-  color: var(--muted, #4a637d);
+  color: rgba(255, 255, 255, 0.5);
   text-align: center;
   margin-bottom: 36px;
 }
@@ -97,17 +111,16 @@
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--muted, #4a637d);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .codeInput {
   width: 100%;
-  background: #0e1520;
-  border: 1.5px solid #1e3048;
-  border-radius: 14px;
-  padding: 16px;
+  background: rgba(10, 10, 20, 0.8);
+  border: 2px solid rgba(255, 93, 0, 0.3);
+  padding: 18px;
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
   font-size: 28px;
   font-weight: 700;
@@ -115,15 +128,16 @@
   text-align: center;
   letter-spacing: 0.3em;
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
 }
 
 .codeInput:focus {
-  border-color: var(--cyan, #00c8f0);
+  border-color: var(--command-orange, #FF5D00);
+  box-shadow: 0 0 30px rgba(255, 93, 0, 0.2);
 }
 
 .codeInput::placeholder {
-  color: #1e3048;
+  color: rgba(255, 255, 255, 0.15);
   letter-spacing: 0.2em;
 }
 
@@ -137,9 +151,8 @@
 
 .nameSelect {
   width: 100%;
-  background: #0e1520;
-  border: 1.5px solid #1e3048;
-  border-radius: 14px;
+  background: rgba(10, 10, 20, 0.8);
+  border: 2px solid rgba(255, 93, 0, 0.3);
   padding: 16px 44px 16px 16px;
   font-family: var(--font-phone), 'Nunito', sans-serif;
   font-size: 16px;
@@ -147,88 +160,116 @@
   color: #fff;
   outline: none;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a637d' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23FF5D00' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 16px center;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
   cursor: pointer;
 }
 
 .nameSelect:focus {
-  border-color: var(--cyan, #00c8f0);
+  border-color: var(--command-orange, #FF5D00);
+  box-shadow: 0 0 30px rgba(255, 93, 0, 0.2);
 }
 
 .nameSelect option {
-  background: #0e1520;
+  background: #0a0a14;
   color: #fff;
 }
 
 .nameSelect optgroup {
-  color: var(--muted, #4a637d);
+  color: rgba(255, 255, 255, 0.5);
   font-size: 12px;
 }
 
 /* Team preview card */
 .teamPreview {
   width: 100%;
-  border-radius: 16px;
-  padding: 16px;
+  padding: 18px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(10, 10, 20, 0.6);
+  position: relative;
+}
+
+/* HUD corners */
+.teamPreview::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 10px;
+  height: 10px;
+  border-left: 2px solid var(--command-orange, #FF5D00);
+  border-top: 2px solid var(--command-orange, #FF5D00);
+  pointer-events: none;
+}
+
+.teamPreview::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--command-orange, #FF5D00);
+  border-bottom: 2px solid var(--command-orange, #FF5D00);
+  pointer-events: none;
 }
 
 .teamPreviewDot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+  width: 12px;
+  height: 12px;
   flex-shrink: 0;
 }
 
 .teamPreviewInfo {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .teamPreviewLabel {
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
   font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--muted, #4a637d);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .teamPreviewName {
   font-size: 18px;
   font-weight: 900;
   line-height: 1.1;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 /* ── Join / Confirm button ── */
 .joinBtn {
   width: 100%;
-  padding: 18px;
-  border-radius: 18px;
-  background: var(--cyan, #00c8f0);
+  padding: 20px;
+  background: var(--command-orange, #FF5D00);
   border: none;
-  font-family: var(--font-phone), 'Nunito', sans-serif;
-  font-size: 17px;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 14px;
   font-weight: 900;
   color: #000;
   cursor: pointer;
-  letter-spacing: 0.02em;
-  box-shadow: 0 8px 24px rgba(0, 200, 240, 0.3);
-  transition: all 0.15s ease;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: 0 8px 30px rgba(255, 93, 0, 0.35);
+  transition: all 0.2s ease;
   margin-top: 4px;
 }
 
 .joinBtn:hover {
-  background: #20d8ff;
+  box-shadow: 0 12px 40px rgba(255, 93, 0, 0.5);
   transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(0, 200, 240, 0.4);
 }
 
 .joinBtn:active {
@@ -237,8 +278,8 @@
 
 .joinBtn:disabled {
   background: transparent;
-  color: var(--muted, #4a637d);
-  border: 1.5px solid #1e3048;
+  color: rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.1);
   box-shadow: none;
   cursor: not-allowed;
   transform: none;
@@ -247,14 +288,14 @@
 
 /* ── Error message ── */
 .error {
-  font-size: 13px;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
   font-weight: 700;
-  color: #ff6060;
+  color: var(--alert-red, #FF3333);
   text-align: center;
-  padding: 10px 14px;
-  background: rgba(255, 68, 68, 0.08);
-  border: 1px solid rgba(255, 68, 68, 0.2);
-  border-radius: 10px;
+  padding: 12px 16px;
+  background: rgba(255, 51, 51, 0.1);
+  border: 1px solid rgba(255, 51, 51, 0.25);
   width: 100%;
 }
 
@@ -263,35 +304,34 @@
   margin-top: 24px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: rgba(0, 232, 122, 0.07);
-  border: 1px solid rgba(0, 232, 122, 0.18);
-  border-radius: 99px;
+  gap: 10px;
+  padding: 10px 18px;
+  background: rgba(190, 239, 0, 0.08);
+  border: 1px solid rgba(190, 239, 0, 0.25);
 }
 
 .classBadgeDot {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
-  background: var(--green, #00e87a);
+  background: var(--team-green, #BEEF00);
+  box-shadow: 0 0 8px var(--team-green, #BEEF00);
 }
 
 .classBadgeText {
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--green, #00e87a);
+  letter-spacing: 0.1em;
+  color: var(--team-green, #BEEF00);
+  text-transform: uppercase;
 }
 
 /* ── Loading spinner ── */
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid rgba(0, 200, 240, 0.15);
-  border-top-color: var(--cyan, #00c8f0);
-  border-radius: 50%;
+  border: 3px solid rgba(255, 93, 0, 0.2);
+  border-top-color: var(--command-orange, #FF5D00);
   animation: spin 0.8s linear infinite;
   margin: 8px auto;
 }
