@@ -307,6 +307,7 @@ export default function GamesHub() {
           );
         })}
       </div>
+    </div>
 
       {/* Settings Modal */}
       {showSettings && (
