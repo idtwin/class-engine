@@ -54,6 +54,10 @@
   --purple: #b06eff;
   --yellow: var(--ice-blue);
   --pink: #ff4d8f;
+  
+  /* --- Alert & Destructive Signals --- */
+  --alert-red: #ff3b3b;
+  --alert-red-rgb: 255, 59, 59;
   --red: var(--alert-red);
 
   /* --- Team Colors --- */

@@ -51,7 +51,7 @@
 .stepper::before {
   content: '';
   position: absolute;
-  top: -1px;
+  top: -4px !important;
   left: -1px;
   width: 12px;
   height: 12px;
@@ -303,7 +303,7 @@
 .studentCard::before {
   content: '';
   position: absolute;
-  top: -1px;
+  top: -4px !important;
   left: -1px;
   width: 10px;
   height: 10px;
@@ -369,8 +369,8 @@
   background: linear-gradient(90deg, rgba(80, 50, 30, 0.95) 0%, rgba(80, 50, 30, 0.7) 40%, transparent 100%); 
 }
 .studentHeader.tierBronze::after {
-  background: linear-gradient(90deg, #ff9d4d 0%, #ff9d4d 30%, transparent 100%);
-  box-shadow: 0 0 10px rgba(255, 157, 77, 0.3);
+  background: linear-gradient(90deg, #cd7f32 0%, #cd7f32 30%, transparent 100%);
+  box-shadow: 0 0 10px rgba(205, 127, 50, 0.3);
 }
 
 .studentHeader.tierSilver { 
@@ -390,7 +390,7 @@
 }
 
 .rankIconLarge {
-  width: 60px;
+  width: 58px !important;
   height: 50px;
   display: flex;
   align-items: flex-start; /* Aligned to top so point hangs down */
@@ -400,17 +400,10 @@
   z-index: 20;
 }
 
+
 .rankIconLarge img {
-  width: 52px; 
-  height: auto;
-  min-height: 76px; 
-  object-fit: contain;
-  object-position: top center; /* Snap content to the top of the <img> box */
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.8));
   position: absolute;
-  top: -1px; /* Overlap the 1px card border to be perfectly flush */
-  left: 50%;
-  transform: translateX(-50%);
+  top: -4px !important; /* Overlap the 1px card border to be perfectly flush */
 }
 
 .studentName { 
@@ -425,6 +418,37 @@
   overflow: hidden;
   text-overflow: ellipsis; /* Tactical ellipsis while static */
   transition: all 0.3s;
+}
+
+.pinBtnDotted {
+  background: rgba(0, 242, 255, 0.1);
+  border: 1px dashed rgba(0, 242, 255, 0.4);
+  color: #00f2ff;
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  padding: 0 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  height: 24px;
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pinBtnDotted:hover {
+  border-color: #00f2ff;
+  color: #00f2ff;
+  background: rgba(0, 242, 255, 0.2);
+  box-shadow: 0 0 12px rgba(0, 242, 255, 0.2);
+}
+
+.pinBtnDotted:disabled {
+  opacity: 0.5;
+  cursor: wait;
 }
 
 .nameWrapper {
@@ -461,7 +485,7 @@
   justify-content: center;
   gap: 0;
   flex: 1;
-  padding-left: 15px;
+  padding-left: 12px;
   min-width: 0;
 }
 
@@ -541,7 +565,7 @@
 .bsCard::before {
   content: '';
   position: absolute;
-  top: -1px;
+  top: -4px !important;
   left: -1px;
   width: 8px;
   height: 8px;
@@ -598,7 +622,7 @@
 .teamCard::before {
   content: '';
   position: absolute;
-  top: -1px;
+  top: -4px !important;
   left: -1px;
   width: 12px;
   height: 12px;
@@ -706,7 +730,7 @@
 .scoreCard::before {
   content: '';
   position: absolute;
-  top: -1px;
+  top: -4px !important;
   left: -1px;
   width: 14px;
   height: 14px;
@@ -857,7 +881,7 @@
   font-family: var(--font-mono), monospace; 
   font-size: 18px; 
   font-weight: 700; 
-  min-width: 60px; 
+  min-width: 65px !important; 
   text-align: center; 
 }
 
@@ -899,7 +923,7 @@
 .classBar::before {
   content: '';
   position: absolute;
-  top: -1px;
+  top: -4px !important;
   left: -1px;
   width: 10px;
   height: 10px;
@@ -1262,58 +1286,103 @@
   width: 100%;
 }
 
-.studentToggleBtn {
-  width: 28px;
-  height: 28px;
+.headerBtnGroup {
+  display: flex;
+  height: 100%;
+}
+
+.headerPresenceToggle {
+  width: 32px;
+  height: 100%;
+  border: none;
+  border-left: 1px solid rgba(255, 93, 0, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-mono), monospace;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 800;
   cursor: pointer;
-  border: 1px solid transparent;
   transition: all 0.2s;
-  flex-shrink: 0;
+  background: transparent;
 }
 
-.studentToggleBtnPresent {
-  background: rgba(190,239,0,0.1);
+.presenceActive {
   color: var(--team-green);
-  border-color: rgba(190,239,0,0.3);
-}
-.studentToggleBtnPresent:hover {
-  background: rgba(255,51,51,0.08);
-  color: var(--alert-red);
-  border-color: rgba(255,51,51,0.2);
+  text-shadow: 0 0 10px rgba(190, 239, 0, 0.4);
 }
 
-.studentToggleBtnAbsent {
-  background: rgba(255,51,51,0.08);
+.presenceInactive {
   color: var(--alert-red);
-  border-color: rgba(255,51,51,0.2);
-}
-.studentToggleBtnAbsent:hover {
-  background: rgba(190,239,0,0.1);
-  color: var(--team-green);
-  border-color: rgba(190,239,0,0.3);
+  text-shadow: 0 0 10px rgba(255, 51, 51, 0.4);
 }
 
 .studentRemoveBtn {
-  width: 24px;
+  background: rgba(var(--alert-red-rgb), 0.1);
+  border: 1px dashed rgba(var(--alert-red-rgb), 0.4);
+  color: var(--alert-red);
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  padding: 0 10px;
+  cursor: pointer;
+  transition: all 0.2s;
   height: 24px;
+  width: fit-content;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
+}
+
+.studentRemoveBtn:hover {
+  border-color: var(--alert-red);
+  background: rgba(var(--alert-red-rgb), 0.2);
+  box-shadow: 0 0 12px rgba(var(--alert-red-rgb), 0.2);
+}
+
+.studentRemoveBtn.confirming {
+  background: var(--alert-red);
+  color: #fff;
+  border-style: solid;
+}
+
+.studentRemoveBtn.confirming .removeIcon,
+.studentRemoveBtn.confirming .removeLabel {
+  color: #fff;
+}
+
+.removeIcon {
+  font-size: 10px;
+  color: var(--alert-red);
+}
+
+.removeLabel {
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.syncLink {
   background: transparent;
   border: none;
-  cursor: pointer;
+  font-family: var(--font-mono), monospace;
   font-size: 11px;
-  opacity: 0.3;
-  transition: opacity 0.2s;
+  color: #ff5d00;
+  cursor: pointer;
   padding: 0;
+  opacity: 0.6;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
-.studentRemoveBtn:hover { opacity: 1; }
+
+.syncLink:hover {
+  opacity: 1;
+  text-shadow: 0 0 8px rgba(255, 93, 0, 0.4);
+}
 
 /* Absent info bar */
 .absentBar {
@@ -1346,9 +1415,42 @@
 }
 .absentBarReset:hover { background: rgba(190,239,0,0.1); }
 
-/* ──────────────────────────────────────────────────────────────────────────
-   ADD STUDENT CARD
-   ────────────────────────────────────────────────────────────────────────── */
+/* Layout for the body content stack */
+.studentCardMainArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.studentActionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-bottom: 2px;
+}
+
+.headerStatusGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-left: auto;
+  padding-right: 15px;
+}
+
+.headerStatusLabel {
+  font-family: var(--font-mono), monospace;
+  font-size: 8px;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
 .addStudentCard {
   background: rgba(10, 10, 20, 0.3);
   border: 1px dashed rgba(255, 255, 255, 0.1);
@@ -1435,7 +1537,7 @@
 .moveModal::before {
   content: '';
   position: absolute;
-  top: -1px;
+  top: -4px !important;
   left: -1px;
   width: 20px;
   height: 20px;
@@ -1537,7 +1639,7 @@
 .view::before {
   content: '';
   position: absolute;
-  top: -1px;
+  top: -4px !important;
   left: -1px;
   width: 30px;
   height: 30px;
@@ -1804,3 +1906,47 @@
   background: rgba(255, 51, 51, 0.1);
   color: var(--alert-red);
 }
+
+.classActionBtn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 5px 12px;
+  transition: all 0.2s;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.classActionBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btnGreen {
+  color: #beef00 !important;
+  border-color: rgba(190, 239, 0, 0.2) !important;
+}
+.btnGreen:hover {
+  background: rgba(190, 239, 0, 0.1) !important;
+  border-color: #beef00 !important;
+  box-shadow: 0 0 15px rgba(190, 239, 0, 0.15);
+}
+
+.classActionBtnDanger {
+  color: #ff5555 !important;
+  border-color: rgba(255, 85, 85, 0.2) !important;
+}
+.classActionBtnDanger:hover {
+  background: rgba(255, 85, 85, 0.1) !important;
+  border-color: #ff5555 !important;
+  box-shadow: 0 0 15px rgba(255, 85, 85, 0.15);
+}
+

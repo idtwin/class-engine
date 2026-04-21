@@ -1,0 +1,174 @@
+<h2>Original OOO — Layout Fixed, Identity Kept</h2>
+<p class="subtitle">Same theme, same language, same word cards — sidebar gone, everything centered and readable.</p>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+
+  .gw { font-family:'Syne','JetBrains Mono',monospace; background:#07090f; border-radius:14px; overflow:hidden; border:1px solid #1c2a40; margin-top:10px; }
+
+  .game-hdr {
+    background:#0a0d18; border-bottom:1px solid #1c2a40;
+    height:60px; display:flex; align-items:center; padding:0 36px; gap:16px;
+  }
+  .gh-title { font-size:17px; font-weight:800; color:#b06eff; letter-spacing:0.1em; }
+  .gh-div { width:1px; height:22px; background:#1c2a40; }
+  .gh-seq { font-size:13px; color:#4a637d; font-family:'JetBrains Mono',monospace; letter-spacing:0.06em; }
+  .gh-level { font-size:11px; background:rgba(176,110,255,0.1); color:#b06eff; border:1px solid rgba(176,110,255,0.2); border-radius:20px; padding:2px 10px; font-family:'JetBrains Mono',monospace; letter-spacing:0.06em; }
+  .gh-timer { margin-left:auto; font-size:26px; font-weight:700; color:#b06eff; font-family:'JetBrains Mono',monospace; }
+
+  .tbar  { height:4px; background:#131b2b; }
+  .tfill { height:4px; width:65%; background:linear-gradient(90deg,#b06eff,rgba(176,110,255,0.3)); border-radius:0 3px 3px 0; }
+
+  .gbody {
+    padding:28px 56px 32px;
+    display:flex; flex-direction:column; align-items:center; gap:20px;
+    background:radial-gradient(ellipse at 50% 0%, rgba(176,110,255,0.05) 0%, transparent 60%);
+  }
+
+  .anomaly-label {
+    font-size:13px; font-weight:700; letter-spacing:0.16em;
+    color:#b06eff; text-transform:uppercase; opacity:0.7;
+  }
+
+  .wgrid { display:grid; grid-template-columns:1fr 1fr; gap:16px; width:100%; max-width:760px; }
+  .wtile {
+    height:120px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:36px; font-weight:800; color:#dce8f5; letter-spacing:0.06em;
+    background:#0d1424;
+    border:1.5px solid rgba(176,110,255,0.3);
+    box-shadow:0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(176,110,255,0.08);
+    position:relative; overflow:hidden; cursor:pointer;
+    transition:border-color 0.2s;
+  }
+  /* corner reticles — kept from original, toned down */
+  .wtile::before, .wtile::after {
+    content:''; position:absolute; width:8px; height:8px;
+    border-color:rgba(176,110,255,0.35); border-style:solid;
+  }
+  .wtile::before { top:8px; left:8px; border-width:1.5px 0 0 1.5px; }
+  .wtile::after  { bottom:8px; right:8px; border-width:0 1.5px 1.5px 0; }
+
+  .wtile.correct {
+    background:#061610; border-color:#00e87a; color:#00e87a;
+    box-shadow:0 4px 20px rgba(0,0,0,0.5), 0 0 40px rgba(0,232,122,0.15), inset 0 1px 0 rgba(0,232,122,0.1);
+  }
+  .wtile.correct::before, .wtile.correct::after { border-color:rgba(0,232,122,0.5); }
+  .wtile.dimmed  { opacity:0.2; box-shadow:none; border-color:#1c2a40; }
+
+  /* student / team status */
+  .srow { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+  .schip {
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px; font-weight:700; letter-spacing:0.06em;
+    border-radius:6px; padding:6px 14px; border:1px solid;
+  }
+  .s-locked  { background:rgba(0,232,122,0.08); border-color:rgba(0,232,122,0.4); color:#00e87a; }
+  .s-locked2 { background:rgba(0,200,240,0.08); border-color:rgba(0,200,240,0.4); color:#00c8f0; }
+  .s-wait    { background:transparent; border-color:#243347; color:#4a637d; }
+  .s-correct { background:rgba(0,232,122,0.08); border-color:rgba(0,232,122,0.4); color:#00e87a; }
+  .s-wrong   { background:rgba(255,68,68,0.06);  border-color:rgba(255,68,68,0.3);  color:#ff4444; }
+
+  /* buttons */
+  .brow { display:flex; gap:12px; margin-top:4px; }
+  .btn-reveal {
+    background:#b06eff; color:#000; border:none; border-radius:8px;
+    padding:13px 40px; font-size:14px; font-weight:700; font-family:'JetBrains Mono',monospace;
+    letter-spacing:0.1em; cursor:pointer; box-shadow:0 4px 24px rgba(176,110,255,0.3);
+  }
+  .btn-hint {
+    background:transparent; border:1px dashed rgba(176,110,255,0.35); color:#b06eff;
+    border-radius:8px; padding:12px 20px; font-size:13px; font-family:'JetBrains Mono',monospace;
+    letter-spacing:0.06em; cursor:pointer;
+  }
+  .btn-next {
+    background:transparent; border:1px solid rgba(176,110,255,0.3); color:#b06eff;
+    border-radius:8px; padding:13px 36px; font-size:14px; font-weight:700;
+    font-family:'JetBrains Mono',monospace; letter-spacing:0.1em; cursor:pointer;
+  }
+  .btn-new {
+    background:transparent; border:1px solid #1c2a40; color:#4a637d;
+    border-radius:8px; padding:12px 18px; font-size:12px;
+    font-family:'JetBrains Mono',monospace; cursor:pointer;
+  }
+
+  /* reveal explanation */
+  .explain {
+    background:#0e1420; border:1px solid rgba(176,110,255,0.15); border-radius:10px;
+    padding:14px 28px; max-width:640px; text-align:center;
+    font-size:14px; color:#4a637d; line-height:1.6; font-family:'JetBrains Mono',monospace;
+    letter-spacing:0.02em;
+  }
+  .explain strong { color:#b06eff; }
+  .score-pop { color:#00e87a; font-weight:700; }
+</style>
+
+<!-- ══ STATE 1: PRE-REVEAL ══ -->
+<div class="section">
+  <div class="label">Before reveal — 2 teams locked in</div>
+  <div class="gw">
+    <div class="game-hdr">
+      <span class="gh-title">ODD ONE OUT</span>
+      <div class="gh-div"></div>
+      <span class="gh-seq">SEQUENCE_03</span>
+      <span class="gh-level">INTERMEDIATE</span>
+      <span class="gh-timer">0:38</span>
+    </div>
+    <div class="tbar"><div class="tfill"></div></div>
+    <div class="gbody">
+      <div class="anomaly-label">// ISOLATE THE ANOMALY</div>
+      <div class="wgrid">
+        <div class="wtile">APPLE</div>
+        <div class="wtile">MANGO</div>
+        <div class="wtile">CARROT</div>
+        <div class="wtile">BANANA</div>
+      </div>
+      <div class="srow">
+        <div class="schip s-locked">🔒 ALPHA</div>
+        <div class="schip s-locked2">🔒 BETA</div>
+        <div class="schip s-wait">· GAMMA</div>
+        <div class="schip s-wait">· DELTA</div>
+      </div>
+      <div class="brow">
+        <button class="btn-reveal">✦ INITIATE REVEAL</button>
+        <button class="btn-hint">💡 DEPLOY HINT</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STATE 2: POST-REVEAL ══ -->
+<div class="section" style="margin-top:32px;">
+  <div class="label">After reveal — CARROT was the anomaly</div>
+  <div class="gw">
+    <div class="game-hdr">
+      <span class="gh-title">ODD ONE OUT</span>
+      <div class="gh-div"></div>
+      <span class="gh-seq">SEQUENCE_03</span>
+      <span class="gh-level">INTERMEDIATE</span>
+    </div>
+    <div class="tbar"></div>
+    <div class="gbody">
+      <div class="anomaly-label">// ANOMALY DETECTED</div>
+      <div class="wgrid">
+        <div class="wtile dimmed">APPLE</div>
+        <div class="wtile dimmed">MANGO</div>
+        <div class="wtile correct">CARROT ◆</div>
+        <div class="wtile dimmed">BANANA</div>
+      </div>
+      <div class="explain">
+        <strong>CARROT</strong> is a vegetable — Apple, Mango, and Banana are all fruits.
+      </div>
+      <div class="srow">
+        <div class="schip s-correct">✓ ALPHA <span class="score-pop">+500</span></div>
+        <div class="schip s-wrong">✗ BETA</div>
+        <div class="schip s-wrong">✗ GAMMA</div>
+        <div class="schip s-wait">— DELTA</div>
+      </div>
+      <div class="brow">
+        <button class="btn-next">NEXT SEQUENCE →</button>
+        <button class="btn-new">← NEW GAME</button>
+      </div>
+    </div>
+  </div>
+</div>

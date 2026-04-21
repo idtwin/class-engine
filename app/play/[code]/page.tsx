@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import styles from "../play.module.css";
 import { useParams } from "next/navigation";
+import PlayerHUD from "@/app/components/PlayerHUD";
+import Link from "next/link";
 
 // Team colour tokens matching design system
 const TEAM_COLORS = [
@@ -35,6 +37,10 @@ export default function PlayPage() {
   const [myTeamInfo, setMyTeamInfo] = useState<{
     id: string; name: string; color: string; score: number
   } | null>(null);
+
+  // ── Database Profile state ───────────────────────
+  const [dbXp, setDbXp] = useState(0);
+  const [dbAccuracy, setDbAccuracy] = useState(0);
 
   // ── Per-question interaction state ───────────────
   const [textInput, setTextInput]   = useState("");
@@ -71,10 +77,29 @@ export default function PlayPage() {
   const [showHostPanel, setShowHostPanel] = useState(false);
   const phoneInputRef = useRef<HTMLInputElement>(null);
 
+  // ── Smart Polling Logic ──────────────────────────
+  const pollingIntervalRef = useRef<number>(2000);
+  const isMyTurnRef        = useRef<boolean>(false);
+  const lastTurnStatusRef  = useRef<boolean>(false);
+
   // ── Initialise from localStorage + start polling ─
   useEffect(() => {
-    const stored = localStorage.getItem(`studentId_${code}`);
-    const storedName = localStorage.getItem(`studentName_${code}`);
+    let stored = localStorage.getItem(`studentId_${code}`);
+    let storedName = localStorage.getItem(`studentName_${code}`);
+    
+    // ── Self-Healing: If room ID is missing, try to recover from global identity ──
+    if (!stored) {
+      const globalId = localStorage.getItem('globalStudentId');
+      const globalName = localStorage.getItem('globalStudentName');
+      if (globalId && globalName) {
+         console.log("[SYSTEM] Recovered global identity for room link.");
+         localStorage.setItem(`studentId_${code}`, globalId);
+         localStorage.setItem(`studentName_${code}`, globalName);
+         stored = globalId;
+         storedName = globalName;
+      }
+    }
+
     if (!stored) {
       window.location.href = `/join?code=${code}`;
       return;
@@ -82,24 +107,82 @@ export default function PlayPage() {
     setStudentId(stored);
     setStudentName(storedName || "Player");
 
+    // Fetch permanent profile stats from Supabase
+    const fetchProfile = async () => {
+      try {
+        const { createBrowserClient } = await import('@supabase/ssr');
+        const supabase = createBrowserClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
+        const { data, error } = await supabase
+          .from('student_profiles')
+          .select('xp, accuracy_rate')
+          .eq('roster_id', stored)
+          .single();
+          
+        if (data) {
+          setDbXp(data.xp || 0);
+          setDbAccuracy(data.accuracy_rate || 0);
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile", err);
+      }
+    };
+    fetchProfile();
+
     const poll = async () => {
       try {
         const res = await fetch(`/api/room/get?code=${code}`);
         if (res.ok) {
           const data = await res.json();
           setRoom(data);
+          
+          // ── Roster Recovery: Find me in the student list if studentId is missing ──
+          if (!studentId || studentId === "") {
+            const meInRoster = data.students?.find((s: any) => s.name === storedName);
+            if (meInRoster?.id) {
+              setStudentId(meInRoster.id);
+            }
+          }
+
+          // Speed up/slow down based on game context
+          const chainState = data.chainState;
+          const teams      = data.teams || [];
+          const student    = data.students?.find((s: any) => s.id === (studentId || stored));
+          const myTeam     = teams.find((t: any) => 
+            t.name === storedName || t.students?.some((s: any) => s.name === storedName)
+          );
+          
+          const currentIsTurn = !!chainState?.currentTeamId && !!myTeam?.id && chainState.currentTeamId === myTeam.id;
+          isMyTurnRef.current = currentIsTurn;
+          pollingIntervalRef.current = currentIsTurn ? 2000 : 4500;
+          
+          // If we just became active, poll again soon!
+          if (currentIsTurn && !lastTurnStatusRef.current) {
+            // we transitioned to active turn
+          }
+          lastTurnStatusRef.current = currentIsTurn;
         } else {
           const err = await res.json();
           setError(err.error || "Room not found");
         }
       } catch {
-        // silent polling error — keep trying
+        // silent polling error
       }
     };
 
     poll();
-    const id = setInterval(poll, 1500);
-    return () => clearInterval(id);
+    
+    // Use a variable interval polling loop
+    let timeoutId: NodeJS.Timeout;
+    const tick = async () => {
+      await poll();
+      timeoutId = setTimeout(tick, pollingIntervalRef.current);
+    };
+    timeoutId = setTimeout(tick, pollingIntervalRef.current);
+    
+    return () => clearTimeout(timeoutId);
   }, [code]);
 
   // ── Derive team info ─────────────────────────────
@@ -119,6 +202,13 @@ export default function PlayPage() {
       });
     }
   }, [room, studentName]);
+
+  // ── Chain Reaction: Auto-reset input when word changes ──
+  useEffect(() => {
+    if (room?.gameMode === "chainreaction") {
+      setPhoneInput("");
+    }
+  }, [room?.chainState?.currentWordIdx, room?.chainState?.words]);
 
   // ── Reset per-question state when question changes
   useEffect(() => {
@@ -333,6 +423,12 @@ export default function PlayPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {timerDisplay && (
               <div className={styles.gameTimer}>{timerDisplay}</div>
+            )}
+            {!!studentId && (
+              <Link href={`/profile/${studentId}`} className={styles.profileBadge}>
+                <span className={styles.profileBadgeIcon}>👤</span>
+                <span className={styles.profileBadgeTxt}>PROFILE</span>
+              </Link>
             )}
             <button
               onClick={() => setShowHostPanel(true)}
@@ -555,6 +651,12 @@ export default function PlayPage() {
             </div>
             <div className={styles.feedbackWaitingText}>Waiting for class...</div>
           </div>
+          
+          {!!studentId && (
+            <Link href={`/profile/${studentId}`} className={styles.profileLink} style={{ margin: '20px auto 0' }}>
+              VIEW SERVICE RECORD
+            </Link>
+          )}
         </div>
       </div>
     );
@@ -568,61 +670,11 @@ export default function PlayPage() {
       : 0;
 
     return (
-      <div className={styles.lobbyScreen}>
-        {/* Team banner */}
-        {myTeamInfo && (
-          <div
-            className={styles.lobbyBanner}
-            style={{
-              background: `${myTeamInfo.color}12`,
-              border: `1.5px solid ${myTeamInfo.color}30`,
-            }}
-          >
-            <div
-              className={styles.lobbyBannerGlow}
-              style={{ background: myTeamInfo.color }}
-            />
-            <div className={styles.lobbyGreeting}>Welcome back,</div>
-            <div className={styles.lobbyName}>{studentName} 👋</div>
-            <div
-              className={styles.lobbyTeamPill}
-              style={{ color: myTeamInfo.color }}
-            >
-              <div
-                className={styles.lobbyTeamPillDot}
-                style={{ background: myTeamInfo.color }}
-              />
-              {myTeamInfo.name.toUpperCase()}
-            </div>
-          </div>
-        )}
-
-        {/* Personal stats */}
-        <div className={styles.lobbyStats}>
-          <div className={styles.lobbyStat}>
-            <div className={styles.lobbyStatVal} style={{ color: "#ffc843" }}>
-              {streak}
-            </div>
-            <div className={styles.lobbyStatLabel}>Streak</div>
-          </div>
-          <div className={styles.lobbyStat}>
-            <div className={styles.lobbyStatVal} style={{ color: "#00e87a" }}>
-              {personalScore}
-            </div>
-            <div className={styles.lobbyStatLabel}>My Score</div>
-          </div>
-          <div className={styles.lobbyStat}>
-            <div className={styles.lobbyStatVal} style={{ color: "#b06eff" }}>
-              {totalAnswered > 0 ? `${accuracy}%` : "—"}
-            </div>
-            <div className={styles.lobbyStatLabel}>Accuracy</div>
-          </div>
-        </div>
-
-        {/* Team standings */}
+      <PlayerHUD name={studentName || "Player"} xp={dbXp} accuracy={dbAccuracy || accuracy} studentId={studentId}>
+        {/* Team standings inside the HUD */}
         {teams.length > 0 && (
-          <>
-            <div className={styles.lobbyStandingsTitle}>// Team Standings</div>
+          <div style={{ position: 'relative', zIndex: 2 }}>
+            <div className={styles.lobbyStandingsTitle} style={{ marginTop: 0 }}>// Team Standings</div>
             {[...teams]
               .sort((a, b) => (b.score || 0) - (a.score || 0))
               .map((team, i) => {
@@ -650,19 +702,9 @@ export default function PlayPage() {
                   </div>
                 );
               })}
-          </>
-        )}
-
-        {/* Waiting indicator */}
-        <div className={styles.lobbyWaiting}>
-          <div className={styles.waitDots}>
-            <div className={styles.waitDot} />
-            <div className={styles.waitDot} />
-            <div className={styles.waitDot} />
           </div>
-          <div className={styles.waitText}>Waiting for teacher to start...</div>
-        </div>
-      </div>
+        )}
+      </PlayerHUD>
     );
   };
 
@@ -676,6 +718,11 @@ export default function PlayPage() {
       <div className={styles.endScreen}>
         <div className={styles.spinner} />
         <div className={styles.endSub}>Connecting to session...</div>
+        {!!studentId && (
+          <Link href={`/profile/${studentId}`} className={styles.profileLink}>
+            VIEW SERVICE RECORD
+          </Link>
+        )}
       </div>
     );
   }
@@ -720,7 +767,7 @@ export default function PlayPage() {
   // ── CHAIN REACTION: Phone UI ────────────────────
   if (room.gameMode === "chainreaction") {
     const chainState = room.chainState;
-    const isMyTurn = chainState?.currentTeamId === myTeamInfo?.id;
+    const isMyTurn = !!chainState?.currentTeamId && !!myTeamInfo?.id && chainState.currentTeamId === myTeamInfo.id;
     const isComplete = chainState?.chainComplete;
 
     if (!chainState) {

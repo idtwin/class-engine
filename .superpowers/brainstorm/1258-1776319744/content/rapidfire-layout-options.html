@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapid Fire — Layout Options</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #07090f; color: #dce8f5; font-family: 'JetBrains Mono', monospace; padding: 32px 24px; }
+
+  h1 { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: #ff4d8f; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .subtitle { font-size: 12px; color: #4a637d; margin-bottom: 32px; letter-spacing: 0.06em; }
+
+  .options-row { display: flex; gap: 24px; align-items: flex-start; }
+  .opt { flex: 1; cursor: pointer; border-radius: 14px; border: 2px solid #1c2a40; overflow: hidden; transition: border-color 0.2s, transform 0.15s; }
+  .opt:hover { border-color: #ff4d8f; transform: translateY(-2px); }
+  .opt.selected { border-color: #ff4d8f; box-shadow: 0 0 0 3px rgba(255,77,143,0.2); }
+  .opt-label { padding: 14px 18px; background: #0e1420; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #1c2a40; }
+  .opt-letter { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,77,143,0.15); border: 1px solid rgba(255,77,143,0.4); color: #ff4d8f; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .opt-name { font-size: 13px; font-weight: 700; color: #dce8f5; letter-spacing: 0.06em; }
+  .opt-desc { font-size: 11px; color: #4a637d; margin-top: 2px; }
+  .opt-preview { padding: 16px; background: #07090f; }
+
+  /* ── Shared mini-UI components ── */
+  .gw { background: #07090f; border-radius: 10px; overflow: hidden; border: 1px solid #1c2a40; font-size: 11px; }
+  .hdr { height: 44px; background: #0a0d18; border-bottom: 1px solid #1c2a40; display: flex; align-items: center; padding: 0 14px; gap: 10px; }
+  .hdr-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 800; color: #ff4d8f; letter-spacing: 0.08em; }
+  .hdr-seq { font-size: 10px; color: #4a637d; }
+  .pbar { height: 2px; background: #131b2b; }
+  .pfill { height: 2px; background: linear-gradient(90deg,#ff4d8f,rgba(255,77,143,0.2)); width: 60%; }
+  .body { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+
+  /* timer circle */
+  .tc { position: relative; width: 36px; height: 36px; flex-shrink: 0; margin-left: auto; }
+  .tc svg { width: 36px; height: 36px; transform: rotate(-90deg); }
+  .tc-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #ff4d8f; }
+
+  /* question text */
+  .q-label { font-size: 9px; color: #4a637d; letter-spacing: 0.1em; text-transform: uppercase; }
+  .q-text { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: #dce8f5; line-height: 1.4; }
+
+  /* MC grid */
+  .mc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .mc-tile { height: 32px; border-radius: 6px; background: #0d1424; border: 1px solid rgba(255,77,143,0.2); display: flex; align-items: center; gap: 8px; padding: 0 10px; }
+  .mc-letter { font-size: 9px; font-weight: 700; color: #ff4d8f; background: rgba(255,77,143,0.1); border: 1px solid rgba(255,77,143,0.2); border-radius: 3px; padding: 1px 5px; }
+  .mc-word { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; color: #dce8f5; }
+  .mc-tile.correct { background: #061610; border-color: #00e87a; }
+  .mc-tile.correct .mc-letter { color: #00e87a; background: rgba(0,232,122,0.1); border-color: rgba(0,232,122,0.3); }
+  .mc-tile.correct .mc-word { color: #00e87a; }
+  .mc-tile.dim { opacity: 0.2; }
+
+  /* speed rank */
+  .rank-row { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+  .rank-chip { border-radius: 5px; padding: 4px 10px; font-size: 10px; font-weight: 700; display: flex; align-items: center; gap: 5px; }
+  .rank-1 { background: rgba(255,200,67,0.15); border: 1px solid rgba(255,200,67,0.4); color: #ffc843; }
+  .rank-2 { background: rgba(220,232,245,0.08); border: 1px solid rgba(220,232,245,0.25); color: #dce8f5; }
+  .rank-3 { background: rgba(255,125,59,0.12); border: 1px solid rgba(255,125,59,0.3); color: #ff7d3b; }
+  .rank-wait { border: 1px solid #1c2a40; color: #4a637d; }
+  .rank-medal { font-size: 12px; }
+
+  /* buzz highlight */
+  .buzz-card { background: rgba(255,77,143,0.08); border: 1.5px solid #ff4d8f; border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; }
+  .buzz-icon { font-size: 16px; }
+  .buzz-name { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 800; color: #ff4d8f; }
+  .buzz-sub { font-size: 9px; color: #4a637d; }
+  .buzz-time { font-size: 10px; color: #4a637d; margin-left: auto; }
+
+  /* sidebar log */
+  .sidebar { background: #0d1424; border-left: 1px solid #1c2a40; padding: 10px 12px; font-size: 9px; color: #4a637d; line-height: 1.7; flex-shrink: 0; width: 120px; }
+  .split-layout { display: flex; }
+  .split-main { flex: 1; padding: 12px; }
+
+  .btn-reveal { background: #ff4d8f; color: #000; border: none; border-radius: 6px; padding: 8px 18px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; }
+  .btn-next { background: transparent; border: 1px solid rgba(255,77,143,0.3); color: #ff4d8f; border-radius: 6px; padding: 7px 14px; font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+
+  /* waiting chips */
+  .teams-row { display: flex; gap: 5px; flex-wrap: wrap; }
+  .tchip { font-size: 10px; font-weight: 700; border-radius: 5px; padding: 3px 9px; border: 1px solid #243347; color: #4a637d; }
+  .tchip.locked { border-color: rgba(255,77,143,0.4); color: #ff4d8f; background: rgba(255,77,143,0.07); }
+
+  .section-label { font-size: 9px; color: #4a637d; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<h1>RAPID FIRE — Layout Direction</h1>
+<p class="subtitle">Pink identity · MC mode + Buzzer mode · Speed ranking feature · Click to select</p>
+
+<div class="options-row">
+
+  <!-- ── OPTION A: Single column, speed ranking below tiles ── -->
+  <div class="opt" id="optA" onclick="sel('A')">
+    <div class="opt-label">
+      <div class="opt-letter">A</div>
+      <div>
+        <div class="opt-name">SINGLE COLUMN + SPEED RANK</div>
+        <div class="opt-desc">OOO/Fix It pattern. Speed ranking row below tiles. Clean, no sidebar.</div>
+      </div>
+    </div>
+    <div class="opt-preview">
+      <!-- PLAYING state -->
+      <div class="section-label" style="margin-bottom:6px;">MC MODE — PLAYING</div>
+      <div class="gw">
+        <div class="hdr">
+          <span class="hdr-title">RAPID FIRE</span>
+          <span style="width:1px;height:16px;background:#1c2a40;flex-shrink:0"></span>
+          <span class="hdr-seq">QUESTION_04</span>
+          <span style="font-size:9px;background:rgba(255,77,143,0.1);color:#ff4d8f;border:1px solid rgba(255,77,143,0.2);border-radius:10px;padding:1px 7px;">MC</span>
+          <div class="tc">
+            <svg viewBox="0 0 36 36">
+              <defs><linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ff4d8f"/><stop offset="100%" stop-color="rgba(255,77,143,0.3)"/></linearGradient></defs>
+              <circle fill="none" stroke="#1c2a40" stroke-width="3" cx="18" cy="18" r="15"/>
+              <circle fill="none" stroke="url(#pg)" stroke-width="3" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="37" cx="18" cy="18" r="15"/>
+            </svg>
+            <div class="tc-num">11</div>
+          </div>
+        </div>
+        <div class="pbar"><div class="pfill" style="width:72%"></div></div>
+        <div class="body">
+          <div class="q-label">Find and fix the error</div>
+          <div class="q-text">Which word best completes: "She _____ to school every day."</div>
+          <div class="mc-grid">
+            <div class="mc-tile"><span class="mc-letter">A</span><span class="mc-word">walk</span></div>
+            <div class="mc-tile"><span class="mc-letter">B</span><span class="mc-word">walks</span></div>
+            <div class="mc-tile"><span class="mc-letter">C</span><span class="mc-word">walked</span></div>
+            <div class="mc-tile"><span class="mc-letter">D</span><span class="mc-word">walking</span></div>
+          </div>
+          <div class="teams-row">
+            <div class="tchip locked">🔒 ALPHA</div>
+            <div class="tchip locked" style="border-color:rgba(0,200,240,0.4);color:#00c8f0;background:rgba(0,200,240,0.07);">🔒 BETA</div>
+            <div class="tchip">· GAMMA</div>
+            <div class="tchip">· DELTA</div>
+          </div>
+          <button class="btn-reveal">✦ REVEAL ANSWER</button>
+        </div>
+      </div>
+
+      <!-- REVEALED state -->
+      <div class="section-label" style="margin:10px 0 6px;">MC MODE — REVEALED (speed ranking)</div>
+      <div class="gw">
+        <div class="hdr">
+          <span class="hdr-title">RAPID FIRE</span>
+          <span style="width:1px;height:16px;background:#1c2a40;flex-shrink:0"></span>
+          <span class="hdr-seq">QUESTION_04</span>
+          <span style="font-size:9px;color:#00e87a;letter-spacing:0.08em;">ANSWER REVEALED</span>
+        </div>
+        <div class="pbar"><div class="pfill" style="width:0%"></div></div>
+        <div class="body">
+          <div class="q-text" style="font-size:12px;">Which word best completes: "She _____ to school every day."</div>
+          <div class="mc-grid">
+            <div class="mc-tile dim"><span class="mc-letter">A</span><span class="mc-word">walk</span></div>
+            <div class="mc-tile correct"><span class="mc-letter">B</span><span class="mc-word">walks</span></div>
+            <div class="mc-tile dim"><span class="mc-letter">C</span><span class="mc-word">walked</span></div>
+            <div class="mc-tile dim"><span class="mc-letter">D</span><span class="mc-word">walking</span></div>
+          </div>
+          <!-- Speed ranking -->
+          <div style="border-top:1px solid #1c2a40;padding-top:8px;">
+            <div class="section-label" style="margin-bottom:6px;">⚡ SPEED RANKING</div>
+            <div class="rank-row">
+              <div class="rank-chip rank-1"><span class="rank-medal">🥇</span> BETA +500</div>
+              <div class="rank-chip rank-2"><span class="rank-medal">🥈</span> ALPHA +400</div>
+              <div class="rank-chip rank-3"><span class="rank-medal">🥉</span> DELTA +300</div>
+              <div class="rank-chip rank-wait">GAMMA —</div>
+            </div>
+          </div>
+          <button class="btn-next">→ NEXT QUESTION</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── OPTION B: Split — question left, live buzz/rank feed right ── -->
+  <div class="opt" id="optB" onclick="sel('B')">
+    <div class="opt-label">
+      <div class="opt-letter">B</div>
+      <div>
+        <div class="opt-name">SPLIT — QUESTION + LIVE FEED</div>
+        <div class="opt-desc">Left: question + tiles. Right: live speed feed updates in real time.</div>
+      </div>
+    </div>
+    <div class="opt-preview">
+      <div class="section-label" style="margin-bottom:6px;">MC MODE — PLAYING (split view)</div>
+      <div class="gw">
+        <div class="hdr">
+          <span class="hdr-title">RAPID FIRE</span>
+          <span style="width:1px;height:16px;background:#1c2a40;flex-shrink:0"></span>
+          <span class="hdr-seq">QUESTION_04</span>
+          <div class="tc" style="margin-left:auto">
+            <svg viewBox="0 0 36 36">
+              <circle fill="none" stroke="#1c2a40" stroke-width="3" cx="18" cy="18" r="15"/>
+              <circle fill="none" stroke="url(#pg)" stroke-width="3" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="37" cx="18" cy="18" r="15"/>
+            </svg>
+            <div class="tc-num">11</div>
+          </div>
+        </div>
+        <div class="pbar"><div class="pfill" style="width:72%"></div></div>
+        <div class="split-layout">
+          <div class="split-main">
+            <div class="q-label" style="margin-bottom:5px;">Choose the correct form</div>
+            <div class="q-text" style="font-size:12px;margin-bottom:8px;">She _____ to school every day.</div>
+            <div class="mc-grid">
+              <div class="mc-tile"><span class="mc-letter">A</span><span class="mc-word">walk</span></div>
+              <div class="mc-tile"><span class="mc-letter">B</span><span class="mc-word">walks</span></div>
+              <div class="mc-tile"><span class="mc-letter">C</span><span class="mc-word">walked</span></div>
+              <div class="mc-tile"><span class="mc-letter">D</span><span class="mc-word">walking</span></div>
+            </div>
+            <div style="margin-top:8px"><button class="btn-reveal" style="font-size:9px;padding:6px 12px;">✦ REVEAL</button></div>
+          </div>
+          <div class="sidebar">
+            <div style="color:#ff4d8f;margin-bottom:6px;font-size:9px;letter-spacing:0.08em;">⚡ LIVE</div>
+            <div style="color:#00c8f0;">1st BETA</div>
+            <div style="color:#00e87a;">2nd ALPHA</div>
+            <div style="color:#4a637d;">— GAMMA</div>
+            <div style="color:#4a637d;">— DELTA</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label" style="margin:10px 0 6px;">BUZZER MODE — PLAYING</div>
+      <div class="gw">
+        <div class="hdr">
+          <span class="hdr-title">RAPID FIRE</span>
+          <span style="width:1px;height:16px;background:#1c2a40;flex-shrink:0"></span>
+          <span class="hdr-seq">QUESTION_04</span>
+          <span style="font-size:9px;background:rgba(255,77,143,0.1);color:#ff4d8f;border:1px solid rgba(255,77,143,0.2);border-radius:10px;padding:1px 7px;">BUZZER</span>
+        </div>
+        <div class="pbar"><div class="pfill" style="width:72%"></div></div>
+        <div class="split-layout">
+          <div class="split-main">
+            <div class="q-text" style="font-size:12px;margin-bottom:8px;">She _____ to school every day.</div>
+            <div class="buzz-card">
+              <span class="buzz-icon">⚡</span>
+              <div>
+                <div class="buzz-name">BETA buzzed first!</div>
+                <div class="buzz-sub">ALPHA, GAMMA waiting</div>
+              </div>
+              <div class="buzz-time">2.3s</div>
+            </div>
+            <div style="margin-top:8px"><button class="btn-reveal" style="font-size:9px;padding:6px 12px;">✦ REVEAL</button></div>
+          </div>
+          <div class="sidebar">
+            <div style="color:#ff4d8f;margin-bottom:6px;font-size:9px;">⚡ BUZZES</div>
+            <div style="color:#ff4d8f;">BETA 2.3s</div>
+            <div style="color:#4a637d;">ALPHA —</div>
+            <div style="color:#4a637d;">GAMMA —</div>
+            <div style="color:#4a637d;">DELTA —</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── OPTION C: Single column, buzzer highlight prominent ── -->
+  <div class="opt" id="optC" onclick="sel('C')">
+    <div class="opt-label">
+      <div class="opt-letter">C</div>
+      <div>
+        <div class="opt-name">SINGLE COLUMN — BUZZER HERO</div>
+        <div class="opt-desc">Like A but buzzer mode puts the first buzz front-and-center as a big card.</div>
+      </div>
+    </div>
+    <div class="opt-preview">
+      <div class="section-label" style="margin-bottom:6px;">BUZZER MODE — FIRST BUZZ IN</div>
+      <div class="gw">
+        <div class="hdr">
+          <span class="hdr-title">RAPID FIRE</span>
+          <span style="width:1px;height:16px;background:#1c2a40;flex-shrink:0"></span>
+          <span class="hdr-seq">QUESTION_04</span>
+          <span style="font-size:9px;background:rgba(255,77,143,0.1);color:#ff4d8f;border:1px solid rgba(255,77,143,0.2);border-radius:10px;padding:1px 7px;">BUZZER</span>
+          <div class="tc">
+            <svg viewBox="0 0 36 36">
+              <circle fill="none" stroke="#1c2a40" stroke-width="3" cx="18" cy="18" r="15"/>
+              <circle fill="none" stroke="url(#pg)" stroke-width="3" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="37" cx="18" cy="18" r="15"/>
+            </svg>
+            <div class="tc-num">11</div>
+          </div>
+        </div>
+        <div class="pbar"><div class="pfill" style="width:72%"></div></div>
+        <div class="body">
+          <div class="q-label">Buzzer round</div>
+          <div class="q-text">She _____ to school every day.</div>
+          <!-- Big buzz hero card -->
+          <div style="background:rgba(255,77,143,0.06);border:2px solid #ff4d8f;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px;">
+            <div style="font-size:28px;">⚡</div>
+            <div>
+              <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#ff4d8f;letter-spacing:0.04em;">BETA buzzed first!</div>
+              <div style="font-size:10px;color:#4a637d;margin-top:2px;">2.3 seconds · Other teams still open</div>
+            </div>
+          </div>
+          <!-- Other buzzes smaller -->
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <div style="font-size:10px;border:1px solid #1c2a40;border-radius:5px;padding:3px 9px;color:#4a637d;">ALPHA —</div>
+            <div style="font-size:10px;border:1px solid #1c2a40;border-radius:5px;padding:3px 9px;color:#4a637d;">GAMMA —</div>
+            <div style="font-size:10px;border:1px solid #1c2a40;border-radius:5px;padding:3px 9px;color:#4a637d;">DELTA —</div>
+          </div>
+          <button class="btn-reveal">✦ REVEAL ANSWER</button>
+        </div>
+      </div>
+
+      <div class="section-label" style="margin:10px 0 6px;">MC MODE — REVEALED (speed ranking)</div>
+      <div class="gw">
+        <div class="hdr">
+          <span class="hdr-title">RAPID FIRE</span>
+          <span style="width:1px;height:16px;background:#1c2a40;flex-shrink:0"></span>
+          <span class="hdr-seq">QUESTION_04</span>
+          <span style="font-size:9px;color:#00e87a;letter-spacing:0.08em;">REVEALED</span>
+        </div>
+        <div class="pbar"><div class="pfill" style="width:0%"></div></div>
+        <div class="body">
+          <div class="q-text" style="font-size:12px;">She _____ to school every day.</div>
+          <div class="mc-grid">
+            <div class="mc-tile dim"><span class="mc-letter">A</span><span class="mc-word">walk</span></div>
+            <div class="mc-tile correct"><span class="mc-letter">B</span><span class="mc-word">walks</span></div>
+            <div class="mc-tile dim"><span class="mc-letter">C</span><span class="mc-word">walked</span></div>
+            <div class="mc-tile dim"><span class="mc-letter">D</span><span class="mc-word">walking</span></div>
+          </div>
+          <div style="border-top:1px solid #1c2a40;padding-top:8px;">
+            <div class="section-label" style="margin-bottom:6px;">⚡ SPEED RANKING</div>
+            <div class="rank-row">
+              <div class="rank-chip rank-1"><span class="rank-medal">🥇</span> BETA +500</div>
+              <div class="rank-chip rank-2"><span class="rank-medal">🥈</span> ALPHA +400</div>
+              <div class="rank-chip rank-3"><span class="rank-medal">🥉</span> DELTA +300</div>
+              <div class="rank-chip rank-wait">GAMMA —</div>
+            </div>
+          </div>
+          <button class="btn-next">→ NEXT QUESTION</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let selected = null;
+  function sel(letter) {
+    document.querySelectorAll('.opt').forEach(el => el.classList.remove('selected'));
+    document.getElementById('opt' + letter).classList.add('selected');
+    selected = letter;
+  }
+</script>
+</body>
+</html>

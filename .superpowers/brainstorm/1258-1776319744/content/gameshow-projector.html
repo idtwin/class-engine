@@ -1,0 +1,247 @@
+<h2>The Middle Ground</h2>
+<p class="subtitle">Game-show energy: live scoreboard, bold tiles, dramatic reveal — without the clutter. Two states.</p>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap');
+
+  .gw { font-family:'Nunito',sans-serif; background:#07090f; border-radius:14px; overflow:hidden; border:1px solid #1c2a40; margin-top:10px; }
+
+  /* ── SCOREBOARD STRIP ── */
+  .scoreboard {
+    background:#0a0c16;
+    border-bottom:1px solid #1c2a40;
+    padding:0 32px;
+    height:44px;
+    display:flex; align-items:center; gap:6px; overflow:hidden;
+  }
+  .sb-team {
+    display:flex; align-items:center; gap:7px;
+    padding:0 14px; height:28px; border-radius:6px;
+    font-size:12px; font-weight:900; letter-spacing:0.04em;
+    flex-shrink:0;
+  }
+  .sb-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .sb-pts { font-weight:700; opacity:0.75; }
+  .sb-div { width:1px; height:20px; background:#1c2a40; margin:0 4px; flex-shrink:0; }
+  .sb-live { margin-left:auto; display:flex; align-items:center; gap:6px; font-size:11px; color:#4a637d; letter-spacing:0.06em; }
+  .sb-live-dot { width:7px; height:7px; border-radius:50%; background:#00e87a; box-shadow:0 0 6px #00e87a; animation: livepulse 1.4s ease-in-out infinite; }
+  @keyframes livepulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── GAME HEADER ── */
+  .game-hdr {
+    background:#0e1420; border-bottom:1px solid #1c2a40;
+    height:58px; display:flex; align-items:center; padding:0 32px; gap:14px;
+  }
+  .gh-title { font-size:18px; font-weight:900; color:#b06eff; letter-spacing:0.08em; }
+  .gh-q {
+    background:rgba(176,110,255,0.1); border:1px solid rgba(176,110,255,0.2);
+    border-radius:20px; padding:3px 12px;
+    font-size:12px; font-weight:900; color:#b06eff;
+  }
+  .gh-category {
+    background:#131b2b; border:1px solid #243347; border-radius:20px;
+    padding:3px 12px; font-size:12px; color:#4a637d; font-weight:700;
+  }
+  .gh-timer {
+    margin-left:auto;
+    font-size:26px; font-weight:900; color:#ffc843;
+    font-family:'JetBrains Mono',monospace;
+    text-shadow:0 0 16px rgba(255,200,67,0.4);
+  }
+  .gh-timer.urgent { color:#ff4444; text-shadow:0 0 16px rgba(255,68,68,0.5); }
+
+  /* timer bar */
+  .tbar { height:4px; background:#131b2b; }
+  .tfill { height:4px; width:65%; background:linear-gradient(90deg,#b06eff,#ffc843); border-radius:0 3px 3px 0; }
+
+  /* ── BODY ── */
+  .gbody {
+    padding:24px 44px 28px;
+    display:flex; flex-direction:column; align-items:center; gap:18px;
+    background:radial-gradient(ellipse at 50% 30%, rgba(176,110,255,0.04) 0%, transparent 65%);
+  }
+  .g-prompt { font-size:13px; font-weight:800; color:#4a637d; letter-spacing:0.1em; text-transform:uppercase; }
+
+  /* ── WORD TILES ── */
+  .wgrid { display:grid; grid-template-columns:1fr 1fr; gap:14px; width:100%; max-width:740px; }
+  .wtile {
+    height:116px; border-radius:18px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:38px; font-weight:900; color:#dce8f5; letter-spacing:0.04em;
+    background:#0d1525;
+    border:2.5px solid rgba(176,110,255,0.28);
+    box-shadow:0 6px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(176,110,255,0.12);
+    position:relative; overflow:hidden;
+  }
+  .wtile::after {
+    content:''; position:absolute; top:0; left:0; right:0; height:40%;
+    background:linear-gradient(180deg, rgba(176,110,255,0.07) 0%, transparent 100%);
+    pointer-events:none; border-radius:16px 16px 0 0;
+  }
+  .wtile.correct {
+    background:#071a0f; border-color:#00e87a; color:#00e87a;
+    box-shadow:0 6px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(0,232,122,0.2), 0 0 40px rgba(0,232,122,0.18);
+  }
+  .wtile.correct::after { background:linear-gradient(180deg,rgba(0,232,122,0.1) 0%,transparent 100%); }
+  .wtile.dimmed { opacity:0.2; box-shadow:none; border-color:#1c2a40; }
+
+  /* ── TEAM STATUS ── */
+  .trow { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+  .tchip {
+    border-radius:10px; padding:8px 18px;
+    font-size:14px; font-weight:900; border:2px solid;
+    display:flex; align-items:center; gap:8px; letter-spacing:0.02em;
+  }
+  .tg  { background:rgba(0,232,122,0.1);  border-color:#00e87a; color:#00e87a; }
+  .tc  { background:rgba(0,200,240,0.1);  border-color:#00c8f0; color:#00c8f0; }
+  .ty  { background:rgba(255,200,67,0.1); border-color:#ffc843; color:#ffc843; }
+  .tw  { background:#0d1525; border-color:#243347; color:#4a637d; }
+  .tr  { background:rgba(255,68,68,0.1);  border-color:#ff4444; color:#ff4444; }
+
+  /* ── SCORE POP ── */
+  .score-pop { font-size:18px; font-weight:900; color:#00e87a; }
+
+  /* ── EXPLAIN ── */
+  .explain {
+    background:#0e1420; border:1.5px solid rgba(0,232,122,0.2); border-radius:14px;
+    padding:13px 28px; max-width:660px; text-align:center;
+    font-size:15px; color:#8899aa; line-height:1.6;
+  }
+  .explain strong { color:#dce8f5; }
+
+  /* ── BUTTONS ── */
+  .brow { display:flex; gap:12px; margin-top:4px; }
+  .btn-r { background:#b06eff; color:#000; border:none; border-radius:14px; padding:14px 48px; font-size:17px; font-weight:900; font-family:inherit; cursor:pointer; box-shadow:0 4px 28px rgba(176,110,255,0.35); }
+  .btn-h { background:transparent; border:2px solid rgba(176,110,255,0.25); color:#b06eff; border-radius:14px; padding:13px 20px; font-size:16px; font-family:inherit; cursor:pointer; }
+  .btn-n { background:transparent; border:2px solid rgba(176,110,255,0.3); color:#b06eff; border-radius:14px; padding:13px 40px; font-size:17px; font-weight:900; font-family:inherit; cursor:pointer; }
+  .btn-x { background:transparent; border:2px solid #1c2a40; color:#4a637d; border-radius:14px; padding:13px 20px; font-size:14px; font-family:inherit; cursor:pointer; }
+</style>
+
+<!-- ══ STATE 1: PRE-REVEAL ══ -->
+<div class="section">
+  <div class="label">Before reveal — 2 teams locked in, 2 still thinking</div>
+  <div class="gw">
+
+    <!-- Scoreboard strip -->
+    <div class="scoreboard">
+      <div class="sb-team" style="background:rgba(0,232,122,0.08);">
+        <div class="sb-dot" style="background:#00e87a; box-shadow:0 0 5px #00e87a;"></div>
+        <span style="color:#00e87a;">Alpha</span>
+        <span class="sb-pts" style="color:#00e87a;">1,200</span>
+      </div>
+      <div class="sb-div"></div>
+      <div class="sb-team" style="background:rgba(0,200,240,0.08);">
+        <div class="sb-dot" style="background:#00c8f0; box-shadow:0 0 5px #00c8f0;"></div>
+        <span style="color:#00c8f0;">Beta</span>
+        <span class="sb-pts" style="color:#00c8f0;">900</span>
+      </div>
+      <div class="sb-div"></div>
+      <div class="sb-team" style="background:rgba(255,200,67,0.08);">
+        <div class="sb-dot" style="background:#ffc843; box-shadow:0 0 5px #ffc843;"></div>
+        <span style="color:#ffc843;">Gamma</span>
+        <span class="sb-pts" style="color:#ffc843;">600</span>
+      </div>
+      <div class="sb-div"></div>
+      <div class="sb-team" style="background:rgba(255,77,143,0.08);">
+        <div class="sb-dot" style="background:#ff4d8f; box-shadow:0 0 5px #ff4d8f;"></div>
+        <span style="color:#ff4d8f;">Delta</span>
+        <span class="sb-pts" style="color:#ff4d8f;">300</span>
+      </div>
+      <div class="sb-live"><div class="sb-live-dot"></div>LIVE</div>
+    </div>
+
+    <!-- Game header -->
+    <div class="game-hdr">
+      <span class="gh-title">ODD ONE OUT</span>
+      <span class="gh-q">Q 3 / 12</span>
+      <span class="gh-category">🍎 Food</span>
+      <span class="gh-timer">0:38</span>
+    </div>
+    <div class="tbar"><div class="tfill"></div></div>
+
+    <div class="gbody">
+      <div class="g-prompt">Which word doesn't belong?</div>
+      <div class="wgrid">
+        <div class="wtile">APPLE</div>
+        <div class="wtile">MANGO</div>
+        <div class="wtile">CARROT</div>
+        <div class="wtile">BANANA</div>
+      </div>
+      <div class="trow">
+        <div class="tchip tg">🔒 Alpha</div>
+        <div class="tchip tc">🔒 Beta</div>
+        <div class="tchip tw">· · · Gamma</div>
+        <div class="tchip tw">· · · Delta</div>
+      </div>
+      <div class="brow">
+        <button class="btn-r">Reveal Answer</button>
+        <button class="btn-h">💡 Hint</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STATE 2: POST-REVEAL ══ -->
+<div class="section" style="margin-top:32px;">
+  <div class="label">After reveal — CARROT wins, scores updated</div>
+  <div class="gw">
+
+    <!-- Scoreboard strip — updated scores -->
+    <div class="scoreboard">
+      <div class="sb-team" style="background:rgba(0,232,122,0.08);">
+        <div class="sb-dot" style="background:#00e87a; box-shadow:0 0 5px #00e87a;"></div>
+        <span style="color:#00e87a;">Alpha</span>
+        <span class="sb-pts" style="color:#00e87a;">1,700 <span style="font-size:11px;opacity:0.8">+500</span></span>
+      </div>
+      <div class="sb-div"></div>
+      <div class="sb-team" style="background:rgba(0,200,240,0.08);">
+        <div class="sb-dot" style="background:#00c8f0; box-shadow:0 0 5px #00c8f0;"></div>
+        <span style="color:#00c8f0;">Beta</span>
+        <span class="sb-pts" style="color:#00c8f0;">900</span>
+      </div>
+      <div class="sb-div"></div>
+      <div class="sb-team" style="background:rgba(255,200,67,0.08);">
+        <div class="sb-dot" style="background:#ffc843; box-shadow:0 0 5px #ffc843;"></div>
+        <span style="color:#ffc843;">Gamma</span>
+        <span class="sb-pts" style="color:#ffc843;">600</span>
+      </div>
+      <div class="sb-div"></div>
+      <div class="sb-team" style="background:rgba(255,77,143,0.08);">
+        <div class="sb-dot" style="background:#ff4d8f; box-shadow:0 0 5px #ff4d8f;"></div>
+        <span style="color:#ff4d8f;">Delta</span>
+        <span class="sb-pts" style="color:#ff4d8f;">300</span>
+      </div>
+      <div class="sb-live"><div class="sb-live-dot"></div>LIVE</div>
+    </div>
+
+    <div class="game-hdr">
+      <span class="gh-title">ODD ONE OUT</span>
+      <span class="gh-q">Q 3 / 12</span>
+      <span class="gh-category">🍎 Food</span>
+    </div>
+    <div class="tbar"></div>
+
+    <div class="gbody">
+      <div class="g-prompt">The odd one out was...</div>
+      <div class="wgrid">
+        <div class="wtile dimmed">APPLE</div>
+        <div class="wtile dimmed">MANGO</div>
+        <div class="wtile correct">CARROT ✓</div>
+        <div class="wtile dimmed">BANANA</div>
+      </div>
+      <div class="explain">
+        💡 <strong>CARROT</strong> is a vegetable — Apple, Mango, and Banana are all fruits.
+      </div>
+      <div class="trow">
+        <div class="tchip tg">✓ Alpha <span class="score-pop">+500</span></div>
+        <div class="tchip tr">✗ Beta</div>
+        <div class="tchip tr">✗ Gamma</div>
+        <div class="tchip tw">— Delta</div>
+      </div>
+      <div class="brow">
+        <button class="btn-n">Next Question →</button>
+        <button class="btn-x">← New Game</button>
+      </div>
+    </div>
+  </div>
+</div>

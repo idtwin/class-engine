@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WYR Mockup — 4 Options</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=JetBrains+Mono:wght@600;700&display=swap');
+
+  :root {
+    --bg: #07090f; --surface: #0e1420; --surface2: #131b2b;
+    --border: #1c2a40; --border2: #243347;
+    --text: #dce8f5; --muted: #4a637d;
+    --pink: #ff4d8f; --green: #00e87a; --cyan: #00c8f0;
+    --yellow: #ffc843; --orange: #ff7d3b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #04050a; font-family: 'JetBrains Mono', monospace; color: var(--text); }
+
+  .nav {
+    display: flex; gap: 0; border-bottom: 1px solid var(--border);
+    background: var(--surface); position: sticky; top: 0; z-index: 10;
+  }
+  .nav button {
+    flex: 1; padding: 14px; background: transparent; border: none;
+    border-right: 1px solid var(--border); color: var(--muted);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+  }
+  .nav button.active { color: var(--pink); background: rgba(255,77,143,0.06); border-bottom: 2px solid var(--pink); }
+  .nav button:hover:not(.active) { color: var(--text); background: var(--surface2); }
+
+  .panel { display: none; width: 100%; height: calc(100vh - 49px); }
+  .panel.active { display: flex; }
+
+  /* ═══════════════════════════════════════
+     OPTION A — Tension Bar
+  ═══════════════════════════════════════ */
+  .a-wrap {
+    width: 100%; display: flex; flex-direction: column;
+    background: var(--bg); overflow: hidden;
+  }
+  .a-header {
+    display: flex; align-items: center; gap: 20px;
+    padding: 0 40px; height: 64px;
+    border-bottom: 1px solid var(--border); background: var(--surface);
+  }
+  .a-title { font-size: 13px; font-weight: 700; letter-spacing: 0.2em; color: var(--pink); text-transform: uppercase; }
+  .a-counter { font-size: 12px; color: var(--muted); }
+  .a-counter span { color: var(--text); font-weight: 700; }
+  .a-spacer { flex: 1; }
+  .a-body {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 100px; gap: 20px;
+  }
+  .a-option {
+    width: 100%; background: var(--surface);
+    border: 1.5px solid var(--border2); border-radius: 16px;
+    padding: 32px 48px; text-align: center;
+    font-family: 'Syne', sans-serif; font-size: clamp(20px, 3vw, 36px);
+    font-weight: 800; color: var(--text); line-height: 1.3; position: relative;
+  }
+  .a-option.a-opt { border-color: rgba(255,77,143,0.4); }
+  .a-option.b-opt { border-color: rgba(0,200,240,0.4); }
+  .a-label {
+    position: absolute; top: -12px; left: 24px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    font-weight: 700; letter-spacing: 0.15em; padding: 2px 10px;
+    border-radius: 4px;
+  }
+  .a-label.a { background: var(--pink); color: #000; }
+  .a-label.b { background: var(--cyan); color: #000; }
+  .a-bar-wrap {
+    width: 100%; background: var(--surface2); border-radius: 12px;
+    height: 48px; overflow: hidden; position: relative;
+    border: 1px solid var(--border2);
+  }
+  .a-bar-a {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 62%; background: rgba(255,77,143,0.25);
+    border-right: 3px solid var(--pink);
+    display: flex; align-items: center; padding-left: 20px;
+    font-size: 14px; font-weight: 700; color: var(--pink);
+    transition: width 1s ease;
+  }
+  .a-bar-b {
+    position: absolute; right: 0; top: 0; bottom: 0;
+    width: 38%; background: rgba(0,200,240,0.12);
+    border-left: 3px solid var(--cyan);
+    display: flex; align-items: center; justify-content: flex-end; padding-right: 20px;
+    font-size: 14px; font-weight: 700; color: var(--cyan);
+  }
+  .a-bar-label {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: var(--muted); letter-spacing: 0.1em;
+  }
+  .a-next {
+    background: rgba(255,77,143,0.1); border: 1.5px solid var(--pink);
+    border-radius: 10px; padding: 12px 32px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    font-weight: 700; color: var(--pink); letter-spacing: 0.1em;
+    cursor: pointer; text-transform: uppercase;
+  }
+
+  /* ═══════════════════════════════════════
+     OPTION B — Side-by-side + team chips
+  ═══════════════════════════════════════ */
+  .b-wrap {
+    width: 100%; display: flex; flex-direction: column; background: var(--bg);
+  }
+  .b-header {
+    display: flex; align-items: center; gap: 20px;
+    padding: 0 40px; height: 64px;
+    border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0;
+  }
+  .b-title { font-size: 13px; font-weight: 700; letter-spacing: 0.2em; color: var(--pink); text-transform: uppercase; }
+  .b-body {
+    flex: 1; display: grid; grid-template-columns: 1fr auto 1fr; overflow: hidden;
+  }
+  .b-side {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 48px; gap: 28px;
+  }
+  .b-side.a-side { border-right: 1px solid var(--border); }
+  .b-side-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+    padding: 4px 14px; border-radius: 4px;
+  }
+  .b-side-label.a { background: var(--pink); color: #000; }
+  .b-side-label.b { background: var(--cyan); color: #000; }
+  .b-text {
+    font-family: 'Syne', sans-serif; font-size: clamp(18px, 2.6vw, 34px);
+    font-weight: 800; color: var(--text); text-align: center; line-height: 1.3;
+  }
+  .b-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
+  .b-chip {
+    padding: 6px 14px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .b-divider {
+    width: 80px; display: flex; align-items: center; justify-content: center;
+    background: var(--surface);
+  }
+  .b-vs {
+    font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 900;
+    color: var(--muted); letter-spacing: -0.02em;
+  }
+  .b-next-row {
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    padding: 16px; background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0;
+  }
+  .b-next {
+    background: rgba(255,77,143,0.1); border: 1.5px solid var(--pink);
+    border-radius: 10px; padding: 10px 28px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    font-weight: 700; color: var(--pink); letter-spacing: 0.1em; cursor: pointer; text-transform: uppercase;
+  }
+
+  /* ═══════════════════════════════════════
+     OPTION C — Blind Vote then Reveal
+  ═══════════════════════════════════════ */
+  .c-wrap { width: 100%; display: flex; flex-direction: column; background: var(--bg); }
+  .c-header {
+    display: flex; align-items: center; gap: 20px;
+    padding: 0 40px; height: 64px;
+    border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0;
+  }
+  .c-title { font-size: 13px; font-weight: 700; letter-spacing: 0.2em; color: var(--pink); text-transform: uppercase; }
+  .c-badge {
+    font-size: 10px; letter-spacing: 0.12em; padding: 3px 10px;
+    border-radius: 4px; text-transform: uppercase;
+  }
+  .c-badge.voting { background: rgba(255,200,67,0.15); border: 1px solid rgba(255,200,67,0.4); color: var(--yellow); }
+  .c-badge.revealed { background: rgba(0,232,122,0.1); border: 1px solid rgba(0,232,122,0.3); color: var(--green); }
+  .c-body {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 40px 120px; gap: 32px;
+  }
+  .c-question {
+    font-family: 'Syne', sans-serif; font-size: clamp(24px, 4vw, 52px);
+    font-weight: 900; color: var(--text); text-align: center; line-height: 1.2;
+  }
+  .c-wyr-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--pink); letter-spacing: 0.2em; text-transform: uppercase;
+  }
+  .c-options-row {
+    display: grid; grid-template-columns: 1fr auto 1fr; gap: 0; width: 100%; align-items: center;
+  }
+  .c-option {
+    padding: 24px 32px; border-radius: 14px; text-align: center;
+    font-family: 'Syne', sans-serif; font-size: clamp(16px, 2.2vw, 28px); font-weight: 800;
+    line-height: 1.3;
+  }
+  .c-option.a { background: rgba(255,77,143,0.08); border: 2px solid rgba(255,77,143,0.35); color: var(--pink); }
+  .c-option.b { background: rgba(0,200,240,0.06); border: 2px solid rgba(0,200,240,0.3); color: var(--cyan); }
+  .c-or { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 900; color: var(--muted); text-align: center; padding: 0 24px; }
+  .c-votes-row {
+    display: flex; align-items: center; gap: 0; width: 100%; height: 60px;
+    border-radius: 12px; overflow: hidden; border: 1px solid var(--border2);
+  }
+  .c-vote-a {
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,77,143,0.2); color: var(--pink); font-size: 16px; font-weight: 800;
+    height: 100%; transition: width 0.8s ease;
+  }
+  .c-vote-b {
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,200,240,0.15); color: var(--cyan); font-size: 16px; font-weight: 800;
+    height: 100%; transition: width 0.8s ease;
+  }
+  .c-vote-waiting {
+    width: 100%; display: flex; align-items: center; justify-content: center;
+    background: var(--surface2); color: var(--muted); font-size: 12px; letter-spacing: 0.1em;
+    height: 100%; border-radius: 12px;
+  }
+  .c-actions { display: flex; gap: 12px; }
+  .c-btn-reveal {
+    background: var(--pink); color: #000; border: none;
+    border-radius: 10px; padding: 14px 36px;
+    font-family: 'JetBrains Mono', monospace; font-size: 13px;
+    font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+  }
+  .c-btn-next {
+    background: transparent; border: 1.5px solid var(--border2);
+    border-radius: 10px; padding: 14px 28px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: var(--muted); cursor: pointer;
+  }
+  .c-voter-chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+
+  /* ═══════════════════════════════════════
+     OPTION D — Debate Podium
+  ═══════════════════════════════════════ */
+  .d-wrap { width: 100%; display: flex; flex-direction: column; background: var(--bg); }
+  .d-header {
+    display: flex; align-items: center; gap: 20px;
+    padding: 0 40px; height: 64px;
+    border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0;
+  }
+  .d-title { font-size: 13px; font-weight: 700; letter-spacing: 0.2em; color: var(--pink); text-transform: uppercase; }
+  .d-body {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 32px 60px; gap: 24px;
+  }
+  .d-question {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .d-podiums { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0; width: 100%; align-items: stretch; }
+  .d-podium {
+    display: flex; flex-direction: column; align-items: center; gap: 20px;
+    padding: 36px 40px; border-radius: 20px; position: relative;
+  }
+  .d-podium.a {
+    background: linear-gradient(160deg, rgba(255,77,143,0.08) 0%, transparent 100%);
+    border: 2px solid rgba(255,77,143,0.3);
+  }
+  .d-podium.b {
+    background: linear-gradient(200deg, rgba(0,200,240,0.06) 0%, transparent 100%);
+    border: 2px solid rgba(0,200,240,0.25);
+  }
+  .d-podium-letter {
+    font-family: 'Syne', sans-serif; font-size: 64px; font-weight: 900;
+    line-height: 1; opacity: 0.12; position: absolute; top: 16px; right: 20px;
+  }
+  .d-podium.a .d-podium-letter { color: var(--pink); }
+  .d-podium.b .d-podium-letter { color: var(--cyan); }
+  .d-podium-tag {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+    padding: 4px 12px; border-radius: 4px;
+  }
+  .d-podium.a .d-podium-tag { background: var(--pink); color: #000; }
+  .d-podium.b .d-podium-tag { background: var(--cyan); color: #000; }
+  .d-podium-text {
+    font-family: 'Syne', sans-serif; font-size: clamp(18px, 2.4vw, 30px);
+    font-weight: 800; color: var(--text); text-align: center; line-height: 1.3; position: relative; z-index: 1;
+  }
+  .d-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; min-height: 36px; }
+  .d-chip {
+    padding: 6px 14px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .d-vs-col {
+    display: flex; align-items: center; justify-content: center; padding: 0 32px;
+  }
+  .d-vs-divider {
+    width: 1px; height: 100%; background: linear-gradient(to bottom, transparent, var(--pink), transparent);
+    display: flex; align-items: center; justify-content: center; position: relative;
+  }
+  .d-vs-text {
+    position: absolute;
+    font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 900; color: var(--pink);
+    background: var(--bg); padding: 8px 4px;
+    letter-spacing: -0.02em;
+  }
+  .d-next-row {
+    display: flex; gap: 12px; align-items: center; justify-content: center; flex-shrink: 0; padding-bottom: 8px;
+  }
+  .d-btn {
+    background: rgba(255,77,143,0.1); border: 1.5px solid var(--pink);
+    border-radius: 10px; padding: 12px 28px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    font-weight: 700; color: var(--pink); letter-spacing: 0.1em; cursor: pointer; text-transform: uppercase;
+  }
+
+  /* shared chips */
+  .chip-green { background: rgba(0,232,122,0.12); border: 1px solid rgba(0,232,122,0.3); color: var(--green); }
+  .chip-cyan  { background: rgba(0,200,240,0.1);  border: 1px solid rgba(0,200,240,0.25); color: var(--cyan); }
+  .chip-yellow{ background: rgba(255,200,67,0.1); border: 1px solid rgba(255,200,67,0.25); color: var(--yellow); }
+  .chip-pink  { background: rgba(255,77,143,0.1); border: 1px solid rgba(255,77,143,0.3); color: var(--pink); }
+  .chip-purple{ background: rgba(176,110,255,0.1);border: 1px solid rgba(176,110,255,0.3); color: #b06eff; }
+  .chip-orange{ background: rgba(255,125,59,0.1); border: 1px solid rgba(255,125,59,0.3); color: var(--orange); }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <button class="active" onclick="show('a', this)">A — Tension Bar</button>
+  <button onclick="show('b', this)">B — Live Team Chips</button>
+  <button onclick="show('c', this)">C — Blind Reveal</button>
+  <button onclick="show('d', this)">D — Debate Podium</button>
+</nav>
+
+<!-- ═══ OPTION A ═══ -->
+<div id="panel-a" class="panel active">
+  <div class="a-wrap">
+    <div class="a-header">
+      <div class="a-title">Would You Rather?</div>
+      <div style="width:1px;height:20px;background:var(--border2)"></div>
+      <div class="a-counter">Scenario <span>2</span> / 8</div>
+      <div class="a-spacer"></div>
+      <div style="font-size:11px;color:var(--muted);letter-spacing:0.08em">8 voted · 3 waiting</div>
+    </div>
+    <div class="a-body">
+      <div class="a-option a-opt">
+        <div class="a-label a">A</div>
+        Be able to speak every language fluently but forget your native language
+      </div>
+      <div class="a-bar-wrap">
+        <div class="a-bar-a">62% · 5 students</div>
+        <div class="a-bar-b">38% · 3 students</div>
+        <div class="a-bar-label">LIVE VOTE</div>
+      </div>
+      <div class="a-option b-opt">
+        <div class="a-label b">B</div>
+        Know every fact in history but be unable to learn anything new
+      </div>
+      <button class="a-next">→ Next Scenario [Space]</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ OPTION B ═══ -->
+<div id="panel-b" class="panel">
+  <div class="b-wrap">
+    <div class="b-header">
+      <div class="b-title">Would You Rather?</div>
+      <div style="width:1px;height:20px;background:var(--border2)"></div>
+      <div class="a-counter">Scenario <span>2</span> / 8</div>
+      <div class="a-spacer"></div>
+    </div>
+    <div class="b-body">
+      <div class="b-side a-side">
+        <div class="b-side-label a">Option A</div>
+        <div class="b-text">Be able to speak every language fluently but forget your native language</div>
+        <div class="b-chips">
+          <span class="b-chip chip-green">🟢 Dragons</span>
+          <span class="b-chip chip-yellow">🟡 Phoenix</span>
+          <span class="b-chip chip-purple">🔮 Titans</span>
+        </div>
+      </div>
+      <div class="b-divider">
+        <div class="b-vs">VS</div>
+      </div>
+      <div class="b-side b-side">
+        <div class="b-side-label b">Option B</div>
+        <div class="b-text">Know every fact in history but be unable to learn anything new</div>
+        <div class="b-chips">
+          <span class="b-chip chip-cyan">🔵 Sharks</span>
+          <span class="b-chip chip-orange">🔶 Storm</span>
+        </div>
+      </div>
+    </div>
+    <div class="b-next-row">
+      <button class="b-next">→ Next Scenario [Space]</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ OPTION C ═══ -->
+<div id="panel-c" class="panel">
+  <div class="c-wrap">
+    <div class="c-header">
+      <div class="c-title">Would You Rather?</div>
+      <div style="width:1px;height:20px;background:var(--border2)"></div>
+      <span class="c-badge revealed">Revealed</span>
+      <div class="a-counter" style="margin-left:12px">Scenario <span>2</span> / 8</div>
+      <div class="a-spacer"></div>
+      <div style="font-size:11px;color:var(--muted)">11 / 11 voted</div>
+    </div>
+    <div class="c-body">
+      <div class="c-wyr-label">Would you rather...</div>
+      <div class="c-options-row">
+        <div class="c-option a">Speak every language but forget your native tongue</div>
+        <div class="c-or">or</div>
+        <div class="c-option b">Know all history but never learn anything new</div>
+      </div>
+      <div class="c-votes-row">
+        <div class="c-vote-a" style="width:64%">A · 64%</div>
+        <div class="c-vote-b" style="width:36%">36% · B</div>
+      </div>
+      <div class="c-voter-chips">
+        <span class="b-chip chip-green">🟢 Dragons → A</span>
+        <span class="b-chip chip-yellow">🟡 Phoenix → A</span>
+        <span class="b-chip chip-cyan">🔵 Sharks → B</span>
+        <span class="b-chip chip-purple">🔮 Titans → A</span>
+        <span class="b-chip chip-orange">🔶 Storm → B</span>
+      </div>
+      <div class="c-actions">
+        <button class="c-btn-next">→ Next [Space]</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- C — voting state toggle -->
+<script>
+  // Show a voting state version of C as well, toggle-able via the badge
+  let cRevealed = true;
+  document.querySelector('.c-badge').addEventListener('click', () => {
+    cRevealed = !cRevealed;
+    const badge = document.querySelector('.c-badge');
+    const votesRow = document.querySelector('.c-votes-row');
+    const chips = document.querySelector('.c-voter-chips');
+    const btn = document.querySelector('.c-btn-next');
+    if (cRevealed) {
+      badge.textContent = 'Revealed'; badge.className = 'c-badge revealed';
+      votesRow.innerHTML = '<div class="c-vote-a" style="width:64%">A · 64%</div><div class="c-vote-b" style="width:36%">36% · B</div>';
+      chips.style.display = 'flex';
+      btn.textContent = '→ Next [Space]';
+    } else {
+      badge.textContent = 'Voting...'; badge.className = 'c-badge voting';
+      votesRow.innerHTML = '<div class="c-vote-waiting">⏳ Waiting for votes... 7 / 11</div>';
+      chips.style.display = 'none';
+      btn.textContent = '✦ Reveal Votes';
+    }
+  });
+</script>
+
+<!-- ═══ OPTION D ═══ -->
+<div id="panel-d" class="panel">
+  <div class="d-wrap">
+    <div class="d-header">
+      <div class="d-title">Would You Rather?</div>
+      <div style="width:1px;height:20px;background:var(--border2)"></div>
+      <div class="a-counter">Scenario <span>2</span> / 8</div>
+      <div class="a-spacer"></div>
+      <div style="font-size:11px;color:var(--muted)">8 voted · 3 waiting</div>
+    </div>
+    <div class="d-body">
+      <div class="d-question">Choose your stance — defend it</div>
+      <div class="d-podiums">
+        <div class="d-podium a">
+          <div class="d-podium-letter">A</div>
+          <div class="d-podium-tag">Option A</div>
+          <div class="d-podium-text">Speak every language but forget your native tongue</div>
+          <div class="d-chips">
+            <span class="d-chip chip-green">🟢 Dragons</span>
+            <span class="d-chip chip-yellow">🟡 Phoenix</span>
+            <span class="d-chip chip-purple">🔮 Titans</span>
+          </div>
+        </div>
+        <div class="d-vs-col">
+          <div class="d-vs-divider">
+            <div class="d-vs-text">VS</div>
+          </div>
+        </div>
+        <div class="d-podium b">
+          <div class="d-podium-letter">B</div>
+          <div class="d-podium-tag">Option B</div>
+          <div class="d-podium-text">Know all of history but never learn anything new</div>
+          <div class="d-chips">
+            <span class="d-chip chip-cyan">🔵 Sharks</span>
+            <span class="d-chip chip-orange">🔶 Storm</span>
+          </div>
+        </div>
+      </div>
+      <div class="d-next-row">
+        <button class="d-btn">→ Next Scenario [Space]</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function show(id, btn) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + id).classList.add('active');
+    btn.classList.add('active');
+  }
+</script>
+</body>
+</html>

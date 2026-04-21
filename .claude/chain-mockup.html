@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Chain Reaction — Mockup V4</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap');
+  :root {
+    --bg:#07090f;--surface:#0e1420;--surface2:#131b2b;
+    --border:#1c2a40;--border2:#243347;
+    --text:#dce8f5;--muted:#4a637d;
+    --cyan:#00c8f0;--green:#00e87a;--yellow:#ffc843;
+    --pink:#ff4d8f;--orange:#ff7d3b;--purple:#b06eff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#04050a;font-family:'JetBrains Mono',monospace;color:var(--text);min-height:100vh}
+
+  /* NAV */
+  .nav{display:flex;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10}
+  .nav button{flex:1;padding:14px;background:transparent;border:none;border-right:1px solid var(--border);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:color .15s,background .15s}
+  .nav button:last-child{border-right:none}
+  .nav button.active{color:var(--cyan);background:rgba(0,200,240,.07);border-bottom:2px solid var(--cyan)}
+  .nav button:hover:not(.active){color:var(--text);background:rgba(255,255,255,.03)}
+
+  .section{display:none;padding:32px;min-height:calc(100vh - 49px)}
+  .section.active{display:flex;flex-direction:column;gap:20px}
+
+  .label{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+
+  /* ═══════════════════════════════════════
+     MAIN LAYOUT
+  ═══════════════════════════════════════ */
+  .game-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 20px;
+    height: calc(100vh - 130px);
+  }
+
+  /* ─── BOARD ─── */
+  .board-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 36px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .board-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .board-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: .04em;
+  }
+  .board-title span { color: var(--cyan); }
+  .board-progress {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: .1em;
+    margin-left: auto;
+  }
+
+  /* Word row base */
+  .word-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    margin: 1px 0;
+    transition: background .2s, opacity .2s;
+    position: relative;
+  }
+  .row-num {
+    font-size: 11px;
+    color: var(--muted);
+    width: 20px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .tiles {
+    display: flex;
+    gap: 7px;
+    flex-wrap: nowrap;
+  }
+
+  /* Tile base */
+  .tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    flex-shrink: 0;
+    transition: all .2s;
+  }
+
+  /* ── SOLVED row ── */
+  .word-row.solved { opacity: .65; }
+  .word-row.solved .row-num { color: var(--green); }
+  .word-row.solved .tile {
+    width: 50px; height: 50px;
+    font-size: 22px;
+    background: rgba(0,232,122,.1);
+    border: 1px solid rgba(0,232,122,.28);
+    color: var(--green);
+  }
+  .word-row.solved .solved-check {
+    font-size: 11px;
+    color: var(--green);
+    opacity: .7;
+    margin-left: 4px;
+    letter-spacing: .05em;
+  }
+
+  /* ── INACTIVE / upcoming row ── */
+  .word-row.inactive { opacity: .38; }
+  .word-row.inactive .row-num { color: var(--muted); }
+  .word-row.inactive .tile {
+    width: 50px; height: 50px;
+    font-size: 22px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: transparent;
+  }
+  .word-row.inactive .tile.peeked {
+    color: rgba(220,232,245,.3);
+    background: rgba(255,255,255,.03);
+    border-color: var(--border2);
+  }
+
+  /* ── ADJACENT rows (above/below active) ── */
+  .word-row.adjacent {
+    opacity: .75;
+    background: rgba(0,200,240,.04);
+    border-left: 2px solid rgba(0,200,240,.25);
+  }
+  .word-row.adjacent .row-num { color: rgba(0,200,240,.5); }
+  .word-row.adjacent.solved .tile {
+    border-color: rgba(0,200,240,.2);
+  }
+  .word-row.adjacent.inactive .tile {
+    border-color: rgba(0,200,240,.15);
+    background: rgba(0,200,240,.04);
+  }
+
+  /* ── ACTIVE row ── */
+  .word-row.active {
+    background: rgba(0,200,240,.06);
+    border-left: 3px solid var(--cyan);
+    padding: 12px 12px 12px 10px;
+  }
+  .word-row.active .row-num {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--cyan);
+  }
+  .word-row.active .tile {
+    width: 68px; height: 72px;
+    font-size: 32px;
+    background: var(--surface2);
+    border: 2px solid var(--border2);
+    color: transparent;
+    border-radius: 12px;
+  }
+  .word-row.active .tile.revealed {
+    background: rgba(0,200,240,.13);
+    border-color: var(--cyan);
+    color: var(--cyan);
+    box-shadow: 0 0 18px rgba(0,200,240,.22);
+  }
+
+  /* Divider */
+  .row-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 2px 12px;
+    opacity: .4;
+  }
+
+  /* Flip animation */
+  @keyframes flipIn {
+    0%   { transform: rotateX(90deg) scale(.9); opacity: 0; }
+    55%  { transform: rotateX(-8deg) scale(1.02); opacity: 1; }
+    100% { transform: rotateX(0deg) scale(1); opacity: 1; }
+  }
+  .tile.flip { animation: flipIn .4s ease forwards; }
+
+  /* ─── CONTROL PANEL ─── */
+  .control-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .ctrl-section-label {
+    font-size: 9px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* Team badge */
+  .team-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0,200,240,.08);
+    border: 1px solid rgba(0,200,240,.22);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .team-badge .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .team-badge .name { font-size: 13px; font-weight: 700; color: var(--cyan); letter-spacing: .04em; flex: 1; }
+  .team-badge .sub { font-size: 9px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
+
+  /* Circular timer */
+  .timer-wrap {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+    align-self: center;
+  }
+  .timer-svg {
+    width: 64px;
+    height: 64px;
+    transform: rotate(-90deg);
+  }
+  .timer-track {
+    fill: none;
+    stroke: var(--surface2);
+    stroke-width: 4;
+  }
+  .timer-ring {
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-dasharray: 125.66;
+    stroke-dashoffset: 41.88; /* ~2/3 remaining = 20s of 30s */
+    transition: stroke-dashoffset .9s linear, stroke .3s;
+  }
+  .timer-ring.urgent {
+    stroke: var(--pink) !important;
+  }
+  .timer-num {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -.02em;
+  }
+  .timer-num.urgent { color: var(--pink); }
+
+  @keyframes urgentPulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50% { opacity:.7; transform:scale(1.08); }
+  }
+  .timer-wrap.urgent .timer-num { animation: urgentPulse .6s ease infinite; }
+
+  /* Letter input */
+  .letter-input {
+    background: var(--surface2);
+    border: 2px solid var(--border2);
+    border-radius: 10px;
+    padding: 14px;
+    font-family: 'Syne', sans-serif;
+    font-size: 40px;
+    font-weight: 800;
+    color: var(--text);
+    text-align: center;
+    text-transform: uppercase;
+    width: 100%;
+    outline: none;
+    letter-spacing: .3em;
+    transition: border-color .2s;
+    height: 82px;
+  }
+  .letter-input:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(0,200,240,.1); }
+  .letter-input::placeholder { color: var(--muted); font-size: 22px; letter-spacing: .1em; }
+
+  /* Action buttons */
+  .btn { width: 100%; border: none; border-radius: 10px; font-family: 'JetBrains Mono', monospace; font-weight: 700; cursor: pointer; transition: all .15s; letter-spacing: .07em; }
+  .btn-correct { padding: 15px; background: rgba(0,232,122,.14); border: 1px solid rgba(0,232,122,.35); color: var(--green); font-size: 12px; }
+  .btn-correct:hover { background: rgba(0,232,122,.24); }
+  .btn-wrong { padding: 13px; background: rgba(255,68,68,.1); border: 1px solid rgba(255,68,68,.28); color: #ff6666; font-size: 11px; }
+  .btn-wrong:hover { background: rgba(255,68,68,.18); }
+  .btn-pass { padding: 11px; background: transparent; border: 1px solid var(--border2); color: var(--muted); font-size: 10px; }
+  .btn-pass:hover { border-color: var(--muted); color: var(--text); }
+  .btn-solve { padding: 11px; background: rgba(255,199,67,.07); border: 1px solid rgba(255,199,67,.2); color: var(--yellow); font-size: 10px; }
+  .btn-solve:hover { background: rgba(255,199,67,.13); }
+  .btn-divider { height: 1px; background: var(--border); }
+
+  /* In-game tally */
+  .tally-box {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .tally-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tally-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .tally-name { font-size: 11px; color: var(--text); flex: 1; letter-spacing: .03em; }
+  .tally-pts {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: .05em;
+    min-width: 40px;
+    text-align: right;
+  }
+  .tally-row.leading .tally-pts { color: var(--yellow); }
+
+  /* Push button */
+  .btn-push {
+    width: 100%;
+    padding: 13px;
+    background: linear-gradient(135deg, rgba(0,200,240,.15), rgba(0,232,122,.1));
+    border: 1px solid rgba(0,200,240,.3);
+    border-radius: 10px;
+    color: var(--cyan);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    cursor: pointer;
+    transition: all .15s;
+    display: none; /* shown at end of game */
+  }
+  .btn-push.visible { display: block; }
+  .btn-push:hover { background: linear-gradient(135deg, rgba(0,200,240,.25), rgba(0,232,122,.18)); }
+
+  /* Points key */
+  .pts-key {
+    display: flex;
+    gap: 8px;
+  }
+  .pts-chip {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px;
+    text-align: center;
+  }
+  .pts-chip .pts-val { font-size: 14px; font-weight: 700; color: var(--yellow); display: block; }
+  .pts-chip .pts-label { font-size: 9px; color: var(--muted); letter-spacing: .08em; margin-top: 2px; display: block; text-transform: uppercase; }
+
+  /* Note */
+  .note {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--cyan);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.75;
+  }
+  .note strong { color: var(--text); }
+
+  /* End screen overlay example */
+  .end-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(7,9,15,.92);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 32px;
+  }
+  .end-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--text);
+    letter-spacing: .04em;
+  }
+  .end-title span { color: var(--cyan); }
+  .end-tally {
+    width: 100%;
+    max-width: 360px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .end-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .end-row:last-child { border-bottom: none; }
+  .end-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .end-name { font-size: 13px; color: var(--text); flex: 1; }
+  .end-delta { font-size: 14px; font-weight: 700; color: var(--green); }
+  .end-push {
+    padding: 16px 40px;
+    background: linear-gradient(135deg, rgba(0,200,240,.2), rgba(0,232,122,.15));
+    border: 1px solid rgba(0,200,240,.4);
+    border-radius: 12px;
+    color: var(--cyan);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    cursor: pointer;
+  }
+  .end-skip {
+    font-size: 10px;
+    color: var(--muted);
+    cursor: pointer;
+    letter-spacing: .08em;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <button class="active" onclick="show('game')">In-Game View</button>
+  <button onclick="show('end')">End Screen (Score Push)</button>
+</div>
+
+<!-- ════════════════ IN-GAME ════════════════ -->
+<div class="section active" id="game">
+  <div class="game-layout">
+
+    <!-- BOARD -->
+    <div class="board-panel">
+      <div class="board-header">
+        <div class="board-title">Chain <span>Reaction</span></div>
+        <div class="board-progress">WORD 3 / 7</div>
+      </div>
+
+      <!-- Row 1: solved -->
+      <div class="word-row solved">
+        <div class="row-num">1</div>
+        <div class="tiles">
+          <div class="tile">S</div><div class="tile">L</div><div class="tile">E</div><div class="tile">E</div><div class="tile">P</div>
+        </div>
+        <div class="solved-check">✓</div>
+      </div>
+
+      <div class="row-divider"></div>
+
+      <!-- Row 2: solved + adjacent to active (above) -->
+      <div class="word-row solved adjacent">
+        <div class="row-num">2</div>
+        <div class="tiles">
+          <div class="tile">D</div><div class="tile">R</div><div class="tile">E</div><div class="tile">A</div><div class="tile">M</div>
+        </div>
+        <div class="solved-check">✓</div>
+      </div>
+
+      <div class="row-divider" style="opacity:.15;margin:0 12px"></div>
+
+      <!-- Row 3: ACTIVE -->
+      <div class="word-row active">
+        <div class="row-num">3</div>
+        <div class="tiles">
+          <div class="tile revealed flip">C</div>
+          <div class="tile"></div>
+          <div class="tile revealed">O</div>
+          <div class="tile"></div>
+          <div class="tile"></div>
+          <div class="tile"></div>
+        </div>
+      </div>
+
+      <div class="row-divider" style="opacity:.15;margin:0 12px"></div>
+
+      <!-- Row 4: adjacent (below active) -->
+      <div class="word-row inactive adjacent">
+        <div class="row-num">4</div>
+        <div class="tiles">
+          <div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+        </div>
+      </div>
+
+      <div class="row-divider"></div>
+
+      <!-- Rows 5-7: inactive, progressively dim -->
+      <div class="word-row inactive" style="opacity:.28">
+        <div class="row-num">5</div>
+        <div class="tiles">
+          <div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+        </div>
+      </div>
+
+      <div class="row-divider"></div>
+
+      <div class="word-row inactive" style="opacity:.18">
+        <div class="row-num">6</div>
+        <div class="tiles">
+          <div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+        </div>
+      </div>
+
+      <div class="row-divider"></div>
+
+      <div class="word-row inactive" style="opacity:.1">
+        <div class="row-num">7</div>
+        <div class="tiles">
+          <div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CONTROL PANEL -->
+    <div class="control-panel">
+
+      <div class="ctrl-section-label">Current Turn</div>
+
+      <div style="display:flex;gap:12px;align-items:center">
+        <div class="team-badge" style="flex:1">
+          <div class="dot" style="background:#00c8f0"></div>
+          <div class="name">Team Ocean</div>
+          <div class="sub">Guessing</div>
+        </div>
+
+        <!-- Circular timer -->
+        <div class="timer-wrap">
+          <svg class="timer-svg" viewBox="0 0 44 44">
+            <defs>
+              <linearGradient id="timerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#00c8f0"/>
+                <stop offset="100%" stop-color="#00e87a"/>
+              </linearGradient>
+            </defs>
+            <circle class="timer-track" cx="22" cy="22" r="20"/>
+            <circle class="timer-ring" cx="22" cy="22" r="20" stroke="url(#timerGrad)" stroke-dashoffset="41.88"/>
+          </svg>
+          <div class="timer-num">20</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="ctrl-section-label" style="margin-bottom:6px">Letter Guess</div>
+        <input class="letter-input" maxlength="1" placeholder="?" />
+      </div>
+
+      <button class="btn btn-correct">✓ CORRECT — REVEAL</button>
+      <button class="btn btn-wrong">✗ WRONG — HINT + NEXT TEAM</button>
+      <div class="btn-divider"></div>
+      <button class="btn btn-pass">↷ PASS — next team, no hint</button>
+      <button class="btn btn-solve">★ SOLVE WORD (full word guessed)</button>
+
+      <div class="btn-divider"></div>
+
+      <div class="pts-key">
+        <div class="pts-chip">
+          <span class="pts-val">+20</span>
+          <span class="pts-label">Letter</span>
+        </div>
+        <div class="pts-chip">
+          <span class="pts-val">+100</span>
+          <span class="pts-label">Word</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="ctrl-section-label" style="margin-bottom:8px">This Game</div>
+        <div class="tally-box">
+          <div class="tally-row leading">
+            <div class="tally-dot" style="background:#00c8f0"></div>
+            <div class="tally-name">Team Ocean</div>
+            <div class="tally-pts">+180</div>
+          </div>
+          <div class="tally-row">
+            <div class="tally-dot" style="background:#00e87a"></div>
+            <div class="tally-name">Team Jungle</div>
+            <div class="tally-pts">+120</div>
+          </div>
+          <div class="tally-row">
+            <div class="tally-dot" style="background:#ffc843"></div>
+            <div class="tally-name">Team Gold</div>
+            <div class="tally-pts">+60</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>Changes from V1:</strong> Non-active tiles = 50px (V2 size). Row above + below active get cyan left border + subtle background tint. Scoreboard removed from right panel — replaced with "This Game" tally showing only points earned in this chain (deltas, not totals). Push happens at end screen.
+  </div>
+</div>
+
+<!-- ════════════════ END SCREEN ════════════════ -->
+<div class="section" id="end">
+  <div class="game-layout">
+
+    <!-- BOARD (all solved) -->
+    <div class="board-panel">
+      <div class="board-header">
+        <div class="board-title">Chain <span>Reaction</span></div>
+        <div class="board-progress" style="color:var(--green)">COMPLETE ✓</div>
+      </div>
+
+      <div class="word-row solved"><div class="row-num">1</div><div class="tiles"><div class="tile">S</div><div class="tile">L</div><div class="tile">E</div><div class="tile">E</div><div class="tile">P</div></div><div class="solved-check">✓</div></div>
+      <div class="row-divider"></div>
+      <div class="word-row solved"><div class="row-num">2</div><div class="tiles"><div class="tile">D</div><div class="tile">R</div><div class="tile">E</div><div class="tile">A</div><div class="tile">M</div></div><div class="solved-check">✓</div></div>
+      <div class="row-divider"></div>
+      <div class="word-row solved"><div class="row-num">3</div><div class="tiles"><div class="tile">C</div><div class="tile">L</div><div class="tile">O</div><div class="tile">U</div><div class="tile">D</div><div class="tile">S</div></div><div class="solved-check">✓</div></div>
+      <div class="row-divider"></div>
+      <div class="word-row solved"><div class="row-num">4</div><div class="tiles"><div class="tile">S</div><div class="tile">T</div><div class="tile">A</div><div class="tile">R</div><div class="tile">S</div></div><div class="solved-check">✓</div></div>
+      <div class="row-divider"></div>
+      <div class="word-row solved"><div class="row-num">5</div><div class="tiles"><div class="tile">N</div><div class="tile">I</div><div class="tile">G</div><div class="tile">H</div><div class="tile">T</div></div><div class="solved-check">✓</div></div>
+      <div class="row-divider"></div>
+      <div class="word-row solved" style="opacity:.5"><div class="row-num">6</div><div class="tiles"><div class="tile">D</div><div class="tile">A</div><div class="tile">R</div><div class="tile">K</div></div><div class="solved-check">✓</div></div>
+      <div class="row-divider"></div>
+      <div class="word-row solved" style="opacity:.35"><div class="row-num">7</div><div class="tiles"><div class="tile">M</div><div class="tile">O</div><div class="tile">O</div><div class="tile">N</div></div><div class="solved-check">✓</div></div>
+    </div>
+
+    <!-- END PANEL -->
+    <div class="control-panel" style="align-items:stretch">
+      <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:var(--text);letter-spacing:.02em">
+        Chain Complete
+      </div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.7">
+        Points earned this round. Push to add to the class scoreboard — or skip to discard.
+      </div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:10px;overflow:hidden">
+        <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+          <div style="width:7px;height:7px;border-radius:50%;background:#00c8f0"></div>
+          <div style="font-size:12px;color:var(--text);flex:1">Team Ocean</div>
+          <div style="font-size:15px;font-weight:700;color:var(--green)">+280 pts</div>
+        </div>
+        <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+          <div style="width:7px;height:7px;border-radius:50%;background:#00e87a"></div>
+          <div style="font-size:12px;color:var(--text);flex:1">Team Jungle</div>
+          <div style="font-size:15px;font-weight:700;color:var(--green)">+200 pts</div>
+        </div>
+        <div style="padding:10px 14px;display:flex;align-items:center;gap:8px">
+          <div style="width:7px;height:7px;border-radius:50%;background:#ffc843"></div>
+          <div style="font-size:12px;color:var(--text);flex:1">Team Gold</div>
+          <div style="font-size:15px;font-weight:700;color:var(--green)">+120 pts</div>
+        </div>
+      </div>
+
+      <button style="padding:16px;background:linear-gradient(135deg,rgba(0,200,240,.18),rgba(0,232,122,.12));border:1px solid rgba(0,200,240,.4);border-radius:10px;color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;letter-spacing:.08em;cursor:pointer;width:100%">
+        ✓ PUSH TO SCOREBOARD
+      </button>
+
+      <button style="padding:13px;background:transparent;border:1px solid var(--border2);border-radius:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;cursor:pointer;width:100%">
+        ↺ Play Again (new chain)
+      </button>
+
+      <button style="padding:10px;background:transparent;border:none;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;cursor:pointer;text-decoration:underline;text-underline-offset:3px">
+        Skip — don't save scores
+      </button>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>End Screen:</strong> All words solved = all rows go green. Right panel shows final deltas per team with "Push to Scoreboard" → calls <code>updateTeamScore()</code> for each team. "Play Again" resets, "Skip" discards scores. Teacher is always in control.
+  </div>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// Live timer demo
+const CIRC = 125.66;
+const DURATION = 30;
+let timeLeft = 20;
+let timerInterval = null;
+
+function updateTimer(t) {
+  const ring = document.querySelector('.timer-ring');
+  const num = document.querySelector('.timer-num');
+  const wrap = document.querySelector('.timer-wrap');
+  const offset = CIRC - (Math.max(t, 0) / DURATION) * CIRC;
+  ring.style.strokeDashoffset = offset;
+  num.textContent = t;
+  const urgent = t <= 5;
+  ring.classList.toggle('urgent', urgent);
+  num.classList.toggle('urgent', urgent);
+  wrap.classList.toggle('urgent', urgent);
+  if (urgent) ring.setAttribute('stroke', '#ff4d8f');
+  else ring.setAttribute('stroke', 'url(#timerGrad)');
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimer(timeLeft);
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      // Simulate wrong outcome
+      document.querySelector('.btn-wrong').style.boxShadow = '0 0 0 2px #ff4444';
+      setTimeout(() => document.querySelector('.btn-wrong').style.boxShadow = '', 800);
+    }
+  }, 1000);
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timeLeft = DURATION;
+  updateTimer(timeLeft);
+  startTimer();
+}
+
+// Auto-start on load
+window.addEventListener('load', () => {
+  updateTimer(timeLeft);
+  startTimer();
+
+  // Correct button resets timer
+  document.querySelector('.btn-correct').addEventListener('click', resetTimer);
+  // Wrong button resets timer + next team
+  document.querySelector('.btn-wrong').addEventListener('click', resetTimer);
+  // Pass resets timer
+  document.querySelector('.btn-pass').addEventListener('click', resetTimer);
+});
+</script>
+</body>
+</html>

@@ -6,7 +6,7 @@ import { playSFX } from "../lib/audio";
 export type Level = "Low" | "Mid" | "High";
 export type Energy = "Passive" | "Normal" | "Active";
 export type Rank = 1 | 2 | 3;
-export type Tier = "Bronze" | "Silver" | "Gold";
+export type Tier = "Bronze" | "Silver" | "Gold" | "Platinum";
 
 export interface Student {
   id: string;
@@ -17,6 +17,7 @@ export interface Student {
   gender: "male" | "female";
   rank: Rank;
   tier: Tier;
+  xp: number;
 }
 
 export interface ClassData {
@@ -111,6 +112,8 @@ interface ClassroomState {
   bulkAddStudents: (classId: string, names: string[], gender: "male" | "female") => void;
   togglePresence: (studentId: string) => void;
   markAllPresent: (classId: string) => void;
+  awardStudentXp: (classId: string, studentId: string, xpAmount: number, eventType?: string, gameType?: string) => void;
+  syncStudentXp: (classId: string, className: string) => Promise<void>;
   
   generateTeams: (classId: string, numberOfTeams: number, presentStudentIds?: string[]) => void;
   updateTeamScore: (teamId: string, delta: number) => void;
@@ -135,19 +138,20 @@ interface ClassroomState {
   
   commandLogs: string[];
   addLog: (message: string) => void;
+  repairClass: (classId: string) => void;
 }
 
 const DEMO_STUDENTS: Student[] = [
-  { id: uuidv4(), name: "Ahmad Rizqi Arrayan", level: "Low", confidence: "Mid", energy: "Normal", gender: "male", rank: 1, tier: "Bronze" },
-  { id: uuidv4(), name: "Aeni Putri", level: "Mid", confidence: "Low", energy: "Passive", gender: "female", rank: 1, tier: "Bronze" },
-  { id: uuidv4(), name: "Al Vinzha Febriano", level: "Low", confidence: "High", energy: "Active", gender: "male", rank: 1, tier: "Bronze" },
-  { id: uuidv4(), name: "Dimas Pratama Yulianto", level: "High", confidence: "High", energy: "Active", gender: "male", rank: 1, tier: "Bronze" },
-  { id: uuidv4(), name: "Dinar Arya Putra", level: "High", confidence: "High", energy: "Active", gender: "male", rank: 1, tier: "Bronze" },
-  { id: uuidv4(), name: "Fakhri Ramadhan", level: "Mid", confidence: "Mid", energy: "Normal", gender: "male", rank: 1, tier: "Bronze" },
-  { id: uuidv4(), name: "Ibnu Akhdaan", level: "Mid", confidence: "Mid", energy: "Active", gender: "male", rank: 1, tier: "Bronze" },
-  { id: uuidv4(), name: "Keyla Wati Lestari", level: "High", confidence: "High", energy: "Normal", gender: "female", rank: 1, tier: "Bronze" },
-  { id: uuidv4(), name: "Levy Cipta Astinto", level: "Mid", confidence: "Low", energy: "Passive", gender: "male", rank: 1, tier: "Bronze" },
-  { id: uuidv4(), name: "Muhammad Ibnu Kamil", level: "Low", confidence: "Low", energy: "Normal", gender: "male", rank: 1, tier: "Bronze" },
+  { id: uuidv4(), name: "Ahmad Rizqi Arrayan", level: "Low", confidence: "Mid", energy: "Normal", gender: "male", rank: 1, tier: "Bronze", xp: 0 },
+  { id: uuidv4(), name: "Aeni Putri", level: "Mid", confidence: "Low", energy: "Passive", gender: "female", rank: 1, tier: "Bronze", xp: 0 },
+  { id: uuidv4(), name: "Al Vinzha Febriano", level: "Low", confidence: "High", energy: "Active", gender: "male", rank: 1, tier: "Bronze", xp: 0 },
+  { id: uuidv4(), name: "Dimas Pratama Yulianto", level: "High", confidence: "High", energy: "Active", gender: "male", rank: 1, tier: "Bronze", xp: 0 },
+  { id: uuidv4(), name: "Dinar Arya Putra", level: "High", confidence: "High", energy: "Active", gender: "male", rank: 1, tier: "Bronze", xp: 0 },
+  { id: uuidv4(), name: "Fakhri Ramadhan", level: "Mid", confidence: "Mid", energy: "Normal", gender: "male", rank: 1, tier: "Bronze", xp: 0 },
+  { id: uuidv4(), name: "Ibnu Akhdaan", level: "Mid", confidence: "Mid", energy: "Active", gender: "male", rank: 1, tier: "Bronze", xp: 0 },
+  { id: uuidv4(), name: "Keyla Wati Lestari", level: "High", confidence: "High", energy: "Normal", gender: "female", rank: 1, tier: "Bronze", xp: 0 },
+  { id: uuidv4(), name: "Levy Cipta Astinto", level: "Mid", confidence: "Low", energy: "Passive", gender: "male", rank: 1, tier: "Bronze", xp: 0 },
+  { id: uuidv4(), name: "Muhammad Ibnu Kamil", level: "Low", confidence: "Low", energy: "Normal", gender: "male", rank: 1, tier: "Bronze", xp: 0 },
 ];
 
 export const useClassroomStore = create<ClassroomState>()(
@@ -290,7 +294,8 @@ export const useClassroomStore = create<ClassroomState>()(
                 energy: "Normal" as Energy, 
                 confidence: "Mid" as Level,
                 rank: 1 as Rank, 
-                tier: "Bronze" as Tier
+                tier: "Bronze" as Tier,
+                xp: 0
               }] } 
             : c
         )
@@ -312,6 +317,77 @@ export const useClassroomStore = create<ClassroomState>()(
         )
       })),
 
+      awardStudentXp: (classId, studentId, xpAmount, eventType = 'manual_award', gameType) => {
+        // Optimistically update XP + rank in Zustand
+        set((state) => {
+          const cls = state.classes.find(c => c.id === classId);
+          if (!cls) return state;
+          const student = cls.students.find(s => s.id === studentId);
+          if (!student) return state;
+
+          const newXp = (student.xp ?? 0) + xpAmount;
+
+          // Lazy import to avoid circular deps at module load time
+          const { getRankForXp } = require('@/utils/ranks');
+          const newRankInfo = getRankForXp(newXp);
+
+          const updatedStudents = cls.students.map(s =>
+            s.id === studentId
+              ? { ...s, xp: newXp, rank: newRankInfo.stars as Rank, tier: newRankInfo.tier as Tier }
+              : s
+          );
+
+          const rankChanged = newRankInfo.stars !== student.rank || newRankInfo.tier !== student.tier;
+          const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: 'numeric', minute: 'numeric', second: 'numeric' });
+          const logMsg = rankChanged
+            ? `[${timestamp}] RANK_UP: ${student.name} → ${newRankInfo.label} (${newXp} XP)`
+            : `[${timestamp}] XP_AWARD: ${student.name} +${xpAmount} XP (${newXp} total)`;
+
+          return {
+            classes: state.classes.map(c => c.id === classId ? { ...c, students: updatedStudents } : c),
+            commandLogs: [logMsg, ...state.commandLogs].slice(0, 50),
+          };
+        });
+
+        // Persist to Supabase in the background (fire-and-forget)
+        const { activeClassId, classes } = get();
+        const cls = classes.find(c => c.id === classId);
+        const className = cls?.name ?? '';
+        if (className) {
+          fetch('/api/xp/award', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ student_id: studentId, class_name: className, event_type: eventType, xp_amount: xpAmount, game_type: gameType }),
+          }).catch(() => { /* silent — Zustand is source of truth during session */ });
+        }
+      },
+
+      syncStudentXp: async (classId, className) => {
+        try {
+          const res = await fetch(`/api/xp/totals?class_name=${encodeURIComponent(className)}`);
+          if (!res.ok) return;
+          const { totals } = await res.json() as { totals: Record<string, number> };
+
+          const { getRankForXp } = await import('@/utils/ranks');
+
+          set((state) => {
+            const cls = state.classes.find(c => c.id === classId);
+            if (!cls) return state;
+
+            const updatedStudents = cls.students.map(s => {
+              const remoteXp = totals[s.id];
+              if (remoteXp === undefined) return s;
+              const rankInfo = getRankForXp(remoteXp);
+              return { ...s, xp: remoteXp, rank: rankInfo.stars as Rank, tier: rankInfo.tier as Tier };
+            });
+
+            return { classes: state.classes.map(c => c.id === classId ? { ...c, students: updatedStudents } : c) };
+          });
+        } catch {
+          // Network failure during sync — local state remains valid
+        }
+      },
+
       bulkAddStudents: (classId, names, gender) => set((state) => ({
         classes: state.classes.map((c) => {
           if (c.id !== classId) return c;
@@ -323,7 +399,8 @@ export const useClassroomStore = create<ClassroomState>()(
             energy: "Normal" as Energy, 
             gender: gender, 
             rank: 1 as Rank, 
-            tier: "Bronze" as Tier
+            tier: "Bronze" as Tier,
+            xp: 0
           }));
           return { ...c, students: [...c.students, ...newStudents] };
         })
@@ -464,7 +541,32 @@ export const useClassroomStore = create<ClassroomState>()(
         if (llmProvider === "gemini")  return geminiModel;
         if (llmProvider === "groq")    return groqModel;
         return mistralModel; // mistral + lmstudio
-      }
+      },
+      repairClass: (classId) => set((state) => {
+        const targetClass = state.classes.find(c => c.id === classId);
+        if (!targetClass) return state;
+
+        const repairedStudents = targetClass.students.map((s, idx) => {
+          // If name is "OPERATOR X" or "Operator X", try to get original from DEMO_STUDENTS
+          let originalName = s.name;
+          if (s.name.toUpperCase().startsWith("OPERATOR") && DEMO_STUDENTS[idx]) {
+            originalName = DEMO_STUDENTS[idx].name;
+          }
+          
+          return {
+            ...s,
+            name: originalName,
+            tier: "Bronze" as Tier,
+            rank: 1 as Rank,
+            xp: 0
+          };
+        });
+
+        return {
+          classes: state.classes.map(c => c.id === classId ? { ...c, students: repairedStudents } : c),
+          commandLogs: [`[SYSTEM] Repair Complete: ${targetClass.name} restored to Bronze Hero.`, ...state.commandLogs].slice(0, 50)
+        };
+      })
     }),
     {
       name: "classroom-engine-storage",

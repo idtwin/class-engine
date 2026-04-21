@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "chain-mockup",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-s", ".claude", "-p", "5678"],
+      "port": 5678
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+<h2>Odd One Out — Game Feel Direction</h2>
+<p class="subtitle">Two takes on "fun but readable." Both remove the tech-noir clutter. Pick the one that feels right, or describe what you'd change.</p>
+
+<div class="cards">
+
+  <!-- Option A -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#07090f; border-radius:10px; padding:14px; font-family:'Nunito',sans-serif;">
+      <div style="background:#0e1420; border-radius:10px; overflow:hidden; border:1px solid #1c2a40; max-width:340px; margin:0 auto;">
+        <!-- Header bar -->
+        <div style="background:#0e1420; border-bottom:1px solid #1c2a40; padding:8px 14px; display:flex; align-items:center; gap:10px;">
+          <span style="font-size:12px; font-weight:900; color:#b06eff; letter-spacing:0.06em;">ODD ONE OUT</span>
+          <span style="margin-left:auto; font-size:11px; color:#4a637d;">Q 3 / 12</span>
+          <span style="font-size:13px; font-weight:700; color:#b06eff; background:rgba(176,110,255,0.1); border-radius:6px; padding:2px 8px;">0:38</span>
+        </div>
+        <!-- Timer bar -->
+        <div style="height:3px; background:#1c2a40;"><div style="height:3px; width:70%; background:#b06eff; border-radius:0 2px 2px 0;"></div></div>
+        <!-- Question prompt -->
+        <div style="padding:10px 14px 6px; text-align:center; font-size:11px; font-weight:700; color:#4a637d; letter-spacing:0.04em; text-transform:uppercase;">Which word doesn't belong?</div>
+        <!-- Word grid -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:0 14px 10px;">
+          <div style="background:#131b2b; border:2px solid #243347; border-radius:10px; padding:22px 8px; text-align:center; font-size:18px; font-weight:900; color:#dce8f5; letter-spacing:0.04em;">APPLE</div>
+          <div style="background:#131b2b; border:2px solid #243347; border-radius:10px; padding:22px 8px; text-align:center; font-size:18px; font-weight:900; color:#dce8f5; letter-spacing:0.04em;">MANGO</div>
+          <div style="background:#131b2b; border:2px solid #243347; border-radius:10px; padding:22px 8px; text-align:center; font-size:18px; font-weight:900; color:#dce8f5; letter-spacing:0.04em;">CARROT</div>
+          <div style="background:#131b2b; border:2px solid #243347; border-radius:10px; padding:22px 8px; text-align:center; font-size:18px; font-weight:900; color:#dce8f5; letter-spacing:0.04em;">BANANA</div>
+        </div>
+        <!-- Team status -->
+        <div style="padding:0 14px 10px; display:flex; gap:6px; flex-wrap:wrap; justify-content:center;">
+          <div style="background:rgba(0,232,122,0.1); border:1px solid rgba(0,232,122,0.3); border-radius:20px; padding:4px 10px; font-size:10px; font-weight:700; color:#00e87a;">🔒 Alpha</div>
+          <div style="background:rgba(0,200,240,0.1); border:1px solid rgba(0,200,240,0.3); border-radius:20px; padding:4px 10px; font-size:10px; font-weight:700; color:#00c8f0;">🔒 Beta</div>
+          <div style="background:#131b2b; border:1px solid #243347; border-radius:20px; padding:4px 10px; font-size:10px; color:#4a637d;">⏳ Gamma</div>
+          <div style="background:#131b2b; border:1px solid #243347; border-radius:20px; padding:4px 10px; font-size:10px; color:#4a637d;">⏳ Delta</div>
+        </div>
+        <!-- Button -->
+        <div style="padding:0 14px 12px; display:flex; gap:8px;">
+          <button style="flex:1; background:#b06eff; color:#000; border:none; border-radius:8px; padding:10px; font-size:12px; font-weight:900; font-family:inherit; letter-spacing:0.04em;">Reveal Answer</button>
+          <button style="background:transparent; border:1px solid #243347; color:#4a637d; border-radius:8px; padding:10px 12px; font-size:12px; font-family:inherit;">💡</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Clean & Bold</h3>
+      <p>Large word tiles, plain background. Team chips show lock-in with their team color. Simple "Reveal Answer" button. Maximum readability, minimal decoration. Feels like a modern quiz show.</p>
+    </div>
+  </div>
+
+  <!-- Option B -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#07090f; border-radius:10px; padding:14px; font-family:'Nunito',sans-serif;">
+      <div style="background:#0e1420; border-radius:10px; overflow:hidden; border:1px solid #1c2a40; max-width:340px; margin:0 auto;">
+        <!-- Header bar -->
+        <div style="background:#0e1420; border-bottom:1px solid #1c2a40; padding:8px 14px; display:flex; align-items:center; gap:10px;">
+          <div style="width:8px; height:8px; border-radius:50%; background:#b06eff; box-shadow:0 0 6px #b06eff;"></div>
+          <span style="font-size:12px; font-weight:900; color:#b06eff; letter-spacing:0.06em;">ODD ONE OUT</span>
+          <span style="margin-left:auto; font-size:11px; color:#4a637d;">3 / 12</span>
+          <span style="font-size:13px; font-weight:700; color:#ffc843; background:rgba(255,200,67,0.1); border-radius:6px; padding:2px 8px;">0:38</span>
+        </div>
+        <!-- Timer bar -->
+        <div style="height:4px; background:#1c2a40;"><div style="height:4px; width:70%; background:linear-gradient(90deg,#b06eff,#ffc843); border-radius:0 3px 3px 0;"></div></div>
+        <!-- Question prompt -->
+        <div style="padding:10px 14px 8px; text-align:center; font-size:12px; font-weight:900; color:#dce8f5; letter-spacing:0.02em;">Which word doesn't belong?</div>
+        <!-- Word grid -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:0 14px 10px;">
+          <div style="background:rgba(176,110,255,0.07); border:2px solid rgba(176,110,255,0.2); border-radius:12px; padding:20px 8px; text-align:center; font-size:18px; font-weight:900; color:#dce8f5; letter-spacing:0.04em;">APPLE</div>
+          <div style="background:rgba(176,110,255,0.07); border:2px solid rgba(176,110,255,0.2); border-radius:12px; padding:20px 8px; text-align:center; font-size:18px; font-weight:900; color:#dce8f5; letter-spacing:0.04em;">MANGO</div>
+          <div style="background:rgba(176,110,255,0.07); border:2px solid rgba(176,110,255,0.2); border-radius:12px; padding:20px 8px; text-align:center; font-size:18px; font-weight:900; color:#dce8f5; letter-spacing:0.04em;">CARROT</div>
+          <div style="background:rgba(176,110,255,0.07); border:2px solid rgba(176,110,255,0.2); border-radius:12px; padding:20px 8px; text-align:center; font-size:18px; font-weight:900; color:#dce8f5; letter-spacing:0.04em;">BANANA</div>
+        </div>
+        <!-- Team status — bigger, more game-like -->
+        <div style="padding:0 14px 10px; display:flex; gap:6px; flex-wrap:wrap; justify-content:center;">
+          <div style="background:rgba(0,232,122,0.12); border:1.5px solid #00e87a; border-radius:8px; padding:5px 12px; font-size:11px; font-weight:900; color:#00e87a;">✓ Alpha</div>
+          <div style="background:rgba(0,200,240,0.12); border:1.5px solid #00c8f0; border-radius:8px; padding:5px 12px; font-size:11px; font-weight:900; color:#00c8f0;">✓ Beta</div>
+          <div style="background:#131b2b; border:1.5px solid #243347; border-radius:8px; padding:5px 12px; font-size:11px; color:#4a637d;">· · · Gamma</div>
+          <div style="background:#131b2b; border:1.5px solid #243347; border-radius:8px; padding:5px 12px; font-size:11px; color:#4a637d;">· · · Delta</div>
+        </div>
+        <!-- Button -->
+        <div style="padding:0 14px 12px; display:flex; gap:8px;">
+          <button style="flex:1; background:#b06eff; color:#000; border:none; border-radius:10px; padding:11px; font-size:13px; font-weight:900; font-family:inherit; letter-spacing:0.04em;">Reveal Answer ✦</button>
+          <button style="background:transparent; border:1.5px solid rgba(176,110,255,0.3); color:#b06eff; border-radius:10px; padding:10px 12px; font-size:12px; font-family:inherit;">💡</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Purple Identity + Game Energy</h3>
+      <p>Same clean structure as A, but the word tiles have a subtle purple tint, the timer gradient adds energy, and team status chips look like game badges (square, bold). Still readable but has more personality.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:20px; padding:14px; background:rgba(0,200,240,0.04); border:1px solid rgba(0,200,240,0.12); border-radius:8px;">
+  <div class="label">What's the same in both</div>
+  <p style="margin:6px 0 0; font-size:13px; color:#8899aa;">Both options: large readable word tiles · team lock-in shown with team color · single reveal button · no sidebar · no lat/lng decoration · no monospace system log. The difference is only how much purple personality the tiles and chips carry.</p>
+</div>

@@ -4,6 +4,7 @@ import "./globals.css";
 import TwistOverlay from "./components/TwistOverlay";
 import ScoreboardOverlay from "./components/ScoreboardOverlay";
 import TopNav from "./components/TopNav";
+import RankUpToast from "./components/RankUpToast";
 
 const syne = Syne({
   variable: "--font-syne",
@@ -43,6 +44,7 @@ export default function RootLayout({
         </main>
         <TwistOverlay />
         <ScoreboardOverlay />
+        <RankUpToast />
       </body>
     </html>
   );
