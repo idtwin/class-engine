@@ -195,7 +195,7 @@ function JoinLogic() {
           </div>
           
           <input
-            type="text"
+            type="tel"
             className={styles.codeInput}
             maxLength={4}
             placeholder="XXXX"
@@ -204,7 +204,6 @@ function JoinLogic() {
             onKeyDown={(e) => e.key === "Enter" && handleVerifyOtp()}
             autoFocus
             autoComplete="off"
-            type="tel"
           />
           {error && <div className={styles.error}>{error}</div>}
           <button
