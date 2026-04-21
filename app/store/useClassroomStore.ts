@@ -5,8 +5,8 @@ import { playSFX } from "../lib/audio";
 
 export type Level = "Low" | "Mid" | "High";
 export type Energy = "Passive" | "Normal" | "Active";
-export type Rank = 1 | 2 | 3;
-export type Tier = "Bronze" | "Silver" | "Gold" | "Platinum";
+export type Rank = 1 | 2 | 3 | 4; // 1-4 metallic stars
+export type Tier = "Hero" | "Legend" | "Immortal"; // Role-based tiers
 
 export interface Student {
   id: string;
@@ -142,16 +142,16 @@ interface ClassroomState {
 }
 
 const DEMO_STUDENTS: Student[] = [
-  { id: uuidv4(), name: "Ahmad Rizqi Arrayan", level: "Low", confidence: "Mid", energy: "Normal", gender: "male", rank: 1, tier: "Bronze", xp: 0 },
-  { id: uuidv4(), name: "Aeni Putri", level: "Mid", confidence: "Low", energy: "Passive", gender: "female", rank: 1, tier: "Bronze", xp: 0 },
-  { id: uuidv4(), name: "Al Vinzha Febriano", level: "Low", confidence: "High", energy: "Active", gender: "male", rank: 1, tier: "Bronze", xp: 0 },
-  { id: uuidv4(), name: "Dimas Pratama Yulianto", level: "High", confidence: "High", energy: "Active", gender: "male", rank: 1, tier: "Bronze", xp: 0 },
-  { id: uuidv4(), name: "Dinar Arya Putra", level: "High", confidence: "High", energy: "Active", gender: "male", rank: 1, tier: "Bronze", xp: 0 },
-  { id: uuidv4(), name: "Fakhri Ramadhan", level: "Mid", confidence: "Mid", energy: "Normal", gender: "male", rank: 1, tier: "Bronze", xp: 0 },
-  { id: uuidv4(), name: "Ibnu Akhdaan", level: "Mid", confidence: "Mid", energy: "Active", gender: "male", rank: 1, tier: "Bronze", xp: 0 },
-  { id: uuidv4(), name: "Keyla Wati Lestari", level: "High", confidence: "High", energy: "Normal", gender: "female", rank: 1, tier: "Bronze", xp: 0 },
-  { id: uuidv4(), name: "Levy Cipta Astinto", level: "Mid", confidence: "Low", energy: "Passive", gender: "male", rank: 1, tier: "Bronze", xp: 0 },
-  { id: uuidv4(), name: "Muhammad Ibnu Kamil", level: "Low", confidence: "Low", energy: "Normal", gender: "male", rank: 1, tier: "Bronze", xp: 0 },
+  { id: uuidv4(), name: "Ahmad Rizqi Arrayan", level: "Low", confidence: "Mid", energy: "Normal", gender: "male", rank: 1, tier: "Hero", xp: 0 },
+  { id: uuidv4(), name: "Aeni Putri", level: "Mid", confidence: "Low", energy: "Passive", gender: "female", rank: 1, tier: "Hero", xp: 0 },
+  { id: uuidv4(), name: "Al Vinzha Febriano", level: "Low", confidence: "High", energy: "Active", gender: "male", rank: 1, tier: "Hero", xp: 0 },
+  { id: uuidv4(), name: "Dimas Pratama Yulianto", level: "High", confidence: "High", energy: "Active", gender: "male", rank: 1, tier: "Hero", xp: 0 },
+  { id: uuidv4(), name: "Dinar Arya Putra", level: "High", confidence: "High", energy: "Active", gender: "male", rank: 1, tier: "Hero", xp: 0 },
+  { id: uuidv4(), name: "Fakhri Ramadhan", level: "Mid", confidence: "Mid", energy: "Normal", gender: "male", rank: 1, tier: "Hero", xp: 0 },
+  { id: uuidv4(), name: "Ibnu Akhdaan", level: "Mid", confidence: "Mid", energy: "Active", gender: "male", rank: 1, tier: "Hero", xp: 0 },
+  { id: uuidv4(), name: "Keyla Wati Lestari", level: "High", confidence: "High", energy: "Normal", gender: "female", rank: 1, tier: "Hero", xp: 0 },
+  { id: uuidv4(), name: "Levy Cipta Astinto", level: "Mid", confidence: "Low", energy: "Passive", gender: "male", rank: 1, tier: "Hero", xp: 0 },
+  { id: uuidv4(), name: "Muhammad Ibnu Kamil", level: "Low", confidence: "Low", energy: "Normal", gender: "male", rank: 1, tier: "Hero", xp: 0 },
 ];
 
 export const useClassroomStore = create<ClassroomState>()(
@@ -294,7 +294,7 @@ export const useClassroomStore = create<ClassroomState>()(
                 energy: "Normal" as Energy, 
                 confidence: "Mid" as Level,
                 rank: 1 as Rank, 
-                tier: "Bronze" as Tier,
+                tier: "Hero" as Tier,
                 xp: 0
               }] } 
             : c
@@ -399,7 +399,7 @@ export const useClassroomStore = create<ClassroomState>()(
             energy: "Normal" as Energy, 
             gender: gender, 
             rank: 1 as Rank, 
-            tier: "Bronze" as Tier,
+            tier: "Hero" as Tier,
             xp: 0
           }));
           return { ...c, students: [...c.students, ...newStudents] };
@@ -556,7 +556,7 @@ export const useClassroomStore = create<ClassroomState>()(
           return {
             ...s,
             name: originalName,
-            tier: "Bronze" as Tier,
+            tier: "Hero" as Tier,
             rank: 1 as Rank,
             xp: 0
           };

@@ -504,7 +504,7 @@ export default function TeamsPage() {
                       >
                         {/* Main Identity Area (Left) */}
                         <div className={styles.studentCardMain}>
-                          <div className={`${styles.studentHeader} ${styles['tier' + (s.tier || 'Bronze')]}`}>
+                          <div className={`${styles.studentHeader} ${styles['tier' + (s.tier || 'Hero')]}`}>
                             <div className={styles.rankIconLarge}>
                               <RankIcon tier={s.tier} stars={s.rank as any} size={50} />
                             </div>

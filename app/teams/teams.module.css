@@ -365,26 +365,26 @@
   pointer-events: none;
 }
 
-.studentHeader.tierBronze { 
+.studentHeader.tierHero { 
   background: linear-gradient(90deg, rgba(80, 50, 30, 0.95) 0%, rgba(80, 50, 30, 0.7) 40%, transparent 100%); 
 }
-.studentHeader.tierBronze::after {
+.studentHeader.tierHero::after {
   background: linear-gradient(90deg, #cd7f32 0%, #cd7f32 30%, transparent 100%);
   box-shadow: 0 0 10px rgba(205, 127, 50, 0.3);
 }
 
-.studentHeader.tierSilver { 
+.studentHeader.tierLegend { 
   background: linear-gradient(90deg, rgba(50, 50, 60, 0.95) 0%, rgba(50, 50, 60, 0.7) 40%, transparent 100%); 
 }
-.studentHeader.tierSilver::after {
+.studentHeader.tierLegend::after {
   background: linear-gradient(90deg, #e2e8f0 0%, #e2e8f0 30%, transparent 100%);
   box-shadow: 0 0 10px rgba(226, 232, 240, 0.3);
 }
 
-.studentHeader.tierGold { 
+.studentHeader.tierImmortal { 
   background: linear-gradient(90deg, rgba(70, 55, 10, 0.95) 0%, rgba(70, 55, 10, 0.7) 40%, transparent 100%); 
 }
-.studentHeader.tierGold::after {
+.studentHeader.tierImmortal::after {
   background: linear-gradient(90deg, #ffc843 0%, #ffc843 30%, transparent 100%);
   box-shadow: 0 0 10px rgba(255, 200, 67, 0.3);
 }
