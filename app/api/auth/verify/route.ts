@@ -30,9 +30,11 @@ export async function POST(request: Request) {
       .single();
 
     if (authError || !authRecord) {
-      console.warn(`[AUTH_FAILURE] Student ${roster_id} failed with OTP ${cleanOtp}. Checking for expired/mismatch...`);
+      console.warn(`[AUTH_FAILURE] Student ${roster_id} failed with OTP ${cleanOtp}. Error:`, authError || 'PIN not found or expired');
       return NextResponse.json({ error: 'Invalid or expired OTP.' }, { status: 401 });
     }
+
+    console.log(`[AUTH_SUCCESS] Student ${roster_id} validated successfully.`);
 
     // Look up roster info
     const { data: rosterRecord, error: rosterError } = await supabase

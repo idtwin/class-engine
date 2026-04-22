@@ -33,14 +33,15 @@ export async function POST(request: Request) {
       .single();
 
     if (insertError) {
-      console.error('[OTP_GENERATE_ERROR]', insertError.message);
+      console.error('[OTP_GENERATE_ERROR] Supabase insert failed:', insertError);
       return NextResponse.json({ error: 'Failed to generate OTP: ' + insertError.message }, { status: 500 });
     }
 
+    console.log(`[OTP_GENERATE_SUCCESS] Generated PIN ${otp} for student ${roster_id}`);
     return NextResponse.json({ success: true, otp: authRecord.otp });
 
   } catch (error: any) {
-    console.error('[OTP_GENERATE_EXCEPTION]', error.message);
+    console.error('[OTP_GENERATE_EXCEPTION] Unhandled error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

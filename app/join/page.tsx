@@ -39,10 +39,32 @@ function JoinLogic() {
   }, [code, router]);
 
   useEffect(() => {
-    // Fetch the full roster — all students can see the list.
-    // Security is enforced at Step 2 via the PIN code the teacher generates.
-    const fetchRoster = async () => {
+    const fetchData = async () => {
       try {
+        // 1. If we have a room code, try to fetch the roster from the specific Redis room first.
+        // This is much faster and more reliable as it's exactly what the teacher just sent.
+        if (code) {
+          const roomRes = await fetch(`/api/room/get?code=${code}`);
+          if (roomRes.ok) {
+            const roomData = await roomRes.json();
+            if (roomData.activeRoster) {
+              const studentsOnly = roomData.activeRoster
+                .filter((p: any) => p.type === "student")
+                .map((p: any) => ({
+                   id: p.id,
+                   name: p.name,
+                   class_name: p.class_name || "Class"
+                }));
+              
+              if (studentsOnly.length > 0) {
+                setRoster(studentsOnly);
+                return; // Successfully loaded from room
+              }
+            }
+          }
+        }
+
+        // 2. Fallback: Fetch from global Supabase roster (useful for direct join or if Redis fails)
         const res = await fetch('/api/roster');
         const data = await res.json();
         if (data.roster) {
@@ -53,8 +75,8 @@ function JoinLogic() {
       }
     };
     
-    fetchRoster();
-  }, []);
+    fetchData();
+  }, [code]);
 
   // Group roster by class
   const groupedRoster = roster.reduce((acc, student) => {
