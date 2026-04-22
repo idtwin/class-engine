@@ -23,13 +23,16 @@ export async function GET(req: Request) {
     const room: any = await redis.get(`room:${code}`);
 
     if (!room) {
+      console.warn(`[ROOM_GET] Room ${code} not found in Redis`);
       return NextResponse.json({ error: "Room not found or expired" }, { status: 404 });
     }
 
+    console.log(`[ROOM_GET] Room ${code} loaded. Roster size: ${room.activeRoster?.length || 0}`);
+    
     // Return full room state for polling clients
     return NextResponse.json(room);
   } catch (error: any) {
-    console.error("Room Get Error:", error);
+    console.error("[ROOM_GET] Exception:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

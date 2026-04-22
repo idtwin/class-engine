@@ -6,9 +6,17 @@ export async function updateSession(request: NextRequest) {
     request,
   })
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('[MIDDLEWARE] Missing Supabase environment variables');
+    return supabaseResponse;
+  }
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() {
@@ -27,10 +35,6 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
   const path = request.nextUrl.pathname;
   const isProtectedRoute = path.startsWith('/dashboard') || 
                            path.startsWith('/teams') ||
@@ -40,20 +44,26 @@ export async function updateSession(request: NextRequest) {
                            path.startsWith('/odd-one-out') ||
                            path.startsWith('/rapid-fire') ||
                            path.startsWith('/reveal') ||
-                           // /play is for students, /join is for students. We shouldn't protect them with teacher auth
-                           path === '/'; // root redirects to dashboard anyway usually, or join. Let's protect root? No, we will let root be public if needed.
+                           path === '/';
 
-  if (!user && isProtectedRoute) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
-  }
+  // Only call getUser() if we are actually checking a protected route.
+  // This prevents 'fetch failed' errors on the Edge runtime for student-facing routes.
+  if (isProtectedRoute || path === '/login') {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-  // If path is /login and user is already logged in, redirect to dashboard
-  if (user && path === '/login') {
+    if (!user && isProtectedRoute) {
       const url = request.nextUrl.clone()
-      url.pathname = '/dashboard'
+      url.pathname = '/login'
       return NextResponse.redirect(url)
+    }
+
+    if (user && path === '/login') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/dashboard'
+        return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse

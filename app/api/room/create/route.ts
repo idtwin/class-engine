@@ -32,24 +32,29 @@ export async function POST(req: Request) {
     await redis.set(`room:${code}`, roomData, { ex: 14400 });
 
     // ── Sync the classroom roster to Supabase so students can find their name in the join dropdown ──
-    // Without this, the /api/roster endpoint returns empty and students see no names to pick from.
     const studentsToSync = (activeRoster || [])
       .filter((p: any) => p.type === "student" && p.id && p.name)
       .map((p: any) => ({ id: p.id, name: p.name, class_name: p.class_name || "Class" }));
 
+    console.log(`[ROOM_CREATE] Room ${code} created. Syncing ${studentsToSync.length} students to Supabase.`);
+
     if (studentsToSync.length > 0) {
       try {
         const supabaseAdmin = createAdminClient();
-        await supabaseAdmin.from("roster").upsert(studentsToSync, { onConflict: "id" });
+        const { error: upsertError } = await supabaseAdmin.from("roster").upsert(studentsToSync, { onConflict: "id" });
+        if (upsertError) {
+          console.error("[ROOM_CREATE] Supabase upsert error:", upsertError);
+        } else {
+          console.log("[ROOM_CREATE] Supabase roster sync successful.");
+        }
       } catch (rosterErr) {
-        // Non-fatal — game still works, but join dropdown may be empty
         console.warn("[ROOM_CREATE] Failed to sync roster to Supabase:", rosterErr);
       }
     }
 
     return NextResponse.json({ code });
   } catch (error: any) {
-    console.error("Room Create Error:", error);
+    console.error("[ROOM_CREATE] Exception:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

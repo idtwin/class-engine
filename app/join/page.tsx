@@ -40,13 +40,14 @@ function JoinLogic() {
 
   useEffect(() => {
     const fetchData = async () => {
+      console.log(`[JOIN] Fetching roster. Room Code: ${code || 'NONE'}`);
       try {
         // 1. If we have a room code, try to fetch the roster from the specific Redis room first.
-        // This is much faster and more reliable as it's exactly what the teacher just sent.
         if (code) {
           const roomRes = await fetch(`/api/room/get?code=${code}`);
           if (roomRes.ok) {
             const roomData = await roomRes.json();
+            console.log(`[JOIN] Room data received. activeRoster size: ${roomData.activeRoster?.length || 0}`);
             if (roomData.activeRoster) {
               const studentsOnly = roomData.activeRoster
                 .filter((p: any) => p.type === "student")
@@ -57,21 +58,26 @@ function JoinLogic() {
                 }));
               
               if (studentsOnly.length > 0) {
+                console.log(`[JOIN] Found ${studentsOnly.length} students in room.`);
                 setRoster(studentsOnly);
-                return; // Successfully loaded from room
+                return;
               }
             }
+          } else {
+            console.warn(`[JOIN] Room fetch failed: ${roomRes.status}`);
           }
         }
 
-        // 2. Fallback: Fetch from global Supabase roster (useful for direct join or if Redis fails)
+        // 2. Fallback: Fetch from global Supabase roster
+        console.log(`[JOIN] Falling back to global roster...`);
         const res = await fetch('/api/roster');
         const data = await res.json();
         if (data.roster) {
+          console.log(`[JOIN] Global roster loaded: ${data.roster.length} students.`);
           setRoster(data.roster);
         }
       } catch (err) {
-        console.error("Failed to load roster", err);
+        console.error("[JOIN] Failed to load roster", err);
       }
     };
     
