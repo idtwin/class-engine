@@ -156,7 +156,7 @@ export default function PlayPage() {
           
           const currentIsTurn = !!chainState?.currentTeamId && !!myTeam?.id && chainState.currentTeamId === myTeam.id;
           isMyTurnRef.current = currentIsTurn;
-          pollingIntervalRef.current = currentIsTurn ? 2000 : 4500;
+          pollingIntervalRef.current = 1500;
           
           // If we just became active, poll again soon!
           if (currentIsTurn && !lastTurnStatusRef.current) {
@@ -173,6 +173,26 @@ export default function PlayPage() {
     };
 
     poll();
+    
+    // ── Join the room automatically once we have an identity ──
+    const joinRoom = async () => {
+      if (!stored) return;
+      try {
+        await fetch("/api/room/join", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code,
+            id: stored,
+            name: storedName || "Player",
+            // Optionally could add teamId here if we wanted to pre-sync
+          })
+        });
+      } catch (err) {
+        console.warn("[SYSTEM] Failed to auto-join room list:", err);
+      }
+    };
+    joinRoom();
     
     // Use a variable interval polling loop
     let timeoutId: NodeJS.Timeout;
