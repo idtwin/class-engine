@@ -39,10 +39,11 @@ function JoinLogic() {
   }, [code, router]);
 
   useEffect(() => {
-    // Fetch filtered roster (only those with active PINs)
+    // Fetch the full roster — all students can see the list.
+    // Security is enforced at Step 2 via the PIN code the teacher generates.
     const fetchRoster = async () => {
       try {
-        const res = await fetch('/api/roster?active=true');
+        const res = await fetch('/api/roster');
         const data = await res.json();
         if (data.roster) {
           setRoster(data.roster);
@@ -53,10 +54,6 @@ function JoinLogic() {
     };
     
     fetchRoster();
-    
-    // Polling: refresh the list every 10 seconds in case a student just got synced
-    const refreshInterval = setInterval(fetchRoster, 10000);
-    return () => clearInterval(refreshInterval);
   }, []);
 
   // Group roster by class

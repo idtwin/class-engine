@@ -540,7 +540,7 @@ export default function TeamsPage() {
                               <div className={`${styles.tierLabelSmall} ${styles['tier' + s.tier]}`}>
                                 {s.tier?.toUpperCase()} {s.rank === 1 ? 'BRONZE' : s.rank === 2 ? 'SILVER' : s.rank === 3 ? 'GOLD' : 'PLATINUM'}
                               </div>
-                              <div style={{ fontFamily: 'JetBrains Mono', fontSize: '9px', color: '#4a637d', marginTop: '2px', letterSpacing: '0.05em' }}>
+                              <div style={{ fontFamily: 'JetBrains Mono', fontSize: '9px', color: '#4a637d', marginTop: '2px', marginBottom: '2px', letterSpacing: '0.05em' }}>
                                 {(s.xp ?? 0).toLocaleString()} XP
                               </div>
                             </Link>
