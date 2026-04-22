@@ -105,7 +105,25 @@ export default function TeamsPage() {
     }
   }, [activeClass?.id, markAllPresent, presentStudentIds.length]);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Migration: Ensure all students use the new role-based tiers (Hero/Legend/Immortal)
+  useEffect(() => {
+    if (activeClass) {
+      activeClass.students.forEach(s => {
+        // @ts-ignore - checking for legacy metallic strings
+        if (s.tier === "Bronze")   updateStudent(activeClass.id, s.id, { tier: "Hero" });
+        // @ts-ignore
+        if (s.tier === "Silver")   updateStudent(activeClass.id, s.id, { tier: "Legend" });
+        // @ts-ignore
+        if (s.tier === "Gold")     updateStudent(activeClass.id, s.id, { tier: "Immortal" });
+        // @ts-ignore
+        if (s.tier === "Platinum") updateStudent(activeClass.id, s.id, { tier: "Immortal", rank: 4 });
+      });
+    }
+  }, [activeClass?.id, updateStudent]);
 
   useEffect(() => {
     if (showClassForm && newClassInputRef.current) newClassInputRef.current.focus();

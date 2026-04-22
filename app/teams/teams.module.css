@@ -389,6 +389,10 @@
   box-shadow: 0 0 10px rgba(255, 200, 67, 0.3);
 }
 
+.tierHero, .tierHero .studentName { color: #cd7f32 !important; }
+.tierLegend, .tierLegend .studentName { color: #e2e8f0 !important; }
+.tierImmortal, .tierImmortal .studentName { color: #ffc843 !important; }
+
 .rankIconLarge {
   width: 58px !important;
   height: 50px;
