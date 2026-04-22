@@ -38,21 +38,24 @@ export async function POST(req: Request) {
 
     console.log(`[ROOM_CREATE] Room ${code} created. Syncing ${studentsToSync.length} students to Supabase.`);
 
+    let syncSuccess = false;
     if (studentsToSync.length > 0) {
       try {
         const supabaseAdmin = createAdminClient();
-        const { error: upsertError } = await supabaseAdmin.from("roster").upsert(studentsToSync, { onConflict: "id" });
+        const { data: upsertData, error: upsertError } = await supabaseAdmin.from("roster").upsert(studentsToSync, { onConflict: "id" }).select();
+        
         if (upsertError) {
           console.error("[ROOM_CREATE] Supabase upsert error:", upsertError);
         } else {
-          console.log("[ROOM_CREATE] Supabase roster sync successful.");
+          console.log(`[ROOM_CREATE] Supabase roster sync successful. Entities: ${upsertData?.length || 0}`);
+          syncSuccess = true;
         }
       } catch (rosterErr) {
-        console.warn("[ROOM_CREATE] Failed to sync roster to Supabase:", rosterErr);
+        console.warn("[ROOM_CREATE] Exception during roster sync:", rosterErr);
       }
     }
 
-    return NextResponse.json({ code });
+    return NextResponse.json({ code, sync: syncSuccess });
   } catch (error: any) {
     console.error("[ROOM_CREATE] Exception:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
