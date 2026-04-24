@@ -1,4 +1,4 @@
-/* 
+/*
   ESL ARENA V2.0 — SQUAD OPERATIONS — TACTICAL STYLES
   Industrial Military Theme
 */
@@ -8,13 +8,16 @@
   z-index: 1;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 60px 32px 80px;
+  padding: 36px 32px 80px;
+  background: var(--bg);
   color: var(--text);
   font-family: var(--font-main), sans-serif;
-  background: rgba(var(--bg-rgb), 0.7);
   min-height: 100vh;
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   HEADER BANNER
+   ────────────────────────────────────────────────────────────────────────── */
 .headerBanner {
   position: absolute;
   top: 0;
@@ -40,8 +43,8 @@
   align-items: center;
   gap: 0;
   margin-bottom: 40px;
-  background: var(--surface);
-  border: 1px solid var(--border-subtle);
+  background: rgba(10, 10, 20, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 4px;
   width: fit-content;
   position: relative;
@@ -51,7 +54,7 @@
 .stepper::before {
   content: '';
   position: absolute;
-  top: -4px !important;
+  top: -1px;
   left: -1px;
   width: 12px;
   height: 12px;
@@ -89,7 +92,7 @@
 }
 
 .stepActive {
-  background: rgba(var(--command-orange-rgb), 0.15);
+  background: rgba(255, 93, 0, 0.1);
   color: var(--command-orange);
 }
 
@@ -142,7 +145,7 @@
 .breadcrumb {
   font-family: var(--font-mono), monospace;
   font-size: 11px;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.4);
   letter-spacing: 0.15em;
   text-transform: uppercase;
   margin-bottom: 8px;
@@ -185,49 +188,58 @@
   transition: all 0.2s;
 }
 
-.btnGhost { 
-  background: transparent; 
-  border: 1px solid rgba(255, 255, 255, 0.15); 
-  color: rgba(255, 255, 255, 0.5); 
+.btnGhost {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.5);
 }
-.btnGhost:hover { 
-  border-color: var(--command-orange); 
+.btnGhost:hover {
+  border-color: var(--command-orange);
   color: var(--command-orange);
   box-shadow: 0 0 20px rgba(255, 93, 0, 0.15);
 }
 
-.btnPrimary { 
-  background: var(--command-orange); 
-  color: #000; 
-}
-.btnPrimary:hover { 
-  background: #ffffff;
+.btnPrimary {
+  background: var(--command-orange);
   color: #000;
-  box-shadow: 0 0 30px rgba(var(--command-orange-rgb), 0.4);
+}
+.btnPrimary:hover {
+  background: #ff7020;
+  box-shadow: 0 0 30px rgba(255, 93, 0, 0.3);
 }
 .btnPrimary:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-.btnCyan { 
-  background: rgba(0,200,240,0.1); 
-  border: 1px solid rgba(0,200,240,0.3); 
-  color: #00c8f0; 
+.btnCyan {
+  background: rgba(0,200,240,0.1);
+  border: 1px solid rgba(0,200,240,0.3);
+  color: #00c8f0;
 }
-.btnCyan:hover { 
+.btnCyan:hover {
   background: rgba(0,200,240,0.2);
   box-shadow: 0 0 20px rgba(0, 200, 240, 0.2);
 }
 
-.btnDanger { 
-  background: rgba(255,51,51,0.1); 
-  border: 1px solid rgba(255,51,51,0.3); 
-  color: var(--alert-red); 
+.btnDanger {
+  background: rgba(255,51,51,0.1);
+  border: 1px solid rgba(255,51,51,0.3);
+  color: var(--alert-red);
 }
-.btnDanger:hover { 
+.btnDanger:hover {
   background: rgba(255,51,51,0.2);
   box-shadow: 0 0 20px rgba(255, 51, 51, 0.2);
+}
+
+.btnGreen {
+  background: rgba(190,239,0,0.15);
+  border: 1px solid rgba(190,239,0,0.3);
+  color: var(--team-green);
+}
+.btnGreen:hover {
+  background: rgba(190,239,0,0.25);
+  box-shadow: 0 0 20px rgba(190,239,0,0.2);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -255,31 +267,82 @@
 }
 
 .rosterSearch::placeholder { color: rgba(255, 255, 255, 0.3); }
-.rosterSearch:focus { 
+.rosterSearch:focus {
   border-color: var(--command-orange);
-  box-shadow: 0 0 20px rgba(var(--command-orange-rgb), 0.2);
+  box-shadow: 0 0 20px rgba(255, 93, 0, 0.1);
 }
 
 .rosterStats {
   display: flex;
   gap: 24px;
+  align-items: center;
 }
 
 .rstat { text-align: center; }
-.rstatVal { 
+.rstatVal {
   font-family: var(--font-mono), monospace;
-  font-size: 22px; 
-  font-weight: 800; 
-  color: var(--data-silver); 
-  line-height: 1; 
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-bright);
+  line-height: 1;
 }
 .rstatLabel {
   font-family: var(--font-mono), monospace;
   font-size: 9px;
   letter-spacing: 0.12em;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.4);
   text-transform: uppercase;
   margin-top: 4px;
+}
+
+.genderFilterRow {
+  display: flex;
+  gap: 4px;
+}
+
+.genderBtn {
+  padding: 4px 10px;
+  border-radius: 2px;
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+.genderBtn:hover { border-color: rgba(255, 255, 255, 0.3); color: rgba(255, 255, 255, 0.7); }
+.genderBtnActive {
+  background: rgba(255, 93, 0, 0.1);
+  border-color: var(--command-orange);
+  color: var(--command-orange);
+}
+
+.statusIndicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+.statusDotActive {
+  background: var(--team-green);
+  box-shadow: 0 0 8px rgba(190,239,0,0.6);
 }
 
 .rosterGrid {
@@ -288,22 +351,26 @@
   gap: 12px;
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   STUDENT CARD
+   ────────────────────────────────────────────────────────────────────────── */
 .studentCard {
   position: relative;
-  background: var(--surface);
-  border: 1px solid var(--border-hard);
-  padding: 0; /* Remove padding to allow banner to span full width */
-  height: 154px; 
-  overflow: hidden;
-  display: flex !important;
-  flex-direction: row !important;
+  background: rgba(10, 10, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.25s;
+  cursor: pointer;
 }
 
 /* Card corner brackets */
 .studentCard::before {
   content: '';
   position: absolute;
-  top: -4px !important;
+  top: -1px;
   left: -1px;
   width: 10px;
   height: 10px;
@@ -320,15 +387,15 @@
   right: -1px;
   width: 10px;
   height: 10px;
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  border-right: 1px solid rgba(255, 93, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 93, 0, 0.3);
   pointer-events: none;
   transition: all 0.25s;
 }
 
-.studentCard:hover { 
-  border-color: var(--border);
-  background: var(--surface-lifted);
+.studentCard:hover {
+  border-color: rgba(255, 93, 0, 0.3);
+  background: rgba(255, 93, 0, 0.03);
 }
 
 .studentCard:hover::before,
@@ -338,174 +405,236 @@
   height: 14px;
 }
 
-.studentCardActive { 
-  border-color: var(--command-orange); 
-  background: rgba(var(--command-orange-rgb), 0.05); 
+.studentCardActive {
+  border-color: var(--command-orange);
+  background: rgba(255, 93, 0, 0.05);
+}
+
+.studentCardAbsent {
+  opacity: 0.4;
+  border-color: rgba(255, 255, 255, 0.03) !important;
+  background: rgba(10, 10, 20, 0.3) !important;
+}
+
+.studentCardMain {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.studentCardSide {
+  display: none;
 }
 
 .studentHeader {
   display: flex;
-  align-items: stretch;
-  height: 50px;
-  position: relative;
-  overflow: visible; /* Allow rank icon to spill out */
-  padding: 0;
-  gap: 0;
+  flex-direction: column;
+  gap: 6px;
 }
 
-/* Tactical Line HUD Gradient — Solid Left to Transparent Right */
-.studentHeader::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 2px; /* Thicker HUD line */
-  z-index: 10;
-  pointer-events: none;
+.tierHero, .tierLegend, .tierImmortal {
+  background: transparent;
+  border: none;
 }
-
-.studentHeader.tierHero { 
-  background: linear-gradient(90deg, rgba(80, 50, 30, 0.95) 0%, rgba(80, 50, 30, 0.7) 40%, transparent 100%); 
-}
-.studentHeader.tierHero::after {
-  background: linear-gradient(90deg, #cd7f32 0%, #cd7f32 30%, transparent 100%);
-  box-shadow: 0 0 10px rgba(205, 127, 50, 0.3);
-}
-
-.studentHeader.tierLegend { 
-  background: linear-gradient(90deg, rgba(50, 50, 60, 0.95) 0%, rgba(50, 50, 60, 0.7) 40%, transparent 100%); 
-}
-.studentHeader.tierLegend::after {
-  background: linear-gradient(90deg, #e2e8f0 0%, #e2e8f0 30%, transparent 100%);
-  box-shadow: 0 0 10px rgba(226, 232, 240, 0.3);
-}
-
-.studentHeader.tierImmortal { 
-  background: linear-gradient(90deg, rgba(70, 55, 10, 0.95) 0%, rgba(70, 55, 10, 0.7) 40%, transparent 100%); 
-}
-.studentHeader.tierImmortal::after {
-  background: linear-gradient(90deg, #ffc843 0%, #ffc843 30%, transparent 100%);
-  box-shadow: 0 0 10px rgba(255, 200, 67, 0.3);
-}
-
-/* Explicit Role Colors — Forces all text inside the banner to match the rank metallic */
-.tierHero .tierLabelSmall { color: #cd7f32 !important; }
-.tierLegend .tierLabelSmall { color: #e2e8f0 !important; }
-.tierImmortal .tierLabelSmall { color: #ffc843 !important; }
-
-/* Override the default white studentName color to match rank metallic */
-.studentHeader.tierHero .studentName { color: #cd7f32 !important; }
-.studentHeader.tierLegend .studentName { color: #e2e8f0 !important; }
-.studentHeader.tierImmortal .studentName { color: #ffc843 !important; }
 
 .rankIconLarge {
-  width: 58px !important;
-  height: 50px;
-  display: flex;
-  align-items: flex-start; /* Aligned to top so point hangs down */
-  justify-content: center;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 20;
-}
-
-
-.rankIconLarge img {
-  position: absolute;
-  top: -4px !important; /* Overlap the 1px card border to be perfectly flush */
-}
-
-.studentName { 
-  font-size: 14px; 
-  font-weight: 900; 
-  color: var(--text-bright); 
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  line-height: 1.1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis; /* Tactical ellipsis while static */
-  transition: all 0.3s;
-}
-
-.pinBtnDotted {
-  background: rgba(0, 242, 255, 0.1);
-  border: 1px dashed rgba(0, 242, 255, 0.4);
-  color: #00f2ff;
-  font-family: var(--font-mono), monospace;
-  font-size: 9px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  padding: 0 10px;
-  cursor: pointer;
-  transition: all 0.2s;
-  height: 24px;
-  width: fit-content;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.pinBtnDotted:hover {
-  border-color: #00f2ff;
-  color: #00f2ff;
-  background: rgba(0, 242, 255, 0.2);
-  box-shadow: 0 0 12px rgba(0, 242, 255, 0.2);
-}
-
-.pinBtnDotted:disabled {
-  opacity: 0.5;
-  cursor: wait;
-}
-
-.nameWrapper {
-  flex: 1;
-  overflow: hidden;
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-/* Transitions to marquee only on hover */
-.nameMarquee {
-  display: inline-block;
-  animation: none; /* Off by default */
-  padding-right: 40px;
-}
-
-.studentCard:hover .nameMarquee {
-  text-overflow: clip; 
-  overflow: visible; /* Ensure full name is visible during scroll */
-  animation: marqueeScroll 6s linear infinite; /* Faster and immediate */
-}
-
-@keyframes marqueeScroll {
-  0% { transform: translateX(0); }
-  80% { transform: translateX(calc(-100% + 140px)); }
-  90% { transform: translateX(calc(-100% + 140px)); opacity: 1; }
-  100% { transform: translateX(0); }
+  display: none;
 }
 
 .rankInfoSmall {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 0;
-  flex: 1;
-  padding-left: 12px;
-  min-width: 0;
+  gap: 2px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.nameWrapper {
+  overflow: hidden;
+}
+
+.studentName {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-bright);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.studentNameAbsent {
+  text-decoration: line-through;
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.nameMarquee {
+  display: inline;
 }
 
 .tierLabelSmall {
   font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.headerStatusGroup {
+  display: none;
+}
+
+.headerPresenceToggle {
+  display: none;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.statRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.statRow {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.statHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.statLabel {
+  font-family: var(--font-mono), monospace;
   font-size: 8px;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  opacity: 0.8;
-  margin-bottom: 4px; /* Shift up from the orange line */
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.statValue {
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.segmentedBar {
+  display: flex;
+  gap: 2px;
+  height: 3px;
+}
+
+.segment {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.segment.lit {
+  opacity: 1;
+}
+
+.fluencyColor { background: rgba(0,200,240,0.3); }
+.fluencyColor.lit { background: #00c8f0; }
+.energyColor { background: rgba(255,200,67,0.3); }
+.energyColor.lit { background: #ffc843; }
+.confColor { background: rgba(176,110,255,0.3); }
+.confColor.lit { background: #b06eff; }
+
+.studentActionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.studentRemoveBtn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  opacity: 0.3;
+  transition: opacity 0.2s;
+  padding: 0;
+}
+.studentRemoveBtn:hover { opacity: 1; }
+
+.confirming {
+  opacity: 1 !important;
+}
+
+.removeIcon {
+  font-size: 11px;
+}
+
+.removeLabel {
+  display: none;
+}
+
+.pinBtnDotted {
+  padding: 4px 10px;
+  border: 1px dashed rgba(0,200,240,0.3);
+  border-radius: 2px;
+  background: transparent;
+  color: rgba(0,200,240,0.7);
+  font-family: var(--font-mono), monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+}
+.pinBtnDotted:hover {
+  border-style: solid;
+  background: rgba(0,200,240,0.1);
+}
+
+.avatarFrame {
+  display: none;
+}
+
+.avatarImgContainer {
+  display: none;
+}
+
+.avatarImg {
+  display: none;
+}
+
+.avatarGenderTag {
+  display: none;
+}
+
+.studentCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.studentCardActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .studentTags { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -521,29 +650,328 @@
   border: 1px solid transparent;
   user-select: none;
   text-transform: uppercase;
+  border-radius: 2px;
 }
 
 .stagLabel {
   font-family: var(--font-mono), monospace;
   font-size: 8px;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.4);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   margin-bottom: 4px;
 }
 
 /* Fluency */
-.stagLow  { background: rgba(var(--alert-red-rgb), 0.1);   color: var(--alert-red); border-color: rgba(var(--alert-red-rgb), 0.2); }
-.stagMid  { background: rgba(var(--command-orange-rgb), 0.1); color: var(--command-orange); border-color: rgba(var(--command-orange-rgb), 0.2); }
-.stagHigh { background: rgba(var(--team-green-rgb), 0.1);   color: var(--team-green); border-color: rgba(var(--team-green-rgb), 0.2); }
+.stagLow  { background: rgba(255,51,51,0.1);   color: var(--alert-red); border-color: rgba(255,51,51,0.2); }
+.stagMid  { background: rgba(255,93,0,0.1);    color: var(--command-orange); border-color: rgba(255,93,0,0.2); }
+.stagHigh { background: rgba(190,239,0,0.1);   color: var(--team-green); border-color: rgba(190,239,0,0.2); }
 /* Energy */
 .stagPass { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); border-color: rgba(255,255,255,0.1); }
-.stagNorm { background: rgba(var(--ice-blue-rgb), 0.1);    color: var(--ice-blue); border-color: rgba(var(--ice-blue-rgb), 0.2); }
-.stagActive { background: rgba(var(--command-orange-rgb), 0.15); color: var(--command-orange); border-color: rgba(var(--command-orange-rgb), 0.25); }
+.stagNorm { background: rgba(0,200,240,0.1);    color: #00c8f0; border-color: rgba(0,200,240,0.2); }
+.stagActive { background: rgba(255,93,0,0.1);   color: var(--command-orange); border-color: rgba(255,93,0,0.2); }
 /* Confidence */
-.stagCoLow  { background: rgba(var(--alert-red-rgb), 0.1);   color: var(--alert-red); border-color: rgba(var(--alert-red-rgb), 0.2); }
-.stagCoMid  { background: rgba(var(--command-orange-rgb), 0.1); color: var(--command-orange); border-color: rgba(var(--command-orange-rgb), 0.2); }
+.stagCoLow  { background: rgba(255,51,51,0.1);   color: var(--alert-red); border-color: rgba(255,51,51,0.2); }
+.stagCoMid  { background: rgba(255,93,0,0.1);    color: var(--command-orange); border-color: rgba(255,93,0,0.2); }
 .stagCoHigh { background: rgba(176,110,255,0.1); color: #b06eff; border-color: rgba(176,110,255,0.2); }
+
+.studentToggleBtn {
+  padding: 4px 10px;
+  font-family: var(--font-mono), monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+  text-transform: uppercase;
+  border-radius: 2px;
+}
+
+.studentToggleBtnPresent {
+  background: rgba(190,239,0,0.1);
+  color: var(--team-green);
+  border-color: rgba(190,239,0,0.3);
+}
+.studentToggleBtnPresent:hover {
+  background: rgba(255,51,51,0.08);
+  color: var(--alert-red);
+  border-color: rgba(255,51,51,0.2);
+}
+
+.studentToggleBtnAbsent {
+  background: rgba(255,51,51,0.08);
+  color: var(--alert-red);
+  border-color: rgba(255,51,51,0.2);
+}
+.studentToggleBtnAbsent:hover {
+  background: rgba(190,239,0,0.1);
+  color: var(--team-green);
+  border-color: rgba(190,239,0,0.3);
+}
+
+/* Absent info bar */
+.absentBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255,51,51,0.06);
+  border: 1px solid rgba(255,51,51,0.2);
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  color: var(--alert-red);
+}
+
+.absentBarIcon { font-size: 14px; }
+
+.absentBarReset {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid rgba(190,239,0,0.3);
+  color: var(--team-green);
+  padding: 4px 12px;
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  border-radius: 2px;
+}
+.absentBarReset:hover { background: rgba(190,239,0,0.1); }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   ADD STUDENT CARD
+   ────────────────────────────────────────────────────────────────────────── */
+.addStudentCard {
+  background: rgba(10, 10, 20, 0.3);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.2s;
+}
+.addStudentCard:hover { border-color: rgba(255, 255, 255, 0.2); }
+
+.addStudentTitle {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.addStudentGenderToggle {
+  display: flex;
+  gap: 6px;
+}
+
+.genderSelectBtn {
+  flex: 1;
+  padding: 6px 0;
+  border-radius: 2px;
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  transition: all 0.2s;
+  text-align: center;
+  text-transform: uppercase;
+}
+.genderSelectBtn:hover { border-color: rgba(255, 255, 255, 0.3); color: rgba(255, 255, 255, 0.7); }
+.genderSelectBtnActive {
+  background: rgba(255, 93, 0, 0.1);
+  border-color: var(--command-orange);
+  color: var(--command-orange);
+}
+
+.addStudentInput {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 14px;
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition: all 0.2s;
+}
+.addStudentInput:focus { border-color: var(--command-orange); }
+.addStudentInput::placeholder { color: rgba(255, 255, 255, 0.3); }
+
+.addStudentButtons {
+  display: flex;
+  gap: 10px;
+}
+
+.bulkTextarea {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 14px;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  transition: all 0.2s;
+  border-radius: 2px;
+}
+.bulkTextarea:focus { border-color: var(--command-orange); }
+.bulkTextarea::placeholder { color: rgba(255, 255, 255, 0.3); }
+
+.bulkOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 20, 0.9);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bulkModal {
+  background: rgba(10, 10, 20, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 500px;
+  max-width: 90vw;
+  padding: 28px;
+  position: relative;
+}
+
+.bulkModal::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 16px;
+  height: 16px;
+  border-left: 2px solid var(--command-orange);
+  border-top: 2px solid var(--command-orange);
+  pointer-events: none;
+}
+
+.bulkModal::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 16px;
+  height: 16px;
+  border-right: 2px solid var(--command-orange);
+  border-bottom: 2px solid var(--command-orange);
+  pointer-events: none;
+}
+
+.bulkHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 93, 0, 0.15);
+  padding-bottom: 12px;
+}
+
+.bulkTitle {
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--command-orange);
+}
+
+.bulkTitleIcon {
+  font-size: 14px;
+}
+
+.bulkClose {
+  width: 24px;
+  height: 24px;
+  border-radius: 2px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.bulkClose:hover { border-color: var(--command-orange); color: var(--command-orange); }
+
+.bulkBody {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bulkInstructions {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.5;
+}
+
+.bulkTextareaModal {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 140px;
+  line-height: 1.6;
+}
+.bulkTextareaModal:focus { border-color: var(--command-orange); }
+.bulkTextareaModal::placeholder { color: rgba(255, 255, 255, 0.3); }
+
+.bulkFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.bulkCount {
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  color: var(--command-orange);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.btnAbort {
+  padding: 10px 18px;
+  border-radius: 2px;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgba(255,51,51,0.3);
+  color: var(--alert-red);
+  transition: all 0.2s;
+}
+.btnAbort:hover { background: rgba(255,51,51,0.1); }
 
 /* ──────────────────────────────────────────────────────────────────────────
    VIEW 2: TEAM BUILDER
@@ -575,7 +1003,7 @@
 .bsCard::before {
   content: '';
   position: absolute;
-  top: -4px !important;
+  top: -1px;
   left: -1px;
   width: 8px;
   height: 8px;
@@ -586,31 +1014,31 @@
 
 .bsTitle { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
 .bsDot { width: 10px; height: 10px; }
-.bsName { 
+.bsName {
   font-family: var(--font-mono), monospace;
-  font-size: 11px; 
-  font-weight: 700; 
-  text-transform: uppercase; 
-  letter-spacing: 0.1em; 
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 .bsRow { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-.bsLabel { 
-  font-family: var(--font-mono), monospace; 
-  font-size: 9px; 
-  color: rgba(255, 255, 255, 0.4); 
-  text-transform: uppercase; 
-  letter-spacing: 0.1em; 
+.bsLabel {
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
-.bsVal { 
-  font-family: var(--font-mono), monospace; 
-  font-size: 10px; 
-  font-weight: 700; 
+.bsVal {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 700;
 }
-.bsTrack { 
-  height: 4px; 
-  background: rgba(255, 255, 255, 0.1); 
-  overflow: hidden; 
-  margin-bottom: 10px; 
+.bsTrack {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  margin-bottom: 10px;
 }
 .bsFill { height: 100%; transition: width 0.4s; }
 
@@ -622,8 +1050,8 @@
 
 .teamCard {
   position: relative;
-  background: var(--surface);
-  border: 1px solid var(--border-hard);
+  background: rgba(10, 10, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   overflow: hidden;
   transition: all 0.25s;
 }
@@ -632,7 +1060,7 @@
 .teamCard::before {
   content: '';
   position: absolute;
-  top: -4px !important;
+  top: -1px;
   left: -1px;
   width: 12px;
   height: 12px;
@@ -661,16 +1089,71 @@
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .teamNameRow { display: flex; align-items: center; gap: 10px; }
 .teamDot { width: 12px; height: 12px; flex-shrink: 0; }
-.teamName { 
+.teamName {
   font-family: var(--font-mono), monospace;
-  font-size: 12px; 
-  font-weight: 800; 
-  letter-spacing: 0.1em; 
-  text-transform: uppercase; 
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.squadRating {
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+}
+
+.teamStatsSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 10px;
+}
+
+.teamStat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.teamStatLabel {
+  font-family: var(--font-mono), monospace;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  width: 50px;
+  flex-shrink: 0;
+}
+
+.teamStatBar {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.teamStatFill {
+  height: 100%;
+  transition: width 0.4s;
+}
+
+.teamStatVal {
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  font-weight: 700;
+  width: 28px;
+  text-align: right;
+  flex-shrink: 0;
 }
 
 .teamMembers { padding: 10px; display: flex; flex-direction: column; gap: 6px; }
@@ -680,19 +1163,20 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  background: var(--surface-lifted);
-  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
   transition: all 0.2s;
+  border-radius: 2px;
 }
-.memberRow:hover { 
-  border-color: var(--border);
-  background: rgba(var(--command-orange-rgb), 0.05);
+.memberRow:hover {
+  border-color: rgba(255, 93, 0, 0.2);
+  background: rgba(255, 93, 0, 0.03);
 }
 
-.memberName { 
-  font-size: 12px; 
-  font-weight: 600; 
-  color: var(--text); 
+.memberName {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
@@ -717,9 +1201,156 @@
 }
 .moveBtn:hover { color: var(--command-orange); }
 
+.moveDropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: rgba(10, 10, 20, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px;
+  z-index: 10;
+  min-width: 120px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.moveDropdownItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  border-radius: 2px;
+  background: transparent;
+  border: none;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.moveDropdownItem:hover { background: rgba(255,255,255,0.05); }
+
+.benchSection {
+  margin-top: 24px;
+  background: rgba(255,51,51,0.03);
+  border: 1px dashed rgba(255,51,51,0.2);
+  padding: 16px;
+}
+
+.benchHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.benchTitle {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--alert-red);
+}
+
+.benchSub {
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.benchGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.benchCard {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: rgba(10, 10, 20, 0.6);
+  border: 1px solid rgba(255,51,51,0.15);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.benchCard:hover { border-color: rgba(255,51,51,0.3); }
+
+.benchCardGlow {
+  display: none;
+}
+
 /* ──────────────────────────────────────────────────────────────────────────
    VIEW 3: LIVE SESSION
    ────────────────────────────────────────────────────────────────────────── */
+.arenaLayout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.arenaColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.intelPanel {
+  background: rgba(10, 10, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 20px;
+}
+
+.intelTitle {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--command-orange);
+  margin-bottom: 16px;
+}
+
+.squadCard {
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 2px;
+  transition: border-color 0.15s;
+}
+
+.crestContainer {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.crestImg {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.trophyCase {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+}
+
+.trophyImg {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+}
+
 .sessionTop {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -730,8 +1361,8 @@
 .scoreCard {
   position: relative;
   padding: 24px;
-  border: 1px solid var(--border-hard);
-  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(10, 10, 20, 0.6);
   overflow: hidden;
   transition: all 0.25s;
 }
@@ -740,7 +1371,7 @@
 .scoreCard::before {
   content: '';
   position: absolute;
-  top: -4px !important;
+  top: -1px;
   left: -1px;
   width: 14px;
   height: 14px;
@@ -749,7 +1380,7 @@
   pointer-events: none;
 }
 
-.scoreCard:hover { 
+.scoreCard:hover {
   transform: translateY(-3px);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
@@ -765,28 +1396,28 @@
 }
 
 .scoreCardHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-.scoreTeamLabel { 
-  font-family: var(--font-mono), monospace; 
-  font-size: 10px; 
-  font-weight: 700; 
-  letter-spacing: 0.12em; 
-  text-transform: uppercase; 
+.scoreTeamLabel {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
-.scoreRank { 
-  font-family: var(--font-mono), monospace; 
-  font-size: 10px; 
-  font-weight: 700; 
-  color: rgba(255, 255, 255, 0.4); 
+.scoreRank {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
 }
 .scoreRankFirst { color: var(--team-green); }
 
-.scoreValue { 
+.scoreValue {
   font-family: var(--font-mono), monospace;
-  font-size: 44px; 
-  font-weight: 800; 
-  line-height: 1; 
-  margin-bottom: 8px; 
-  color: var(--text-bright); 
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 8px;
+  color: var(--text-bright);
 }
 
 .gapSection { margin-bottom: 28px; }
@@ -800,17 +1431,17 @@
   display: flex;
   justify-content: space-between;
 }
-.gapTrack { 
-  height: 12px; 
-  background: rgba(255, 255, 255, 0.05); 
-  overflow: hidden; 
-  display: flex; 
+.gapTrack {
+  height: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  display: flex;
 }
 .gapSeg { height: 100%; transition: width 0.6s ease; }
 
 .dominantAlert {
-  background: rgba(var(--command-orange-rgb), 0.08);
-  border: 1px solid rgba(var(--command-orange-rgb), 0.25);
+  background: rgba(255, 93, 0, 0.06);
+  border: 1px solid rgba(255, 93, 0, 0.2);
   padding: 14px 18px;
   display: flex;
   align-items: center;
@@ -835,7 +1466,7 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, rgba(var(--command-orange-rgb), 0.3), transparent);
+  background: linear-gradient(90deg, rgba(255, 93, 0, 0.3), transparent);
 }
 
 .historyGrid { display: flex; flex-direction: column; gap: 8px; }
@@ -849,13 +1480,14 @@
   padding: 12px 16px;
   font-size: 13px;
 }
-.historyHeader { 
-  color: rgba(255, 255, 255, 0.4); 
-  font-family: var(--font-mono), monospace; 
-  font-size: 9px; 
-  letter-spacing: 0.1em; 
-  text-transform: uppercase; 
+.historyHeader {
+  color: rgba(255, 255, 255, 0.4);
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
+.historySection { margin-bottom: 24px; }
 
 .adjustGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .adjustCard {
@@ -881,36 +1513,48 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  border-radius: 2px;
 }
-.adjBtn:hover { 
-  border-color: var(--command-orange); 
+.adjBtn:hover {
+  border-color: var(--command-orange);
   color: var(--command-orange);
   background: rgba(255, 93, 0, 0.1);
 }
-.adjScore { 
-  font-family: var(--font-mono), monospace; 
-  font-size: 18px; 
-  font-weight: 700; 
-  min-width: 65px !important; 
-  text-align: center; 
+.adjScore {
+  font-family: var(--font-mono), monospace;
+  font-size: 18px;
+  font-weight: 700;
+  min-width: 60px;
+  text-align: center;
 }
 
-.tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 12px;
+.finalizeBtn {
+  width: 100%;
+  padding: 14px 20px;
+  background: transparent;
+  border: 1px solid rgba(190,239,0,0.3);
+  color: var(--team-green);
   font-family: var(--font-mono), monospace;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 2px;
 }
-.tagCyan { 
-  background: rgba(0,200,240,0.1); 
-  color: #00c8f0; 
-  border: 1px solid rgba(0,200,240,0.25); 
+.finalizeBtn:hover {
+  background: rgba(190,239,0,0.1);
+  border-color: var(--team-green);
+  box-shadow: 0 0 16px rgba(190,239,0,0.15);
+}
+
+.adjustTeamName {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -921,8 +1565,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  background: var(--surface);
-  border: 1px solid var(--border-hard);
+  background: rgba(10, 10, 20, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   padding: 12px 18px;
   margin-bottom: 28px;
   flex-wrap: wrap;
@@ -933,7 +1577,7 @@
 .classBar::before {
   content: '';
   position: absolute;
-  top: -4px !important;
+  top: -1px;
   left: -1px;
   width: 10px;
   height: 10px;
@@ -959,6 +1603,7 @@
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+  z-index: 1;
 }
 
 .classBarRight {
@@ -966,6 +1611,7 @@
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
+  z-index: 1;
 }
 
 .classBarLabel {
@@ -991,16 +1637,17 @@
   color: rgba(255, 255, 255, 0.5);
   transition: all 0.2s;
   text-transform: uppercase;
+  border-radius: 2px;
 }
-.classChip:hover { 
-  color: rgba(255, 255, 255, 0.8); 
-  border-color: rgba(255, 255, 255, 0.2); 
+.classChip:hover {
+  color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .classChipActive {
   border-color: var(--command-orange);
   color: var(--command-orange);
-  background: rgba(var(--command-orange-rgb), 0.15);
+  background: rgba(255, 93, 0, 0.1);
 }
 
 .classChipAdd {
@@ -1016,161 +1663,19 @@
   color: rgba(255, 255, 255, 0.4);
   transition: all 0.2s;
   text-transform: uppercase;
+  border-radius: 2px;
 }
-.classChipAdd:hover { 
-  color: var(--team-green); 
-  border-color: var(--team-green); 
-}
-
-.studentCardMain {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: visible; /* Allow breakout elements like the large rank crest */
-}
-
-.cardBody {
-  padding: 10px 14px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.statsLayout {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.statLine {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  cursor: pointer;
-}
-
-.statHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-}
-
-.statLabel {
-  font-family: var(--font-mono), monospace;
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: var(--muted);
-  text-transform: uppercase;
-}
-
-.statValue {
-  font-family: var(--font-mono), monospace;
-  font-size: 9px;
-  font-weight: 900;
-  color: var(--text-bright);
-}
-
-.segmentedBar {
-  display: flex;
-  gap: 3px;
-  height: 6px;
-}
-
-.segment {
-  flex: 1;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s;
-}
-
-.segment.lit {
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-/* Stat Colors */
-.fluencyColor.lit { 
-  background: var(--electric-mint); 
-  box-shadow: 0 0 8px rgba(var(--electric-mint-rgb), 0.4); 
-}
-.energyColor.lit { 
-  background: var(--radar-blue); 
-  box-shadow: 0 0 8px rgba(var(--radar-blue-rgb), 0.4); 
-}
-.confColor.lit { 
-  background: #ffc843; 
-  box-shadow: 0 0 8px rgba(255, 200, 67, 0.4); 
-}
-
-.statsSecondaryRow {
-  display: flex;
-  gap: 12px;
-}
-
-.statLineSmall {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  cursor: pointer;
-}
-
-.segmentedBarSmall {
-  display: flex;
-  gap: 2px;
-  height: 4px;
-}
-
-
-.rankIconSmall {
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
-}
-
-.tierBronze { color: #ff9d4d; }
-.tierSilver { color: #e2e8f0; }
-.tierGold { color: #ffc843; }
-
-.studentCardSide {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.2);
-  border-left: 2px solid var(--border-hard); /* Default state */
-  width: 110px;
-  min-width: 110px;
-  max-width: 110px;
-  flex-shrink: 0;
-  position: relative;
-  transition: border-color 0.25s;
-}
-
-.studentCardActive .studentCardSide {
-  border-left-color: var(--command-orange);
-}
-
-.studentCardAbsent .studentCardSide {
-  border-left-color: rgba(255, 255, 255, 0.03);
-}
-
-.studentCardActions {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: flex;
-  gap: 6px;
-  z-index: 10;
+.classChipAdd:hover {
+  color: var(--team-green);
+  border-color: var(--team-green);
 }
 
 .classInlineForm {
   display: flex;
   align-items: center;
   gap: 8px;
+  z-index: 2;
+  position: relative;
 }
 
 .classInlineInput {
@@ -1182,6 +1687,7 @@
   color: var(--text);
   outline: none;
   width: 180px;
+  border-radius: 2px;
 }
 
 .classInlineBtn {
@@ -1194,26 +1700,27 @@
   background: transparent;
   color: rgba(255, 255, 255, 0.5);
   transition: all 0.2s;
+  border-radius: 2px;
 }
-.classInlineBtn:hover { 
-  color: var(--text); 
-  border-color: rgba(255, 255, 255, 0.3); 
-}
-
-.classInlineBtnConfirm { 
-  border-color: rgba(190,239,0,0.4); 
-  color: var(--team-green); 
-}
-.classInlineBtnConfirm:hover { 
-  background: rgba(190,239,0,0.1); 
+.classInlineBtn:hover {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
-.classInlineBtnDanger { 
-  border-color: rgba(255,51,51,0.4); 
-  color: var(--alert-red); 
+.classInlineBtnConfirm {
+  border-color: rgba(190,239,0,0.4);
+  color: var(--team-green);
 }
-.classInlineBtnDanger:hover { 
-  background: rgba(255,51,51,0.15); 
+.classInlineBtnConfirm:hover {
+  background: rgba(190,239,0,0.1);
+}
+
+.classInlineBtnDanger {
+  border-color: rgba(255,51,51,0.4);
+  color: var(--alert-red);
+}
+.classInlineBtnDanger:hover {
+  background: rgba(255,51,51,0.15);
 }
 
 .classDeletePrompt {
@@ -1234,729 +1741,36 @@
   color: rgba(255, 255, 255, 0.5);
   transition: all 0.2s;
   text-transform: uppercase;
+  border-radius: 2px;
 }
-.classActionBtn:hover { 
-  color: var(--text); 
-  border-color: rgba(255, 255, 255, 0.2); 
-}
-.classActionBtnDanger:hover { 
-  color: var(--alert-red); 
-  border-color: rgba(255,51,51,0.4); 
-}
-
-/* ──────────────────────────────────────────────────────────────────────────
-   STUDENT CARD — ABSENT / PRESENT
-   ────────────────────────────────────────────────────────────────────────── */
-.studentCardAbsent {
-  opacity: 0.4;
-  border-color: rgba(255, 255, 255, 0.03) !important;
-  background: rgba(10, 10, 20, 0.3) !important;
-}
-
-.studentCardMain {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.rankIconSmall {
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.2));
-}
-
-.tierBronze { color: #ff9d4d; text-shadow: 0 0 10px rgba(255, 157, 77, 0.4); }
-.tierSilver { color: #e2e8f0; text-shadow: 0 0 10px rgba(255, 255, 255, 0.4); }
-.tierGold { color: #ffc843; text-shadow: 0 0 10px rgba(255, 200, 67, 0.4); }
-
-.studentCardSide {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 12px;
-  width: 90px;
-  flex-shrink: 0;
-}
-
-.studentCardTop {
-  display: none; /* Replaced by studentCardMain/Side */
-}
-
-.studentNameAbsent {
-  text-decoration: line-through;
-  color: rgba(255, 255, 255, 0.4) !important;
-}
-
-.studentCardActions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  width: 100%;
-}
-
-.headerBtnGroup {
-  display: flex;
-  height: 100%;
-}
-
-.headerPresenceToggle {
-  width: 32px;
-  height: 100%;
-  border: none;
-  border-left: 1px solid rgba(255, 93, 0, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-mono), monospace;
-  font-size: 14px;
-  font-weight: 800;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: transparent;
-}
-
-.presenceActive {
-  color: var(--team-green);
-  text-shadow: 0 0 10px rgba(190, 239, 0, 0.4);
-}
-
-.presenceInactive {
-  color: var(--alert-red);
-  text-shadow: 0 0 10px rgba(255, 51, 51, 0.4);
-}
-
-.studentRemoveBtn {
-  background: rgba(var(--alert-red-rgb), 0.1);
-  border: 1px dashed rgba(var(--alert-red-rgb), 0.4);
-  color: var(--alert-red);
-  font-family: var(--font-mono), monospace;
-  font-size: 9px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  padding: 0 10px;
-  cursor: pointer;
-  transition: all 0.2s;
-  height: 24px;
-  width: fit-content;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-
-.studentRemoveBtn:hover {
-  border-color: var(--alert-red);
-  background: rgba(var(--alert-red-rgb), 0.2);
-  box-shadow: 0 0 12px rgba(var(--alert-red-rgb), 0.2);
-}
-
-.studentRemoveBtn.confirming {
-  background: var(--alert-red);
-  color: #fff;
-  border-style: solid;
-}
-
-.studentRemoveBtn.confirming .removeIcon,
-.studentRemoveBtn.confirming .removeLabel {
-  color: #fff;
-}
-
-.removeIcon {
-  font-size: 10px;
-  color: var(--alert-red);
-}
-
-.removeLabel {
-  font-family: var(--font-mono), monospace;
-  font-size: 9px;
-  font-weight: 800;
-}
-
-.syncLink {
-  background: transparent;
-  border: none;
-  font-family: var(--font-mono), monospace;
-  font-size: 11px;
-  color: #ff5d00;
-  cursor: pointer;
-  padding: 0;
-  opacity: 0.6;
-  transition: all 0.2s;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.syncLink:hover {
-  opacity: 1;
-  text-shadow: 0 0 8px rgba(255, 93, 0, 0.4);
-}
-
-/* Absent info bar */
-.absentBar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(255,51,51,0.06);
-  border: 1px solid rgba(255,51,51,0.2);
-  padding: 10px 16px;
-  margin-bottom: 16px;
-  font-family: var(--font-mono), monospace;
-  font-size: 11px;
-  color: var(--alert-red);
-}
-
-.absentBarIcon { font-size: 14px; }
-
-.absentBarReset {
-  margin-left: auto;
-  background: transparent;
-  border: 1px solid rgba(190,239,0,0.3);
-  color: var(--team-green);
-  padding: 4px 12px;
-  font-family: var(--font-mono), monospace;
-  font-size: 9px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-transform: uppercase;
-}
-.absentBarReset:hover { background: rgba(190,239,0,0.1); }
-
-/* Layout for the body content stack */
-.studentCardMainArea {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.studentActionRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding-bottom: 2px;
-}
-
-.headerStatusGroup {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  margin-left: auto;
-  padding-right: 15px;
-}
-
-.headerStatusLabel {
-  font-family: var(--font-mono), monospace;
-  font-size: 8px;
-  font-weight: 800;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-.addStudentCard {
-  background: rgba(10, 10, 20, 0.3);
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-  padding: 8px 10px; /* Reduced padding */
-  display: flex;
-  flex-direction: column;
-  gap: 4px; /* Tighter gap */
-  transition: all 0.2s;
-  height: 154px;
-}
-.addStudentCard:hover { border-color: rgba(255, 255, 255, 0.2); }
-
-.addStudentTitle {
-  font-family: var(--font-mono), monospace;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.5);
-  margin-bottom: 2px;
-}
-
-.addStudentInput {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 8px 12px; /* Reduced vertical padding */
-  font-family: var(--font-mono), monospace;
-  font-size: 12px;
+.classActionBtn:hover {
   color: var(--text);
-  outline: none;
-  width: 100%;
-  box-sizing: border-box;
-  transition: all 0.2s;
-}
-.addStudentInput:focus { border-color: var(--command-orange); }
-.addStudentInput::placeholder { color: rgba(255, 255, 255, 0.3); }
-
-.addStudentButtons {
-  display: flex;
-  gap: 10px;
-}
-
-.bulkTextarea {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 10px 14px;
-  font-family: var(--font-mono), monospace;
-  font-size: 11px;
-  color: var(--text);
-  outline: none;
-  width: 100%;
-  box-sizing: border-box;
-  resize: vertical;
-  transition: all 0.2s;
-}
-.bulkTextarea:focus { border-color: var(--command-orange); }
-.bulkTextarea::placeholder { color: rgba(255, 255, 255, 0.3); }
-
-/* ──────────────────────────────────────────────────────────────────────────
-   MOVE STUDENT MODAL
-   ────────────────────────────────────────────────────────────────────────── */
-.moveOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(10, 10, 20, 0.9);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.moveModal {
-  position: relative;
-  background: rgba(10, 10, 20, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  width: 400px;
-  max-width: 92vw;
-  padding: 32px;
-}
-
-/* Modal HUD corners */
-.moveModal::before {
-  content: '';
-  position: absolute;
-  top: -4px !important;
-  left: -1px;
-  width: 20px;
-  height: 20px;
-  border-left: 2px solid var(--command-orange);
-  border-top: 2px solid var(--command-orange);
-  pointer-events: none;
-}
-
-.moveModal::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  right: -1px;
-  width: 20px;
-  height: 20px;
-  border-right: 2px solid var(--command-orange);
-  border-bottom: 2px solid var(--command-orange);
-  pointer-events: none;
-}
-
-.moveTitle {
-  font-family: var(--font-mono), monospace;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--command-orange);
-  margin-bottom: 20px;
-}
-
-.moveOptions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.moveOption {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 18px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.moveOption:hover {
-  border-color: var(--command-orange);
-  background: rgba(var(--command-orange-rgb), 0.1);
-}
-
-.moveOptionDot {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-}
-
-.moveOptionName {
-  font-family: var(--font-mono), monospace;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.moveCancel {
-  margin-top: 20px;
-  width: 100%;
-  padding: 12px;
-  font-family: var(--font-mono), monospace;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.5);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.moveCancel:hover {
   border-color: rgba(255, 255, 255, 0.2);
-  color: var(--text);
+}
+.classActionBtnDanger:hover {
+  color: var(--alert-red);
+  border-color: rgba(255,51,51,0.4);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-radius: 2px;
+}
+.tagCyan {
+  background: rgba(0,200,240,0.1);
+  color: #00c8f0;
+  border: 1px solid rgba(0,200,240,0.25);
 }
 
 .view {
   position: relative;
-  background: rgba(var(--bg-rgb), 0.8);
-  border: 1px solid var(--border-subtle);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  padding: 24px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
 }
-
-/* Framed view corners */
-.view::before {
-  content: '';
-  position: absolute;
-  top: -4px !important;
-  left: -1px;
-  width: 30px;
-  height: 30px;
-  border-left: 2px solid var(--command-orange);
-  border-top: 2px solid var(--command-orange);
-  pointer-events: none;
-}
-
-.view::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  right: -1px;
-  width: 30px;
-  height: 30px;
-  border-right: 2px solid var(--command-orange);
-  border-bottom: 2px solid var(--command-orange);
-  pointer-events: none;
-}
-
-/* ── Gender Filter Styles ── */
-.genderFilterRow {
-  display: flex;
-  gap: 0;
-  background: rgba(10, 10, 20, 0.6);
-  border: 1px solid var(--border-hard);
-  padding: 4px;
-}
-
-.genderBtn {
-  background: transparent;
-  border: 1px solid transparent;
-  padding: 8px 16px;
-  color: var(--muted);
-  font-family: var(--font-mono), monospace;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  transition: all 0.25s ease;
-}
-
-.genderBtn:hover {
-  color: var(--text-bright);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.genderBtnActive {
-  background: var(--command-orange) !important;
-  border-color: var(--command-orange);
-  color: #000 !important;
-  font-weight: 800;
-  box-shadow: 0 0 15px rgba(var(--command-orange-rgb), 0.3);
-}
-
-/* ── Student Card Avatar Styles ── */
-/* studentCardContent removed as it is replaced by Main/Side */
-.studentCardContent {
-  display: none;
-}
-
-.avatarFrame {
-  position: relative;
-  width: 110px; 
-  height: 154px;
-  background: rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-
-.avatarImgContainer {
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
-
-.avatarImg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top center;
-  opacity: 0.95;
-  transition: all 0.4s ease;
-}
-
-/* Tactical corners for avatar */
-.avatarFrame::before {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  width: 8px;
-  height: 8px;
-  border-left: 1px solid var(--command-orange);
-  border-top: 1px solid var(--command-orange);
-  z-index: 5;
-}
-
-.avatarFrame::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 8px;
-  height: 8px;
-  border-right: 1px solid var(--command-orange);
-  border-bottom: 1px solid var(--command-orange);
-  z-index: 5;
-}
-
-.avatarFrame:hover {
-  border-color: var(--command-orange);
-  box-shadow: 0 0 20px rgba(var(--command-orange-rgb), 0.3);
-}
-
-.avatarImgContainer {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  position: relative;
-  background: radial-gradient(circle at center, rgba(var(--command-orange-rgb), 0.05), transparent);
-}
-
-.avatarImg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.9;
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.avatarFrame:hover .avatarImg {
-  transform: scale(1.15);
-  opacity: 1;
-}
-
-.avatarGenderTag {
-  position: absolute;
-  bottom: 2px;
-  left: 2px;
-  width: 18px;
-  height: 18px;
-  font-size: 10px;
-  font-weight: 900;
-  color: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-  border: 1px solid rgba(255,255,255,0.2);
-}
-
-.studentStatsColumn {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* ── Add Student Gender Toggle ── */
-.addStudentGenderToggle {
-  display: flex;
-  gap: 1px;
-  background: rgba(255, 255, 255, 0.05);
-  margin-bottom: 6px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 4px;
-  overflow: hidden;
-  height: 28px;
-}
-
-.genderSelectBtn {
-  flex: 1;
-  background: transparent;
-  border: none;
-  padding: 0 8px; /* Removed vertical padding */
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-  font-family: var(--font-mono), monospace;
-  font-size: 10px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.genderSelectBtnActive {
-  background: var(--command-orange);
-  color: #000 !important;
-  font-weight: 700;
-}
-
-.bulkGenderInfo {
-  font-family: var(--font-mono), monospace;
-  font-size: 9px;
-  color: var(--muted);
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.memberAvatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 1px solid var(--border-hard);
-  background: rgba(0, 0, 0, 0.3);
-  flex-shrink: 0;
-}
-
-.memberRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.2s;
-}
-
-.memberRow:hover {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-/* ── Header Presence Toggle ── */
-.headerPresenceToggle {
-  width: 26px;
-  height: 26px;
-  margin-right: 12px;
-  align-self: center;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: var(--team-green);
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  font-weight: 900;
-  cursor: pointer;
-  transition: all 0.2s;
-  border-radius: 2px;
-  flex-shrink: 0;
-  padding: 0;
-}
-
-.presenceActive {
-  background: rgba(190, 239, 0, 0.2) !important;
-  border-color: rgba(190, 239, 0, 0.5) !important;
-  box-shadow: 0 0 10px rgba(190, 239, 0, 0.2);
-  color: var(--team-green);
-}
-
-.presenceInactive {
-  opacity: 0.2;
-  color: var(--alert-red);
-}
-
-.presenceInactive:hover {
-  opacity: 1;
-  background: rgba(255, 51, 51, 0.1);
-  color: var(--alert-red);
-}
-
-.classActionBtn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  font-family: var(--font-mono), monospace;
-  font-size: 10px;
-  color: #94a3b8;
-  font-weight: 700;
-  cursor: pointer;
-  padding: 5px 12px;
-  transition: all 0.2s;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  border-radius: 2px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.classActionBtn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.btnGreen {
-  color: #beef00 !important;
-  border-color: rgba(190, 239, 0, 0.2) !important;
-}
-.btnGreen:hover {
-  background: rgba(190, 239, 0, 0.1) !important;
-  border-color: #beef00 !important;
-  box-shadow: 0 0 15px rgba(190, 239, 0, 0.15);
-}
-
-.classActionBtnDanger {
-  color: #ff5555 !important;
-  border-color: rgba(255, 85, 85, 0.2) !important;
-}
-.classActionBtnDanger:hover {
-  background: rgba(255, 85, 85, 0.1) !important;
-  border-color: #ff5555 !important;
-  box-shadow: 0 0 15px rgba(255, 85, 85, 0.15);
-}
-

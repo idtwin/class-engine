@@ -9,7 +9,6 @@ import RankIcon from "../components/RankIcon";
 
 export default function TeamsPage() {
   const [mounted, setMounted] = useState(false);
-  const [step, setStep] = useState(0); // 0: roster, 1: builder, 2: session
   const [rosterSearch, setRosterSearch] = useState("");
   const [teamCount, setTeamCount] = useState(4);
   const [genderFilter, setGenderFilter] = useState<"all" | "male" | "female">("all");
@@ -70,8 +69,12 @@ export default function TeamsPage() {
     updateStudent,
     updateTeamName,
     moveStudentToTeam,
+    moveStudentToBench,
     resetTeamsState,
+    currentStep,
+    setStep,
     presentStudentIds,
+    unassignedStudents,
     togglePresence,
     markAllPresent,
     awardStudentXp,
@@ -88,13 +91,19 @@ export default function TeamsPage() {
 
   const router = useRouter();
 
+  useEffect(() => {
+    if (mounted && currentTeams.length > 0) {
+      setTeamCount(currentTeams.length);
+    }
+  }, [mounted, currentTeams.length]);
+
   const activeClass = useMemo(() => {
     if (!mounted) return null;
     return classes.find(c => c.id === activeClassId) || classes[0] || null;
   }, [classes, activeClassId, mounted]);
 
   const sortedClasses = useMemo(() => {
-    return [...classes].sort((a, b) => 
+    return [...classes].sort((a, b) =>
       a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
     );
   }, [classes]);
@@ -132,6 +141,10 @@ export default function TeamsPage() {
   useEffect(() => {
     if (renameMode && renameInputRef.current) renameInputRef.current.focus();
   }, [renameMode]);
+
+  useEffect(() => {
+    setMovingStudentId(null);
+  }, [currentStep]);
 
   if (!mounted) return (
     <div className={styles.page} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
@@ -173,21 +186,31 @@ export default function TeamsPage() {
 
   const handleBulkAdd = () => {
     if (!activeClass) return;
-    const names = bulkText.split("\n").map(n => n.trim()).filter(Boolean);
-    if (names.length > 0) {
-      bulkAddStudents(activeClass.id, names, newStudentGender);
-      setBulkText("");
-      setShowBulkAdd(false);
-    }
+    const lines = bulkText.split("\n").filter(l => l.trim());
+    if (lines.length === 0) return;
+
+    const studentData: { name: string, gender: "male" | "female" }[] = lines.map(line => {
+      let name = line.trim();
+      let gender: 'male' | 'female' = 'male';
+
+      if (name.toLowerCase().includes("(f)") || name.toLowerCase().includes(",f")) {
+        gender = 'female';
+        name = name.replace(/\(f\)/gi, "").replace(/,f/gi, "").trim();
+      } else if (name.toLowerCase().includes("(m)") || name.toLowerCase().includes(",m")) {
+        gender = 'male';
+        name = name.replace(/\(m\)/gi, "").replace(/,m/gi, "").trim();
+      }
+      return { name, gender };
+    });
+
+    bulkAddStudents(activeClass.id, studentData);
+    setBulkText("");
+    setShowBulkAdd(false);
   };
 
   const handleRemoveStudent = (studentId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!activeClass) return;
-    const student = activeClass.students.find(s => s.id === studentId);
-    if (student) {
-      syncAttendance(student.name, 'a', activeClass.name);
-    }
     removeStudent(activeClass.id, studentId);
     setConfirmingDeleteId(null);
   };
@@ -195,13 +218,9 @@ export default function TeamsPage() {
   const syncAttendance = async (studentName: string, status: string, className: string) => {
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzT-gtBYDwgOyijewpt1AdadYEGigWezZH8-8P5qYrhVtEGvHyegBHNmCizt0Nhn2FC/exec";
     if (!GOOGLE_SCRIPT_URL || !studentName.trim()) return;
-
     try {
       const queryParams = new URLSearchParams({ studentName, status, className }).toString();
-      fetch(`${GOOGLE_SCRIPT_URL}?${queryParams}`, {
-        method: 'GET',
-        mode: 'no-cors'
-      });
+      fetch(`${GOOGLE_SCRIPT_URL}?${queryParams}`, { method: 'GET', mode: 'no-cors' });
     } catch (err) {
       console.error("Attendance Sync Failed:", err);
     }
@@ -210,39 +229,32 @@ export default function TeamsPage() {
   const syncBulkAttendance = async (className: string) => {
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzT-gtBYDwgOyijewpt1AdadYEGigWezZH8-8P5qYrhVtEGvHyegBHNmCizt0Nhn2FC/exec";
     if (!activeClass || !GOOGLE_SCRIPT_URL) return;
-
     try {
-      console.log(`[SYSTEM] Initializing Hybrid Sync for ${className}...`);
-      
-      // Phase 1: Heavy Lift - Mark entire column 'p'
-      // Adding count as a potential guard for the script
-      const queryParams = new URLSearchParams({ 
-        type: 'bulk', 
+      const queryParams = new URLSearchParams({
+        type: 'bulk',
         className: className,
-        count: activeClass.students.length.toString() 
+        count: activeClass.students.length.toString()
       }).toString();
-      
       await fetch(`${GOOGLE_SCRIPT_URL}?${queryParams}`, { method: 'GET', mode: 'no-cors' });
 
-      // Phase 2: Surgical Strike - Mark specific students 'a'
-      // Filter out any nameless ghost entries from the local list
       const absentStudents = activeClass.students.filter(s => s.name.trim() && !isSelected(s.id));
-      
       if (absentStudents.length > 0) {
-        console.log(`[SYSTEM] Pushing ${absentStudents.length} local absences...`);
         absentStudents.forEach((s, index) => {
           setTimeout(() => {
             syncAttendance(s.name, 'a', className);
           }, index * 200);
         });
       }
-
-      console.log("[SYSTEM] Neural Link Status: SYNCHRONIZED.");
     } catch (err) {
       console.error("Bulk Sync Failed:", err);
     }
   };
 
+  const setStat = (studentId: string, statType: 'level' | 'energy' | 'confidence', value: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!activeClass) return;
+    updateStudent(activeClass.id, studentId, { [statType]: value });
+  };
 
   const handleCycleStat = (studentId: string, statType: 'level' | 'energy' | 'confidence' | 'gender', e: React.MouseEvent) => {
     e.stopPropagation();
@@ -300,9 +312,9 @@ export default function TeamsPage() {
   // ─── Data ─────────────────────────────────────────────────────────────────
 
   const teamHex = ['#00e87a', '#00c8f0', '#ffc843', '#ff4d8f', '#b06eff', '#ff7d3b', '#e2e8f0'];
-  const flColor = { Low: '#ff8080', Mid: '#ffc843', High: '#00e87a' };
-  const enColor = { Passive: '#4a637d', Normal: '#00c8f0', Active: '#ff7d3b' };
-  const coColor = { Low: '#ff8080', Mid: '#ffc843', High: '#b06eff' };
+  const flColor = { Low: '#0088cc', Mid: '#00bbff', High: '#00f3ff' };
+  const enColor = { Passive: '#cc9900', Normal: '#ffbb00', Active: '#ffc843' };
+  const coColor = { Low: '#cc0066', Mid: '#ff0088', High: '#ff2e88' };
 
   const filteredStudents = (activeClass?.students ?? [])
     .filter(s => {
@@ -350,7 +362,6 @@ export default function TeamsPage() {
         <div className={styles.classBarLeft}>
           <span className={styles.classBarLabel}>Class:</span>
 
-          {/* All class chips */}
           {sortedClasses.map(cls => (
             <button
               key={cls.id}
@@ -361,7 +372,6 @@ export default function TeamsPage() {
             </button>
           ))}
 
-          {/* New class inline form */}
           {showClassForm ? (
             <div className={styles.classInlineForm}>
               <input
@@ -380,7 +390,6 @@ export default function TeamsPage() {
           )}
         </div>
 
-        {/* Active class actions */}
         {activeClass && !showClassForm && (
           <div className={styles.classBarRight}>
             {renameMode ? (
@@ -404,22 +413,24 @@ export default function TeamsPage() {
             ) : (
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <button
-                  className={`${styles.classActionBtn} ${styles.btnGreen}`}
+                  className={styles.classActionBtn}
+                  style={{ color: '#c4ff00', borderColor: 'rgba(196, 255, 0, 0.4)', background: 'rgba(196, 255, 0, 0.05)' }}
                   onClick={() => syncBulkAttendance(activeClass.name)}
                 >
-                  ↻ Sync
+                  <span style={{ fontSize: '10px' }}>↻</span> SYNC
                 </button>
                 <button
                   className={styles.classActionBtn}
                   onClick={() => { setRenameValue(activeClass.name); setRenameMode(true); }}
                 >
-                  ✎ Rename
+                  <span style={{ fontSize: '10px' }}>✎</span> RENAME
                 </button>
                 <button
                   className={`${styles.classActionBtn} ${styles.classActionBtnDanger}`}
+                  style={{ color: '#ff3333', borderColor: 'rgba(255, 51, 51, 0.4)', background: 'rgba(255, 51, 51, 0.05)' }}
                   onClick={() => setConfirmDeleteClass(true)}
                 >
-                  🗑 Delete
+                  <span style={{ fontSize: '10px' }}>🗑</span> DELETE
                 </button>
               </div>
             )}
@@ -427,7 +438,6 @@ export default function TeamsPage() {
         )}
       </div>
 
-      {/* No class state */}
       {!activeClass && (
         <div style={{ textAlign: 'center', padding: '60px 20px' }}>
           <div style={{ fontSize: '32px', marginBottom: '12px' }}>📚</div>
@@ -441,19 +451,19 @@ export default function TeamsPage() {
         <>
           {/* ── STEPPER ─────────────────────────────────────────────────────── */}
           <div className={styles.stepper}>
-            <div className={`${styles.step} ${step === 0 ? styles.stepActive : styles.stepDone}`} onClick={() => setStep(0)}>
-              <div className={styles.stepNum}>{step > 0 ? "✓" : "1"}</div>
-              Roster Setup
+            <div className={`${styles.step} ${currentStep === 0 ? styles.stepActive : styles.stepDone}`} onClick={() => setStep(0)}>
+              <div className={styles.stepNum}>{currentStep > 0 ? "✓" : "1"}</div>
+              ROSTER SETUP
             </div>
             <div className={styles.stepDivider}></div>
-            <div className={`${styles.step} ${step === 1 ? styles.stepActive : step > 1 ? styles.stepDone : ""}`} onClick={() => step >= 1 && setStep(1)}>
-              <div className={styles.stepNum}>{step > 1 ? "✓" : "2"}</div>
-              Team Builder
+            <div className={`${styles.step} ${currentStep === 1 ? styles.stepActive : currentStep > 1 ? styles.stepDone : ""}`} onClick={() => currentStep >= 1 && setStep(1)}>
+              <div className={styles.stepNum}>{currentStep > 1 ? "✓" : "2"}</div>
+              TEAM BUILDER
             </div>
             <div className={styles.stepDivider}></div>
-            <div className={`${styles.step} ${step === 2 ? styles.stepActive : ""}`} onClick={() => step >= 2 && setStep(2)}>
+            <div className={`${styles.step} ${currentStep === 2 ? styles.stepActive : ""}`} onClick={() => currentStep >= 2 && setStep(2)}>
               <div className={styles.stepNum}>3</div>
-              Live Session
+              LIVE SESSION
             </div>
           </div>
 
@@ -462,7 +472,7 @@ export default function TeamsPage() {
             {/* ═══════════════════════════════════════════════════════════════
                 VIEW 1: ROSTER
             ═══════════════════════════════════════════════════════════════ */}
-            {step === 0 && (
+            {currentStep === 0 && (
               <>
                 <div className={styles.rosterToolbar}>
                   <input
@@ -484,18 +494,36 @@ export default function TeamsPage() {
                       </div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      className={`${styles.btn} ${styles.btnPrimary}`}
-                      onClick={() => { generateTeams(activeClass.id, teamCount, presentStudentIds); setStep(1); }}
-                      disabled={presentCount < 2}
-                    >
-                      → Generate Teams ({presentCount} present)
-                    </button>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    {currentTeams.length > 0 && (
+                      <div className={styles.statusIndicator}>
+                        <div className={`${styles.statusDot} ${styles.statusDotActive}`}></div>
+                        <span>Session Active</span>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {currentTeams.length > 0 && (
+                        <button
+                          className={`${styles.btn} ${styles.btnGreen}`}
+                          onClick={() => setStep(1)}
+                        >
+                          ▶ Resume Mission
+                        </button>
+                      )}
+                      <button
+                        className={`${styles.btn} ${currentTeams.length > 0 ? styles.btnGhost : styles.btnPrimary}`}
+                        onClick={() => {
+                          if (currentTeams.length > 0 && !confirm("This will clear your current squads and data. Initialize new mission?")) return;
+                          generateTeams(activeClass.id, teamCount, presentStudentIds);
+                        }}
+                        disabled={presentCount < 2}
+                      >
+                        {currentTeams.length > 0 ? "↻ Reset Squads" : `→ Initialize Squads`}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                {/* Absent summary bar */}
                 {absentCount > 0 && (
                   <div className={styles.absentBar}>
                     <span className={styles.absentBarIcon}>🚫</span>
@@ -527,8 +555,8 @@ export default function TeamsPage() {
                               <RankIcon tier={s.tier} stars={s.rank as any} size={50} />
                             </div>
 
-                            <Link 
-                              href={`/profile/${s.id}`} 
+                            <Link
+                              href={`/profile/${s.id}`}
                               className={styles.rankInfoSmall}
                               style={{ textDecoration: 'none', cursor: 'pointer' }}
                             >
@@ -557,77 +585,76 @@ export default function TeamsPage() {
                               >
                                 {isPresent ? '✓' : '✕'}
                               </button>
-                              <div className={styles.headerStatusLabel}>
-                                {(s.level || 'Mid').toUpperCase()}
-                              </div>
                             </div>
                           </div>
 
                           <div className={styles.cardBody}>
-                            <div className={styles.studentCardMainArea}>
-                              <div className={styles.statsLayout}>
-                                <div className={styles.statLine} onClick={(e) => handleCycleStat(s.id, 'level', e)}>
-                                  <div className={styles.statHeader}>
-                                    <span className={styles.statLabel}>FLUENCY</span>
-                                  </div>
-                                  <div className={styles.segmentedBar}>
-                                    <div className={`${styles.segment} ${styles.fluencyColor} ${['Low', 'Mid', 'High'].indexOf(s.level || 'Mid') >= 0 ? styles.lit : ''}`} />
-                                    <div className={`${styles.segment} ${styles.fluencyColor} ${['Mid', 'High'].indexOf(s.level || 'Mid') >= 0 ? styles.lit : ''}`} />
-                                    <div className={`${styles.segment} ${styles.fluencyColor} ${['High'].indexOf(s.level || 'Mid') >= 0 ? styles.lit : ''}`} />
-                                  </div>
+                            <div className={styles.statRows}>
+                              {/* ROW 1: FLUENCY */}
+                              <div className={styles.statRow}>
+                                <div className={styles.statHeader}>
+                                  <span className={styles.statLabel}>FLUENCY</span>
+                                  <span className={styles.statValue} style={{ color: 'var(--stat-power)' }}>{s.level || 'MID'}</span>
                                 </div>
-
-                                <div className={styles.statsSecondaryRow}>
-                                  <div className={styles.statLineSmall} onClick={(e) => handleCycleStat(s.id, 'energy', e)}>
-                                    <div className={styles.statHeader}>
-                                      <span className={styles.statLabel}>ENERGY</span>
-                                    </div>
-                                    <div className={styles.segmentedBarSmall}>
-                                      <div className={`${styles.segment} ${styles.energyColor} ${['Passive', 'Normal', 'Active'].indexOf(s.energy || 'Normal') >= 0 ? styles.lit : ''}`} />
-                                      <div className={`${styles.segment} ${styles.energyColor} ${['Normal', 'Active'].indexOf(s.energy || 'Normal') >= 0 ? styles.lit : ''}`} />
-                                      <div className={`${styles.segment} ${styles.energyColor} ${['Active'].indexOf(s.energy || 'Normal') >= 0 ? styles.lit : ''}`} />
-                                    </div>
-                                  </div>
-
-                                  <div className={styles.statLineSmall} onClick={(e) => handleCycleStat(s.id, 'confidence', e)}>
-                                    <div className={styles.statHeader}>
-                                      <span className={styles.statLabel}>CONFID.</span>
-                                    </div>
-                                    <div className={styles.segmentedBarSmall}>
-                                      <div className={`${styles.segment} ${styles.confColor} ${['Low', 'Mid', 'High'].indexOf(s.confidence || 'Mid') >= 0 ? styles.lit : ''}`} />
-                                      <div className={`${styles.segment} ${styles.confColor} ${['Mid', 'High'].indexOf(s.confidence || 'Mid') >= 0 ? styles.lit : ''}`} />
-                                      <div className={`${styles.segment} ${styles.confColor} ${['High'].indexOf(s.confidence || 'Mid') >= 0 ? styles.lit : ''}`} />
-                                    </div>
-                                  </div>
+                                <div className={styles.segmentedBar}>
+                                  <div className={`${styles.segment} ${styles.fluencyColor} ${['Low', 'Mid', 'High'].indexOf(s.level || 'Mid') >= 0 ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'level', 'Low', e)} />
+                                  <div className={`${styles.segment} ${styles.fluencyColor} ${['Mid', 'High'].indexOf(s.level || 'Mid') >= 0 ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'level', 'Mid', e)} />
+                                  <div className={`${styles.segment} ${styles.fluencyColor} ${['High'].indexOf(s.level || 'Mid') >= 0 ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'level', 'High', e)} />
                                 </div>
                               </div>
 
-                              <div className={styles.studentActionRow}>
-                                <button
-                                  className={`${styles.studentRemoveBtn} ${confirmingDeleteId === s.id ? styles.confirming : ''}`}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (confirmingDeleteId === s.id) {
-                                      handleRemoveStudent(s.id, e);
-                                    } else {
-                                      setConfirmingDeleteId(s.id);
-                                      setTimeout(() => setConfirmingDeleteId(null), 3000);
-                                    }
-                                  }}
-                                  title={confirmingDeleteId === s.id ? "Confirm Deletion" : "Remove Student"}
-                                >
-                                  <span className={styles.removeIcon}>{confirmingDeleteId === s.id ? '⚠️' : '🗑'}</span>
-                                  <span className={styles.removeLabel}>{confirmingDeleteId === s.id ? 'SURE?' : 'REMOVE'}</span>
-                                </button>
-
-                                <button
-                                  className={styles.pinBtnDotted}
-                                  onClick={(e) => handleGenerateOtp(s.id, s.name, activeClass.name, e)}
-                                  disabled={generatingOtpId === s.id}
-                                >
-                                  {generatingOtpId === s.id ? '...' : (otps[s.id] || 'GET PIN')}
-                                </button>
+                              {/* ROW 2: ENERGY */}
+                              <div className={styles.statRow}>
+                                <div className={styles.statHeader}>
+                                  <span className={styles.statLabel}>ENERGY</span>
+                                  <span className={styles.statValue} style={{ color: 'var(--stat-energy)' }}>{s.energy || 'NORMAL'}</span>
+                                </div>
+                                <div className={styles.segmentedBar}>
+                                  <div className={`${styles.segment} ${styles.energyColor} ${['Passive', 'Normal', 'Active'].indexOf(s.energy || 'Normal') >= 0 ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'energy', 'Passive', e)} />
+                                  <div className={`${styles.segment} ${styles.energyColor} ${['Normal', 'Active'].indexOf(s.energy || 'Normal') >= 0 ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'energy', 'Normal', e)} />
+                                  <div className={`${styles.segment} ${styles.energyColor} ${['Active'].indexOf(s.energy || 'Normal') >= 0 ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'energy', 'Active', e)} />
+                                </div>
                               </div>
+
+                              {/* ROW 3: COMMAND */}
+                              <div className={styles.statRow}>
+                                <div className={styles.statHeader}>
+                                  <span className={styles.statLabel}>COMMAND</span>
+                                  <span className={styles.statValue} style={{ color: 'var(--stat-command)' }}>{s.confidence || 'MID'}</span>
+                                </div>
+                                <div className={styles.segmentedBar}>
+                                  <div className={`${styles.segment} ${styles.confColor} ${['Low', 'Mid', 'High'].indexOf(s.confidence || 'Mid') >= 0 ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'confidence', 'Low', e)} />
+                                  <div className={`${styles.segment} ${styles.confColor} ${['Mid', 'High'].indexOf(s.confidence || 'Mid') >= 0 ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'confidence', 'Mid', e)} />
+                                  <div className={`${styles.segment} ${styles.confColor} ${['High'].indexOf(s.confidence || 'Mid') >= 0 ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'confidence', 'High', e)} />
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className={styles.studentActionRow}>
+                              <button
+                                className={`${styles.studentRemoveBtn} ${confirmingDeleteId === s.id ? styles.confirming : ''}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (confirmingDeleteId === s.id) {
+                                    handleRemoveStudent(s.id, e);
+                                  } else {
+                                    setConfirmingDeleteId(s.id);
+                                    setTimeout(() => setConfirmingDeleteId(null), 3000);
+                                  }
+                                }}
+                                title={confirmingDeleteId === s.id ? "Confirm Deletion" : "Remove Student"}
+                              >
+                                <span className={styles.removeIcon}>{confirmingDeleteId === s.id ? '⚠️' : '🗑'}</span>
+                                <span className={styles.removeLabel}>{confirmingDeleteId === s.id ? 'SURE?' : 'REMOVE'}</span>
+                              </button>
+
+                              <button
+                                className={styles.pinBtnDotted}
+                                onClick={(e) => handleGenerateOtp(s.id, s.name, activeClass.name, e)}
+                                disabled={generatingOtpId === s.id}
+                              >
+                                {generatingOtpId === s.id ? '...' : (otps[s.id] || 'GET PIN')}
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -653,7 +680,8 @@ export default function TeamsPage() {
 
                   {/* Add student card */}
                   <div className={styles.addStudentCard}>
-                    <div className={styles.addStudentTitle}>＋ Add Student</div>
+                    <div className={styles.addStudentTitle}>+ ADD STUDENT</div>
+
                     <div className={styles.addStudentGenderToggle}>
                       <button
                         className={`${styles.genderSelectBtn} ${newStudentGender === 'male' ? styles.genderSelectBtnActive : ''}`}
@@ -668,14 +696,16 @@ export default function TeamsPage() {
                         ♀ Female
                       </button>
                     </div>
+
                     <input
                       ref={addStudentInputRef}
                       className={styles.addStudentInput}
-                      placeholder="Student name…"
+                      placeholder="Student name.."
                       value={addStudentName}
                       onChange={e => setAddStudentName(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') handleAddStudent(); }}
                     />
+
                     <div className={styles.addStudentButtons}>
                       <button
                         className={`${styles.btn} ${styles.btnCyan}`}
@@ -683,45 +713,71 @@ export default function TeamsPage() {
                         onClick={handleAddStudent}
                         disabled={!addStudentName.trim()}
                       >
-                        Add
+                        ADD
                       </button>
                       <button
                         className={`${styles.btn} ${styles.btnGhost}`}
                         onClick={() => setShowBulkAdd(v => !v)}
                         title="Bulk add (paste names)"
                       >
-                        Bulk
+                        BULK
                       </button>
                     </div>
-                    {showBulkAdd && (
-                      <>
-                        <div className={styles.bulkGenderInfo}>* Global gender for bulk add: {newStudentGender}</div>
-                        <textarea
-                          className={styles.bulkTextarea}
-                          placeholder={"One name per line:\nAhmad\nSiti\nBudi"}
-                          value={bulkText}
-                          onChange={e => setBulkText(e.target.value)}
-                          rows={5}
-                        />
-                        <button
-                          className={`${styles.btn} ${styles.btnPrimary}`}
-                          style={{ width: '100%' }}
-                          onClick={handleBulkAdd}
-                          disabled={!bulkText.trim()}
-                        >
-                          Add {bulkText.split("\n").filter(l => l.trim()).length} Students
-                        </button>
-                      </>
-                    )}
                   </div>
                 </div>
+
+                {/* Tactical Bulk Add Overlay */}
+                {showBulkAdd && (
+                  <div className={styles.bulkOverlay}>
+                    <div className={styles.bulkModal}>
+                      <div className={styles.bulkHeader}>
+                        <div className={styles.bulkTitle}>
+                          <span className={styles.bulkTitleIcon}>📝</span>
+                          NEURAL_ROSTER_INGESTION
+                        </div>
+                        <button className={styles.bulkClose} onClick={() => setShowBulkAdd(false)}>✕</button>
+                      </div>
+
+                      <div className={styles.bulkBody}>
+                        <div className={styles.bulkInstructions}>
+                          PASTE ROSTER: Use <strong>(m)</strong> or <strong>(f)</strong> for gender, or leave blank for default.
+                          <br /><em>Example: John (m), Jane (f), Ahmad</em>
+                        </div>
+
+                        <textarea
+                          className={styles.bulkTextareaModal}
+                          placeholder={"John (m)\nJane (f)\nAhmad\n..."}
+                          value={bulkText}
+                          onChange={e => setBulkText(e.target.value)}
+                          autoFocus
+                        />
+
+                        <div className={styles.bulkFooter}>
+                          <div className={styles.bulkCount}>
+                            {bulkText.split("\n").filter(l => l.trim()).length} OPERATIVES IDENTIFIED
+                          </div>
+                          <div style={{ display: 'flex', gap: '12px' }}>
+                            <button className={styles.btnAbort} onClick={() => setShowBulkAdd(false)}>ABORT_LINK</button>
+                            <button
+                              className={`${styles.btn} ${styles.btnPrimary}`}
+                              onClick={handleBulkAdd}
+                              disabled={!bulkText.trim()}
+                            >
+                              INITIATE MASS INGESTION
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             )}
 
             {/* ═══════════════════════════════════════════════════════════════
                 VIEW 2: TEAM BUILDER
             ═══════════════════════════════════════════════════════════════ */}
-            {step === 1 && (
+            {currentStep === 1 && (
               <>
                 <div className={styles.builderHeader}>
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -749,214 +805,238 @@ export default function TeamsPage() {
                   </div>
                 </div>
 
-                <div className={styles.balanceSummary} style={{ gridTemplateColumns: `repeat(${currentTeams.length}, 1fr)` }}>
+                <div className={styles.teamsGrid} style={{ gridTemplateColumns: `repeat(${Math.min(4, currentTeams.length)}, 1fr)` }}>
                   {currentTeams.map((team, i) => {
-                    const fl = getTeamStat(team, 'level');
-                    const en = getTeamStat(team, 'energy');
-                    const co = getTeamStat(team, 'confidence');
+                    const avgPower = getTeamStat(team, 'level');
+                    const avgEnergy = getTeamStat(team, 'energy');
+                    const avgCommand = getTeamStat(team, 'confidence');
+                    const overallStrength = Math.round((avgPower + avgEnergy + avgCommand) / 3);
+
                     return (
-                      <div key={team.id} className={styles.bsCard}>
-                        <div className={styles.bsTitle}>
-                          <div className={styles.bsDot} style={{ background: teamHex[i % teamHex.length] }}></div>
-                          <div className={styles.bsName} style={{ color: teamHex[i % teamHex.length] }}>{team.name}</div>
-                          <div style={{ marginLeft: 'auto', fontFamily: 'JetBrains Mono', fontSize: '10px', color: '#4a637d' }}>{team.students.length} students</div>
-                        </div>
-                        {[
-                          { label: 'Fluency', val: fl, col: '#ffc843' },
-                          { label: 'Energy', val: en, col: '#00c8f0' },
-                          { label: 'Confidence', val: co, col: '#ffc843' }
-                        ].map((row, idx) => (
-                          <div key={idx}>
-                            <div className={styles.bsRow}><span className={styles.bsLabel}>{row.label}</span><span className={styles.bsVal} style={{ color: row.col }}>{row.val}%</span></div>
-                            <div className={styles.bsTrack}><div className={styles.bsFill} style={{ width: `${row.val}%`, background: row.col }}></div></div>
+                      <div key={team.id} className={styles.teamCard} style={{ borderTop: `2px solid ${team.color}` }}>
+                        <div className={styles.teamHeader}>
+                          <div className={styles.teamNameRow}>
+                            <div className={styles.teamDot} style={{ background: team.color, boxShadow: `0 0 6px ${team.color}` }}></div>
+                            <div className={styles.teamName} style={{ color: team.color }}>{team.name}</div>
+                            <div className={styles.squadRating} title="Overall Squad Rating">OSR {overallStrength}</div>
                           </div>
-                        ))}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ fontFamily: 'JetBrains Mono', fontSize: '11px', color: '#4a637d' }}>{team.students.length} students</div>
+                          </div>
+
+                          <div className={styles.teamStatsSummary}>
+                            <div className={styles.teamStat}>
+                              <div className={styles.teamStatLabel}>POWER</div>
+                              <div className={styles.teamStatBar}>
+                                <div className={styles.teamStatFill} style={{ width: `${avgPower}%`, background: 'var(--stat-power)' }} />
+                              </div>
+                              <div className={styles.teamStatVal} style={{ color: 'var(--stat-power)' }}>{avgPower}%</div>
+                            </div>
+                            <div className={styles.teamStat}>
+                              <div className={styles.teamStatLabel}>ENERGY</div>
+                              <div className={styles.teamStatBar}>
+                                <div className={styles.teamStatFill} style={{ width: `${avgEnergy}%`, background: 'var(--stat-energy)' }} />
+                              </div>
+                              <div className={styles.teamStatVal} style={{ color: 'var(--stat-energy)' }}>{avgEnergy}%</div>
+                            </div>
+                            <div className={styles.teamStat}>
+                              <div className={styles.teamStatLabel}>COMMAND</div>
+                              <div className={styles.teamStatBar}>
+                                <div className={styles.teamStatFill} style={{ width: `${avgCommand}%`, background: 'var(--stat-command)' }} />
+                              </div>
+                              <div className={styles.teamStatVal} style={{ color: 'var(--stat-command)' }}>{avgCommand}%</div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className={styles.teamMembers}>
+                          {team.students.map(s => (
+                            <div key={s.id} className={styles.memberRow}>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <div>
+                                  <div className={styles.memberName}>{s.name}</div>
+                                  <div className={styles.memberMiniTags} style={{ marginTop: '3px' }}>
+                                    <div className={styles.miniTag} style={{ background: flColor[s.level] }}></div>
+                                    <div className={styles.miniTag} style={{ background: enColor[s.energy] }}></div>
+                                    <div className={styles.miniTag} style={{ background: coColor[s.confidence] }}></div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div style={{ position: 'relative' }}>
+                                <button
+                                  className={styles.moveBtn}
+                                  onClick={() => setMovingStudentId(movingStudentId === s.id ? null : s.id)}
+                                >
+                                  Move ▾
+                                </button>
+                                {movingStudentId === s.id && (
+                                  <div className={styles.moveDropdown}>
+                                    {currentTeams.filter(t => t.id !== team.id).map((t) => (
+                                      <button
+                                        key={t.id}
+                                        className={styles.moveDropdownItem}
+                                        style={{ color: t.color }}
+                                        onClick={() => { moveStudentToTeam(s.id, t.id); setMovingStudentId(null); }}
+                                      >
+                                        → {t.name}
+                                      </button>
+                                    ))}
+                                    <button
+                                      className={styles.moveDropdownItem}
+                                      style={{ color: 'var(--muted)', borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: '4px', paddingTop: '4px' }}
+                                      onClick={() => { moveStudentToBench(s.id); setMovingStudentId(null); }}
+                                    >
+                                      ⇊ Bench
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     );
                   })}
                 </div>
 
-                <div className={styles.teamsGrid} style={{ gridTemplateColumns: `repeat(${Math.min(4, currentTeams.length)}, 1fr)` }}>
-                  {currentTeams.map((team, i) => (
-                    <div key={team.id} className={styles.teamCard} style={{ borderTop: `2px solid ${teamHex[i % teamHex.length]}` }}>
-                      <div className={styles.teamHeader}>
-                        <div className={styles.teamNameRow}>
-                          <div className={styles.teamDot} style={{ background: teamHex[i % teamHex.length], boxShadow: `0 0 6px ${teamHex[i % teamHex.length]}` }}></div>
-                          <div className={styles.teamName} style={{ color: teamHex[i % teamHex.length] }}>{team.name}</div>
-                        </div>
-                        <div style={{ fontFamily: 'JetBrains Mono', fontSize: '11px', color: '#4a637d' }}>{team.students.length} students</div>
-                      </div>
-                      <div className={styles.teamMembers}>
-                        {team.students.map(s => (
-                          <div key={s.id} className={styles.memberRow}>
-                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                              <div className={styles.memberAvatar}>
-                                <img
-                                  src={s.gender === 'female' ? '/AvatarGirl.png?v=v2' : '/AvatarBoy.png?v=v2'}
-                                  alt=""
-                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                />
-                              </div>
-                              <div>
-                                <div className={styles.memberName}>{s.name}</div>
-                                <div className={styles.memberMiniTags} style={{ marginTop: '3px' }}>
-                                  <div className={styles.miniTag} style={{ background: flColor[s.level] }}></div>
-                                  <div className={styles.miniTag} style={{ background: enColor[s.energy] }}></div>
-                                  <div className={styles.miniTag} style={{ background: coColor[s.confidence] }}></div>
-                                </div>
-                              </div>
-                            </div>
-                            {/* Move student dropdown */}
-                            <div style={{ position: 'relative' }}>
-                              <button
-                                className={styles.moveBtn}
-                                onClick={() => setMovingStudentId(movingStudentId === s.id ? null : s.id)}
-                              >
-                                Move ▾
-                              </button>
-                              {movingStudentId === s.id && (
-                                <div className={styles.moveDropdown}>
-                                  {currentTeams.filter(t => t.id !== team.id).map((t, ti) => (
-                                    <button
-                                      key={t.id}
-                                      className={styles.moveDropdownItem}
-                                      style={{ color: teamHex[currentTeams.findIndex(x => x.id === t.id) % teamHex.length] }}
-                                      onClick={() => { moveStudentToTeam(s.id, t.id); setMovingStudentId(null); }}
-                                    >
-                                      → {t.name}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                {/* HOLDING AREA (BENCH) */}
+                {unassignedStudents.length > 0 && (
+                  <div className={styles.benchSection}>
+                    <div className={styles.benchHeader}>
+                      <div className={styles.benchTitle}>[ PERSONNEL HOLDING AREA ]</div>
+                      <div className={styles.benchSub}>UNASSIGNED OPERATIVES DETECTED</div>
                     </div>
-                  ))}
-                </div>
+                    <div className={styles.benchGrid}>
+                      {unassignedStudents.map(s => (
+                        <div key={s.id} className={styles.benchCard}>
+                          <div className={styles.benchCardGlow}></div>
+                          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                            <div className={styles.memberName} style={{ fontSize: '11px', opacity: 0.8 }}>{s.name}</div>
+                          </div>
+                          <div style={{ position: 'relative' }}>
+                            <button
+                              className={styles.moveBtn}
+                              onClick={() => setMovingStudentId(movingStudentId === s.id ? null : s.id)}
+                            >
+                              Move ▾
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
 
             {/* ═══════════════════════════════════════════════════════════════
                 VIEW 3: LIVE SESSION
             ═══════════════════════════════════════════════════════════════ */}
-            {step === 2 && (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
-                  <button className={`${styles.btn} ${styles.btnGhost}`} onClick={() => setStep(1)}>← Teams</button>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button className={`${styles.btn} ${styles.btnDanger}`} onClick={finishSession}>✕ End Session</button>
+            {currentStep === 2 && (
+              <div className={styles.arenaLayout}>
+                {/* COLUMN 1: SQUAD INTEL */}
+                <div className={styles.arenaColumn}>
+                  <div>
+                    <div className={styles.intelTitle}>SQUAD_HERALDRY</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+                      {currentTeams.map(team => (
+                        <div key={team.id} className={styles.squadCard} style={{ '--team-color': team.color } as any}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px' }}>
+                            <div className={styles.crestContainer} style={{ '--team-color': team.color } as any}>
+                              <img src={team.crestUrl} className={styles.crestImg} alt={team.name} />
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '12px', fontWeight: 800, color: team.color }}>{team.name}</div>
+                              <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', letterSpacing: '1px' }}>OSR: {team.osr ?? 0} // {team.students.length} OPS</div>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            {team.students.map(s => (
+                              <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
+                                <span style={{ color: 'rgba(255,255,255,0.7)' }}>{s.name}</span>
+                                <span style={{ color: 'rgba(255,255,255,0.2)' }}>{s.xp || 0} XP</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
-                <div className={styles.sessionTop} style={{ gridTemplateColumns: `repeat(${currentTeams.length}, 1fr)` }}>
-                  {[...currentTeams].sort((a, b) => b.score - a.score).map((team, i) => {
-                    const rank = i + 1;
-                    const originalIdx = currentTeams.findIndex(t => t.id === team.id);
-                    return (
-                      <div key={team.id} className={styles.scoreCard} style={{ borderTop: `2px solid ${teamHex[originalIdx % teamHex.length]}` }}>
-                        <div className={styles.scoreCardGlow} style={{ background: teamHex[originalIdx % teamHex.length] }}></div>
-                        <div className={styles.scoreCardHeader}>
-                          <div className={styles.scoreTeamLabel} style={{ color: teamHex[originalIdx % teamHex.length] }}>{team.name}</div>
-                          <div className={`${styles.scoreRank} ${rank === 1 ? styles.scoreRankFirst : ""}`}>{rank === 1 ? '👑' : '#' + rank}</div>
-                        </div>
-                        <div className={styles.scoreValue} style={{ color: teamHex[originalIdx % teamHex.length] }}>{team.score.toLocaleString()}</div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
-                          <div style={{ fontFamily: 'JetBrains Mono', fontSize: '10px', color: '#4a637d' }}>
-                            {Math.round(team.score / (currentTeams.reduce((a, b) => a + b.score, 0) || 1) * 100)}% of total
+                {/* COLUMN 2: LEADERBOARD HUB */}
+                <div className={styles.arenaColumn} style={{ alignItems: 'center', padding: '40px' }}>
+                  <div className={styles.trophyCase}>
+                    <div style={{ fontSize: '10px', letterSpacing: '8px', color: 'var(--command-orange)', marginBottom: '20px' }}>SEASON_LEADING_SQUAD</div>
+                    <img src="/arena_trophy_gold_1776948914488.png" className={styles.trophyImg} alt="Trophy" />
+                    <div style={{ fontFamily: 'Syne, var(--font-main)', fontSize: '32px', color: 'white', marginTop: '20px', fontWeight: 800 }}>
+                      {(currentTeams.length > 0 ? [...currentTeams].sort((a, b) => b.score - a.score)[0].name : "NO_DATA").toUpperCase()}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--command-orange)', marginTop: '5px' }}>RANK #1 // PRESTIGE_TIER</div>
+                  </div>
+
+                  <div className={styles.intelPanel} style={{ width: '100%', marginTop: '40px' }}>
+                    <div className={styles.intelTitle}>LEADERBOARD_STATUS</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {[...currentTeams].sort((a, b) => b.score - a.score).map((team, i) => (
+                        <div key={team.id} style={{ display: 'flex', alignItems: 'center', gap: '20px', background: 'rgba(255,255,255,0.02)', padding: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                          <div style={{ fontSize: '24px', fontWeight: 900, color: i === 0 ? 'var(--command-orange)' : 'rgba(255,255,255,0.1)', width: '30px' }}>0{i + 1}</div>
+                          <img src={team.crestUrl} style={{ width: '35px', height: '35px', mixBlendMode: 'screen' }} alt="" />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '12px', fontWeight: 800, color: team.color }}>{team.name}</div>
+                            <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.05)', marginTop: '8px' }}>
+                              <div style={{ width: `${(team.score / ([...currentTeams].sort((a, b) => b.score - a.score)[0]?.score || 1)) * 100}%`, height: '100%', background: team.color }}></div>
+                            </div>
                           </div>
-                          {rank === 1 && currentTeams.length > 1 && (
-                            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '10px', color: '#ffc843' }}>
-                              +{(team.score - ([...currentTeams].sort((a, b) => b.score - a.score)[1]?.score || 0)).toLocaleString()} lead
-                            </span>
-                          )}
+                          <div style={{ fontSize: '18px', fontWeight: 900, color: team.color }}>{team.score.toLocaleString()}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Score Adjustment Controls */}
+                  <div style={{ width: '100%', marginTop: '24px', display: 'grid', gridTemplateColumns: `repeat(${Math.min(3, currentTeams.length)}, 1fr)`, gap: '10px' }}>
+                    {currentTeams.map((team) => (
+                      <div key={team.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+                        <div style={{ fontSize: '9px', fontWeight: 800, color: team.color, fontFamily: 'JetBrains Mono', letterSpacing: '0.1em' }}>{team.name}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <button className={styles.adjBtn} onClick={() => updateTeamScore(team.id, -100)}>−</button>
+                          <div className={styles.adjScore} style={{ color: team.color }}>{team.score.toLocaleString()}</div>
+                          <button className={styles.adjBtn} onClick={() => updateTeamScore(team.id, 100)}>+</button>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-
-                <div className={styles.dominantAlert}>
-                  <span style={{ fontSize: '18px' }}>⚠️</span>
-                  <span>
-                    <strong>{[...currentTeams].sort((a, b) => b.score - a.score)[0]?.name}</strong> is leading by <strong>{calculateGap().toLocaleString()} pts</strong> — consider a catch-up round.
-                  </span>
-                </div>
-
-                <div className={styles.gapSection}>
-                  <div className={styles.gapLabel}>
-                    <span>Score Distribution</span>
-                    <span>Gap: {calculateGap().toLocaleString()} pts</span>
-                  </div>
-                  <div className={styles.gapTrack}>
-                    {currentTeams.map((team, i) => (
-                      <div
-                        key={team.id}
-                        className={styles.gapSeg}
-                        style={{
-                          width: `${(team.score / (currentTeams.reduce((a, b) => a + b.score, 0) || 1)) * 100}%`,
-                          background: teamHex[i % teamHex.length]
-                        }}
-                      />
                     ))}
                   </div>
                 </div>
 
-                <div className={styles.historySection}>
-                  <div className={styles.sectionTitle}>Session History</div>
-                  <div className={styles.historyGrid}>
-                    <div className={styles.historyRow}>
-                      <div className={styles.historyHeader}>Game</div>
-                      {currentTeams.map((t, i) => <div key={t.id} className={styles.historyHeader} style={{ color: teamHex[i % teamHex.length], textAlign: 'center' }}>{t.name.split(' ')[1] || t.name}</div>)}
-                      <div className={styles.historyHeader} style={{ textAlign: 'right' }}>Winner</div>
-                    </div>
-                    <div className={styles.historyRow} style={{ opacity: 0.5 }}>
-                      <div style={{ fontWeight: 700, fontSize: '12px' }}>Neural Syncing...</div>
-                      {currentTeams.map(t => <div key={t.id} style={{ textAlign: 'center', fontFamily: 'JetBrains Mono' }}>+0</div>)}
-                      <div style={{ textAlign: 'right', fontSize: '9px' }}>PENDING</div>
+                {/* COLUMN 3: SESSION INTEL */}
+                <div className={styles.arenaColumn}>
+                  <div className={styles.intelPanel}>
+                    <div className={styles.intelTitle}>MISSION_HISTORY</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {[
+                        { game: 'CHAIN_REACTION', winner: 'SQUAD ALPHA', time: '14:20' },
+                        { game: 'NEURAL_SPEED', winner: 'SQUAD DELTA', time: '14:45' },
+                        { game: 'VOCAB_STRIKE', winner: 'SQUAD ALPHA', time: '15:10' }
+                      ].map((entry, idx) => (
+                        <div key={idx} style={{ padding: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <div style={{ fontSize: '10px', color: '#fff', fontWeight: 700 }}>{entry.game}</div>
+                            <div style={{ fontSize: '8px', color: 'var(--command-orange)', marginTop: '4px' }}>WINNER: {entry.winner}</div>
+                          </div>
+                          <div style={{ fontSize: '9px', opacity: 0.3 }}>{entry.time}</div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </div>
 
-                <div className={styles.adjustGrid} style={{ gridTemplateColumns: `repeat(${currentTeams.length}, 1fr)` }}>
-                  {currentTeams.map((team, i) => (
-                    <div key={team.id} className={styles.adjustCard}>
-                      <div className={styles.adjustTeamName} style={{ color: teamHex[i % teamHex.length] }}>{team.name}</div>
-                      <div className={styles.adjustControls}>
-                        <button className={styles.adjBtn} onClick={() => updateTeamScore(team.id, -100)}>−</button>
-                        <div className={styles.adjScore} style={{ color: teamHex[i % teamHex.length] }}>{team.score.toLocaleString()}</div>
-                        <button className={styles.adjBtn} onClick={() => {
-                          updateTeamScore(team.id, 100);
-                          // Award XP to every student on this team (20 XP per 100 pts manual award)
-                          if (activeClass) {
-                            team.students.forEach(s => awardStudentXp(activeClass.id, s.id, 20, 'manual_award'));
-                          }
-                        }}>+</button>
-                      </div>
-                      <input
-                        className={styles.rosterSearch}
-                        style={{ width: '80px', textAlign: 'center' }}
-                        placeholder="+/-"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            const val = parseInt((e.target as HTMLInputElement).value);
-                            if (!isNaN(val)) {
-                              updateTeamScore(team.id, val);
-                              // Award proportional XP for positive manual entries (20 XP per 100 pts)
-                              if (val > 0 && activeClass) {
-                                const xpAmount = Math.max(1, Math.round(val / 100 * 20));
-                                team.students.forEach(s => awardStudentXp(activeClass.id, s.id, xpAmount, 'manual_award'));
-                              }
-                              (e.target as HTMLInputElement).value = '';
-                            }
-                          }
-                        }}
-                      />
-                    </div>
-                  ))}
+                  <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <button className={`${styles.btn} ${styles.btnGhost}`} style={{ width: '100%' }} onClick={() => setStep(1)}>← MODIFY_SQUADS</button>
+                    <button className={styles.finalizeBtn} onClick={finishSession}>
+                      <span>[</span> FINALIZE_MATCH_DATA <span>]</span>
+                    </button>
+                  </div>
                 </div>
-              </>
+              </div>
             )}
 
           </div>
