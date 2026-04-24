@@ -358,12 +358,13 @@
   position: relative;
   background: rgba(10, 10, 20, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 18px 20px;
+  padding: 18px 0 18px 20px;
   display: flex;
   flex-direction: row;
-  gap: 12px;
+  gap: 0;
   transition: all 0.25s;
   cursor: pointer;
+  overflow: hidden;
 }
 
 /* Card corner brackets */
@@ -424,12 +425,11 @@
 }
 
 .studentCardSide {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px;
+  position: relative;
+  width: 110px;
+  flex-shrink: 0;
+  align-self: stretch;
+  overflow: hidden;
 }
 
 .studentHeader {
@@ -551,15 +551,15 @@
   opacity: 1;
 }
 
-/* Tier-based colors: Low=Red, Mid=Yellow, High=Cyan */
-.statLow     { background: rgba(255, 68, 68, 0.15); }
-.statLow.lit { background: #ff4444; box-shadow: 0 0 8px rgba(255, 68, 68, 0.4); }
+/* Stat identity colors: POWER=Red, ENERGY=Yellow, COMMAND=Cyan */
+.powerColor     { background: rgba(255, 68, 68, 0.15); }
+.powerColor.lit { background: #ff4444; box-shadow: 0 0 8px rgba(255, 68, 68, 0.4); }
 
-.statMid     { background: rgba(255, 200, 67, 0.15); }
-.statMid.lit { background: #ffc843; box-shadow: 0 0 8px rgba(255, 200, 67, 0.4); }
+.energyColor     { background: rgba(255, 200, 67, 0.15); }
+.energyColor.lit { background: #ffc843; box-shadow: 0 0 8px rgba(255, 200, 67, 0.4); }
 
-.statHigh     { background: rgba(0, 200, 240, 0.15); }
-.statHigh.lit { background: #00c8f0; box-shadow: 0 0 8px rgba(0, 200, 240, 0.4); }
+.commandColor     { background: rgba(0, 200, 240, 0.15); }
+.commandColor.lit { background: #00c8f0; box-shadow: 0 0 8px rgba(0, 200, 240, 0.4); }
 
 .studentActionRow {
   display: flex;
@@ -617,48 +617,40 @@
 }
 
 .avatarFrame {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  position: absolute;
+  inset: 0;
   cursor: pointer;
-  position: relative;
-  gap: 4px;
 }
 
 .avatarImgContainer {
-  width: 60px;
-  height: 60px;
-  border: 1px solid var(--border);
-  border-radius: 2px;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,0.3);
+  background: linear-gradient(135deg, rgba(0,200,240,0.08), rgba(176,110,255,0.08));
 }
 
 .avatarImg {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
+  object-position: center top;
 }
 
 .avatarGenderTag {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: bold;
   color: white;
   position: absolute;
-  bottom: -4px;
-  right: -4px;
-  border: 1px solid var(--bg);
+  bottom: 8px;
+  right: 8px;
+  border: 2px solid var(--bg);
+  z-index: 2;
 }
 
 .studentCardTop {

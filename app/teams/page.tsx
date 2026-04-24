@@ -590,55 +590,52 @@ export default function TeamsPage() {
 
                           <div className={styles.cardBody}>
                             <div className={styles.statRows}>
-                              {/* ROW 1: POWER (level: Low/Mid/High → Red/Yellow/Cyan) */}
+                              {/* ROW 1: POWER — always RED, segments show level */}
                               {(() => {
                                 const lv = s.level || 'Mid';
-                                const c = lv === 'Low' ? styles.statLow : lv === 'High' ? styles.statHigh : styles.statMid;
                                 return (
                                   <div className={styles.statRow}>
                                     <div className={styles.statHeader}>
                                       <span className={styles.statLabel}>POWER</span>
                                     </div>
                                     <div className={styles.segmentedBar}>
-                                      <div className={`${styles.segment} ${c} ${styles.lit}`} onClick={(e) => setStat(s.id, 'level', 'Low', e)} />
-                                      <div className={`${styles.segment} ${c} ${['Mid','High'].includes(lv) ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'level', 'Mid', e)} />
-                                      <div className={`${styles.segment} ${c} ${lv === 'High' ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'level', 'High', e)} />
+                                      <div className={`${styles.segment} ${styles.powerColor} ${styles.lit}`} onClick={(e) => setStat(s.id, 'level', 'Low', e)} />
+                                      <div className={`${styles.segment} ${styles.powerColor} ${['Mid','High'].includes(lv) ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'level', 'Mid', e)} />
+                                      <div className={`${styles.segment} ${styles.powerColor} ${lv === 'High' ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'level', 'High', e)} />
                                     </div>
                                   </div>
                                 );
                               })()}
 
-                              {/* ROW 2: ENERGY (Passive/Normal/Active → Red/Yellow/Cyan) */}
+                              {/* ROW 2: ENERGY — always YELLOW, segments show level */}
                               {(() => {
                                 const en = s.energy || 'Normal';
-                                const c = en === 'Passive' ? styles.statLow : en === 'Active' ? styles.statHigh : styles.statMid;
                                 return (
                                   <div className={styles.statRow}>
                                     <div className={styles.statHeader}>
                                       <span className={styles.statLabel}>ENERGY</span>
                                     </div>
                                     <div className={styles.segmentedBar}>
-                                      <div className={`${styles.segment} ${c} ${styles.lit}`} onClick={(e) => setStat(s.id, 'energy', 'Passive', e)} />
-                                      <div className={`${styles.segment} ${c} ${['Normal','Active'].includes(en) ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'energy', 'Normal', e)} />
-                                      <div className={`${styles.segment} ${c} ${en === 'Active' ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'energy', 'Active', e)} />
+                                      <div className={`${styles.segment} ${styles.energyColor} ${styles.lit}`} onClick={(e) => setStat(s.id, 'energy', 'Passive', e)} />
+                                      <div className={`${styles.segment} ${styles.energyColor} ${['Normal','Active'].includes(en) ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'energy', 'Normal', e)} />
+                                      <div className={`${styles.segment} ${styles.energyColor} ${en === 'Active' ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'energy', 'Active', e)} />
                                     </div>
                                   </div>
                                 );
                               })()}
 
-                              {/* ROW 3: COMMAND (Low/Mid/High → Red/Yellow/Cyan) */}
+                              {/* ROW 3: COMMAND — always CYAN, segments show level */}
                               {(() => {
                                 const co = s.confidence || 'Mid';
-                                const c = co === 'Low' ? styles.statLow : co === 'High' ? styles.statHigh : styles.statMid;
                                 return (
                                   <div className={styles.statRow}>
                                     <div className={styles.statHeader}>
                                       <span className={styles.statLabel}>COMMAND</span>
                                     </div>
                                     <div className={styles.segmentedBar}>
-                                      <div className={`${styles.segment} ${c} ${styles.lit}`} onClick={(e) => setStat(s.id, 'confidence', 'Low', e)} />
-                                      <div className={`${styles.segment} ${c} ${['Mid','High'].includes(co) ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'confidence', 'Mid', e)} />
-                                      <div className={`${styles.segment} ${c} ${co === 'High' ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'confidence', 'High', e)} />
+                                      <div className={`${styles.segment} ${styles.commandColor} ${styles.lit}`} onClick={(e) => setStat(s.id, 'confidence', 'Low', e)} />
+                                      <div className={`${styles.segment} ${styles.commandColor} ${['Mid','High'].includes(co) ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'confidence', 'Mid', e)} />
+                                      <div className={`${styles.segment} ${styles.commandColor} ${co === 'High' ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'confidence', 'High', e)} />
                                     </div>
                                   </div>
                                 );
