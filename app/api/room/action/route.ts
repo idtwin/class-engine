@@ -102,11 +102,12 @@ export async function POST(req: Request) {
     // Chain Reaction state sync (projector → phones)
     if (action === "set_chain_state") {
       room.chainState = payload;
-      room.chainSubmit = null;
+      room.chainSubmit = null; // clear any pending phone submit when projector advances
     }
 
     // Phone submits a word guess
     if (action === "submit_chain_answer") {
+      // Only accept from the currently active team
       if (room.chainState?.currentTeamId === payload.teamId) {
         room.chainSubmit = { answer: payload.answer, teamId: payload.teamId, ts: Date.now() };
       }
@@ -156,7 +157,6 @@ export async function POST(req: Request) {
       room.revealImageAnswer = null;
       room.tilesRevealed = 0;
     }
-
     await redis.set(roomCode, room, { ex: 14400 });
 
     return NextResponse.json({ success: true, room });

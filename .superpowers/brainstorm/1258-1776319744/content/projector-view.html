@@ -1,0 +1,104 @@
+<h2>Odd One Out — Projector View (Option B style)</h2>
+<p class="subtitle">Full-screen game view as a teacher would see it on the projector. Two states below.</p>
+
+<!-- PRE-REVEAL STATE -->
+<div class="section">
+  <div class="label">State 1 — Waiting for teams to lock in</div>
+  <div style="background:#07090f; border-radius:12px; overflow:hidden; border:1px solid #1c2a40; margin-top:10px; font-family:'Nunito',sans-serif;">
+
+    <!-- Game header -->
+    <div style="background:#0e1420; border-bottom:1px solid #1c2a40; height:56px; display:flex; align-items:center; padding:0 32px; gap:16px;">
+      <div style="width:10px; height:10px; border-radius:50%; background:#b06eff; box-shadow:0 0 8px #b06eff; flex-shrink:0;"></div>
+      <span style="font-size:16px; font-weight:900; color:#b06eff; letter-spacing:0.06em; font-family:'Syne',sans-serif;">ODD ONE OUT</span>
+      <div style="width:1px; height:20px; background:#1c2a40;"></div>
+      <span style="font-size:13px; color:#4a637d; font-family:'JetBrains Mono',monospace;">Q 3 / 12</span>
+      <div style="margin-left:auto; display:flex; align-items:center; gap:12px;">
+        <span style="font-size:20px; font-weight:900; color:#ffc843; font-family:'JetBrains Mono',monospace;">0:38</span>
+      </div>
+    </div>
+    <!-- Timer bar -->
+    <div style="height:4px; background:#131b2b;"><div style="height:4px; width:70%; background:linear-gradient(90deg,#b06eff,#ffc843);"></div></div>
+
+    <!-- Game body -->
+    <div style="padding:32px 48px; display:flex; flex-direction:column; align-items:center; gap:24px;">
+
+      <!-- Prompt -->
+      <div style="font-size:15px; font-weight:700; color:#4a637d; letter-spacing:0.08em; text-transform:uppercase;">Which word doesn't belong?</div>
+
+      <!-- Word grid — 4 large tiles -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; width:100%; max-width:700px;">
+        <div style="background:rgba(176,110,255,0.07); border:2px solid rgba(176,110,255,0.2); border-radius:16px; padding:36px 16px; text-align:center; font-size:32px; font-weight:900; color:#dce8f5; letter-spacing:0.04em;">APPLE</div>
+        <div style="background:rgba(176,110,255,0.07); border:2px solid rgba(176,110,255,0.2); border-radius:16px; padding:36px 16px; text-align:center; font-size:32px; font-weight:900; color:#dce8f5; letter-spacing:0.04em;">MANGO</div>
+        <div style="background:rgba(176,110,255,0.07); border:2px solid rgba(176,110,255,0.2); border-radius:16px; padding:36px 16px; text-align:center; font-size:32px; font-weight:900; color:#dce8f5; letter-spacing:0.04em;">CARROT</div>
+        <div style="background:rgba(176,110,255,0.07); border:2px solid rgba(176,110,255,0.2); border-radius:16px; padding:36px 16px; text-align:center; font-size:32px; font-weight:900; color:#dce8f5; letter-spacing:0.04em;">BANANA</div>
+      </div>
+
+      <!-- Team lock-in status -->
+      <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+        <div style="background:rgba(0,232,122,0.1); border:2px solid #00e87a; border-radius:10px; padding:8px 20px; font-size:15px; font-weight:900; color:#00e87a;">✓ Alpha locked in</div>
+        <div style="background:rgba(0,200,240,0.1); border:2px solid #00c8f0; border-radius:10px; padding:8px 20px; font-size:15px; font-weight:900; color:#00c8f0;">✓ Beta locked in</div>
+        <div style="background:#131b2b; border:2px solid #243347; border-radius:10px; padding:8px 20px; font-size:15px; color:#4a637d;">· · · Gamma</div>
+        <div style="background:#131b2b; border:2px solid #243347; border-radius:10px; padding:8px 20px; font-size:15px; color:#4a637d;">· · · Delta</div>
+      </div>
+
+      <!-- Controls -->
+      <div style="display:flex; gap:12px; align-items:center; margin-top:4px;">
+        <button style="background:#b06eff; color:#000; border:none; border-radius:12px; padding:14px 40px; font-size:16px; font-weight:900; font-family:inherit; letter-spacing:0.04em; cursor:pointer;">Reveal Answer ✦</button>
+        <button style="background:transparent; border:2px solid rgba(176,110,255,0.25); color:#b06eff; border-radius:12px; padding:13px 20px; font-size:15px; font-family:inherit; cursor:pointer;">💡 Hint</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- POST-REVEAL STATE -->
+<div class="section" style="margin-top:28px;">
+  <div class="label">State 2 — After reveal (CARROT was the odd one out)</div>
+  <div style="background:#07090f; border-radius:12px; overflow:hidden; border:1px solid #1c2a40; margin-top:10px; font-family:'Nunito',sans-serif;">
+
+    <!-- Game header (same) -->
+    <div style="background:#0e1420; border-bottom:1px solid #1c2a40; height:56px; display:flex; align-items:center; padding:0 32px; gap:16px;">
+      <div style="width:10px; height:10px; border-radius:50%; background:#b06eff; box-shadow:0 0 8px #b06eff; flex-shrink:0;"></div>
+      <span style="font-size:16px; font-weight:900; color:#b06eff; letter-spacing:0.06em; font-family:'Syne',sans-serif;">ODD ONE OUT</span>
+      <div style="width:1px; height:20px; background:#1c2a40;"></div>
+      <span style="font-size:13px; color:#4a637d; font-family:'JetBrains Mono',monospace;">Q 3 / 12</span>
+    </div>
+    <div style="height:4px; background:#131b2b;"></div>
+
+    <!-- Game body -->
+    <div style="padding:32px 48px; display:flex; flex-direction:column; align-items:center; gap:24px;">
+
+      <!-- Prompt -->
+      <div style="font-size:15px; font-weight:700; color:#4a637d; letter-spacing:0.08em; text-transform:uppercase;">The odd one out was...</div>
+
+      <!-- Word grid — revealed state -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; width:100%; max-width:700px;">
+        <div style="background:rgba(176,110,255,0.04); border:2px solid #243347; border-radius:16px; padding:36px 16px; text-align:center; font-size:32px; font-weight:900; color:rgba(220,232,245,0.3); letter-spacing:0.04em;">APPLE</div>
+        <div style="background:rgba(176,110,255,0.04); border:2px solid #243347; border-radius:16px; padding:36px 16px; text-align:center; font-size:32px; font-weight:900; color:rgba(220,232,245,0.3); letter-spacing:0.04em;">MANGO</div>
+        <!-- Correct answer — highlighted -->
+        <div style="background:rgba(0,232,122,0.1); border:3px solid #00e87a; border-radius:16px; padding:36px 16px; text-align:center; font-size:32px; font-weight:900; color:#00e87a; letter-spacing:0.04em; box-shadow:0 0 24px rgba(0,232,122,0.15);">CARROT ✓</div>
+        <div style="background:rgba(176,110,255,0.04); border:2px solid #243347; border-radius:16px; padding:36px 16px; text-align:center; font-size:32px; font-weight:900; color:rgba(220,232,245,0.3); letter-spacing:0.04em;">BANANA</div>
+      </div>
+
+      <!-- AI explanation -->
+      <div style="background:#0e1420; border:1px solid #243347; border-radius:12px; padding:14px 24px; max-width:600px; text-align:center; font-size:15px; color:#8899aa; line-height:1.5;">
+        💡 <span style="color:#dce8f5;">CARROT</span> is a vegetable. Apple, Mango, and Banana are all fruits.
+      </div>
+
+      <!-- Team results -->
+      <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+        <div style="background:rgba(0,232,122,0.1); border:2px solid #00e87a; border-radius:10px; padding:8px 20px; font-size:15px; font-weight:900; color:#00e87a;">✓ Alpha +500</div>
+        <div style="background:rgba(255,68,68,0.1); border:2px solid #ff4444; border-radius:10px; padding:8px 20px; font-size:15px; font-weight:900; color:#ff4444;">✗ Beta</div>
+        <div style="background:rgba(255,68,68,0.1); border:2px solid #ff4444; border-radius:10px; padding:8px 20px; font-size:15px; font-weight:900; color:#ff4444;">✗ Gamma</div>
+        <div style="background:#131b2b; border:2px solid #243347; border-radius:10px; padding:8px 20px; font-size:15px; color:#4a637d;">— Delta (no answer)</div>
+      </div>
+
+      <!-- Next button -->
+      <div style="display:flex; gap:12px; margin-top:4px;">
+        <button style="background:transparent; border:2px solid rgba(176,110,255,0.3); color:#b06eff; border-radius:12px; padding:13px 32px; font-size:16px; font-weight:900; font-family:inherit;">Next Question →</button>
+        <button style="background:transparent; border:2px solid #243347; color:#4a637d; border-radius:12px; padding:13px 20px; font-size:14px; font-family:inherit;">← New Game</button>
+      </div>
+
+    </div>
+  </div>
+</div>

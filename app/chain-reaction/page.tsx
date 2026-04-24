@@ -57,6 +57,11 @@ export default function ChainReaction() {
   const [timeLeft, setTimeLeft]       = useState(0);
   const [timerActive, setTimerActive] = useState(false);
 
+  // Sync / Reliability
+  const [syncing, setSyncing]         = useState(false);
+  const [syncError, setSyncError]     = useState(false);
+  const syncRetryRef = useRef<NodeJS.Timeout | null>(null);
+
   // Refs to avoid stale closures in event listeners
   const wordsRef         = useRef<WordState[]>([]);
   const currentWordIdxRef = useRef(1);
@@ -90,26 +95,50 @@ export default function ChainReaction() {
 
   // ── Room sync helpers ─────────────────────────────────────────────────────────
 
-  const syncChainState = useCallback((
+  const syncChainState = useCallback(async (
     w: WordState[], wIdx: number, cIdx: number, totalC: number,
     complete: boolean, teamId: string | null,
     lastGuess?: { teamName: string; answer: string; correct: boolean } | null
   ) => {
-    if (!activeRoomCode) return;
-    fetch("/api/room/action", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        code: activeRoomCode,
-        action: "set_chain_state",
-        payload: {
-          words: w, currentWordIdx: wIdx, currentChainIdx: cIdx,
-          totalChains: totalC, chainComplete: complete, currentTeamId: teamId,
-          lastGuess: lastGuess ?? null,
-        },
-      }),
-    }).catch(() => {});
+    if (!activeRoomCode) return false;
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/room/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: activeRoomCode,
+          action: "set_chain_state",
+          payload: {
+            words: w, currentWordIdx: wIdx, currentChainIdx: cIdx,
+            totalChains: totalC, chainComplete: complete, currentTeamId: teamId,
+            lastGuess: lastGuess ?? null,
+          },
+        }),
+      });
+      if (res.ok) {
+        setSyncError(false);
+        setSyncing(false);
+        return true;
+      }
+      throw new Error("Sync failed");
+    } catch (err) {
+      console.error("Chain Reaction Sync Error:", err);
+      setSyncError(true);
+      setSyncing(false);
+      return false;
+    }
   }, [activeRoomCode]);
+
+  // Periodic heartbeat sync to force convergence
+  useEffect(() => {
+    if (phase !== "playing" || !activeRoomCode || chainComplete) return;
+    const interval = setInterval(() => {
+      const currentTeamId = currentTeams[currentTeamIdx]?.id ?? null;
+      syncChainState(words, currentWordIdx, currentChainIdx, chains.length, chainComplete, currentTeamId);
+    }, 6000); // Pulse every 6s
+    return () => clearInterval(interval);
+  }, [phase, activeRoomCode, chainComplete, words, currentWordIdx, currentChainIdx, chains.length, currentTeams, currentTeamIdx, syncChainState]);
 
   // Poll for phone submits while game is active
   useEffect(() => {
@@ -549,6 +578,21 @@ export default function ChainReaction() {
             <div className={styles.headerSpacer} />
             <MultiplayerHost gameMode="chainreaction" />
             <button className={styles.btnNewGame} onClick={reset}>← New Game</button>
+            
+            <div style={{ marginLeft: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ 
+                width: 8, height: 8, borderRadius: '50%', 
+                background: syncError ? '#ff4d8f' : syncing ? '#ffc843' : '#00e87a',
+                boxShadow: syncError ? '0 0 10px #ff4d8f' : 'none',
+                transition: 'all 0.3s'
+              }} />
+              <span style={{ 
+                fontSize: 10, color: syncError ? '#ff4d8f' : 'var(--muted)',
+                fontFamily: 'var(--font-mono)', fontWeight: 700
+              }}>
+                {syncError ? "SYNC ERROR" : syncing ? "SYNCING..." : "SYNCED"}
+              </span>
+            </div>
           </div>
 
           {/* Body */}

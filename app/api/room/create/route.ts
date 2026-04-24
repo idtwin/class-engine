@@ -1,5 +1,6 @@
 import { Redis } from "@upstash/redis";
 import { NextResponse } from "next/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 export async function POST(req: Request) {
   try {
@@ -30,9 +31,33 @@ export async function POST(req: Request) {
     // TTL 4 hours (14400 seconds)
     await redis.set(`room:${code}`, roomData, { ex: 14400 });
 
-    return NextResponse.json({ code });
+    // ── Sync the classroom roster to Supabase so students can find their name in the join dropdown ──
+    const studentsToSync = (activeRoster || [])
+      .filter((p: any) => p.type === "student" && p.id && p.name)
+      .map((p: any) => ({ id: p.id, name: p.name, class_name: p.class_name || "Class" }));
+
+    console.log(`[ROOM_CREATE] Room ${code} created. Syncing ${studentsToSync.length} students to Supabase.`);
+
+    let syncSuccess = false;
+    if (studentsToSync.length > 0) {
+      try {
+        const supabaseAdmin = createAdminClient();
+        const { data: upsertData, error: upsertError } = await supabaseAdmin.from("roster").upsert(studentsToSync, { onConflict: "id" }).select();
+        
+        if (upsertError) {
+          console.error("[ROOM_CREATE] Supabase upsert error:", upsertError);
+        } else {
+          console.log(`[ROOM_CREATE] Supabase roster sync successful. Entities: ${upsertData?.length || 0}`);
+          syncSuccess = true;
+        }
+      } catch (rosterErr) {
+        console.warn("[ROOM_CREATE] Exception during roster sync:", rosterErr);
+      }
+    }
+
+    return NextResponse.json({ code, sync: syncSuccess });
   } catch (error: any) {
-    console.error("Room Create Error:", error);
+    console.error("[ROOM_CREATE] Exception:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

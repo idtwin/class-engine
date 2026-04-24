@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapid Fire — Buzzer Flow</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #07090f; color: #dce8f5; font-family: 'JetBrains Mono', monospace; padding: 28px 24px; }
+  h1 { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: #ff4d8f; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .subtitle { font-size: 11px; color: #4a637d; margin-bottom: 28px; letter-spacing: 0.06em; }
+  .row { display: flex; gap: 20px; align-items: flex-start; margin-bottom: 12px; }
+  .label { font-size: 10px; color: #4a637d; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+  .arrow { font-size: 22px; color: #4a637d; align-self: center; flex-shrink: 0; padding-top: 20px; }
+
+  .gw { background: #07090f; border-radius: 10px; overflow: hidden; border: 1px solid #1c2a40; width: 260px; flex-shrink: 0; }
+  .hdr { height: 42px; background: #0a0d18; border-bottom: 1px solid #1c2a40; display: flex; align-items: center; padding: 0 16px; gap: 8px; }
+  .hdr-title { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 800; color: #ff4d8f; letter-spacing: 0.1em; }
+  .hdr-badge-rev { font-size: 9px; color: #00e87a; letter-spacing: 0.08em; margin-left: auto; }
+  .gbody { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .q-card { background: #0d1424; border: 1.5px solid rgba(255,77,143,0.2); border-radius: 8px; padding: 10px 14px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: #dce8f5; line-height: 1.4; }
+  .answer-card { background: #0d1424; border: 1.5px solid rgba(0,232,122,0.2); border-radius: 8px; padding: 8px 14px; text-align: center; }
+  .answer-lbl { font-size: 9px; color: #4a637d; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 3px; }
+  .answer-text { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: #00e87a; }
+
+  .buzz-list { display: flex; flex-direction: column; gap: 6px; }
+  .be { border-radius: 7px; padding: 8px 12px; display: flex; align-items: center; gap: 10px; }
+  .be.active { background: rgba(255,77,143,0.08); border: 1.5px solid #ff4d8f; }
+  .be.wrong-done { background: rgba(255,68,68,0.05); border: 1px solid rgba(255,68,68,0.2); opacity: 0.5; }
+  .be.correct-done { background: rgba(0,232,122,0.06); border: 1px solid rgba(0,232,122,0.3); }
+  .be.waiting { background: transparent; border: 1px solid #1c2a40; opacity: 0.4; }
+  .be-pos { font-size: 13px; flex-shrink: 0; width: 20px; text-align: center; }
+  .be-name { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 800; }
+  .be.active .be-name { color: #ff4d8f; }
+  .be.correct-done .be-name { color: #00e87a; }
+  .be.wrong-done .be-name { color: #ff4444; }
+  .be.waiting .be-name { color: #4a637d; }
+  .be-time { font-size: 9px; color: #4a637d; }
+
+  .btn-wrap { display: flex; gap: 6px; margin-left: auto; }
+  .btn-c { background: rgba(0,232,122,0.12); border: 1px solid rgba(0,232,122,0.4); color: #00e87a; border-radius: 4px; padding: 3px 8px; font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; cursor: pointer; }
+  .btn-w { background: rgba(255,68,68,0.08); border: 1px solid rgba(255,68,68,0.3); color: #ff4444; border-radius: 4px; padding: 3px 8px; font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; cursor: pointer; }
+  .result-badge { font-size: 9px; font-weight: 700; border-radius: 4px; padding: 2px 7px; margin-left: auto; }
+  .rb-correct { background: rgba(0,232,122,0.1); color: #00e87a; }
+  .rb-wrong { background: rgba(255,68,68,0.08); color: #ff4444; }
+
+  .btn-next { background: transparent; border: 1px solid rgba(255,77,143,0.3); color: #ff4d8f; border-radius: 6px; padding: 8px 18px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; cursor: pointer; align-self: center; }
+
+  .step-num { font-size: 9px; color: #ff4d8f; letter-spacing: 0.1em; background: rgba(255,77,143,0.1); border: 1px solid rgba(255,77,143,0.2); border-radius: 4px; padding: 2px 7px; margin-bottom: 6px; display: inline-block; }
+</style>
+</head>
+<body>
+
+<h1>BUZZER MODE — Sequential Unlock Flow</h1>
+<p class="subtitle">Teacher calls on 1st buzz · ✓ / ✗ buttons · wrong = next team unlocks</p>
+
+<div class="row">
+
+  <!-- Step 1: BETA active -->
+  <div>
+    <div class="step-num">STEP 1</div>
+    <div class="label">Reveal — BETA is called</div>
+    <div class="gw">
+      <div class="hdr">
+        <span class="hdr-title">RAPID FIRE</span>
+        <span class="hdr-badge-rev">REVEALED</span>
+      </div>
+      <div class="gbody">
+        <div class="q-card">She _____ to school every day.</div>
+        <div class="answer-card">
+          <div class="answer-lbl">Correct Answer</div>
+          <div class="answer-text">walks</div>
+        </div>
+        <div class="buzz-list">
+          <div class="be active">
+            <span class="be-pos">⚡</span>
+            <div><div class="be-name">BETA</div><div class="be-time">2.3s</div></div>
+            <div class="btn-wrap">
+              <button class="btn-c">✓</button>
+              <button class="btn-w">✗</button>
+            </div>
+          </div>
+          <div class="be waiting">
+            <span class="be-pos">2</span>
+            <div class="be-name">ALPHA</div>
+          </div>
+          <div class="be waiting">
+            <span class="be-pos">3</span>
+            <div class="be-name">DELTA</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">→</div>
+
+  <!-- Step 2: BETA wrong, ALPHA unlocked -->
+  <div>
+    <div class="step-num">STEP 2 — if BETA wrong</div>
+    <div class="label">ALPHA now active</div>
+    <div class="gw">
+      <div class="hdr">
+        <span class="hdr-title">RAPID FIRE</span>
+        <span class="hdr-badge-rev">REVEALED</span>
+      </div>
+      <div class="gbody">
+        <div class="q-card">She _____ to school every day.</div>
+        <div class="answer-card">
+          <div class="answer-lbl">Correct Answer</div>
+          <div class="answer-text">walks</div>
+        </div>
+        <div class="buzz-list">
+          <div class="be wrong-done">
+            <span class="be-pos">⚡</span>
+            <div><div class="be-name">BETA</div><div class="be-time">2.3s</div></div>
+            <span class="result-badge rb-wrong">✗ wrong</span>
+          </div>
+          <div class="be active">
+            <span class="be-pos">2</span>
+            <div><div class="be-name">ALPHA</div><div class="be-time">3.1s</div></div>
+            <div class="btn-wrap">
+              <button class="btn-c">✓</button>
+              <button class="btn-w">✗</button>
+            </div>
+          </div>
+          <div class="be waiting">
+            <span class="be-pos">3</span>
+            <div class="be-name">DELTA</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">→</div>
+
+  <!-- Step 3: ALPHA correct -->
+  <div>
+    <div class="step-num">STEP 3 — if ALPHA correct</div>
+    <div class="label">Points awarded, done</div>
+    <div class="gw">
+      <div class="hdr">
+        <span class="hdr-title">RAPID FIRE</span>
+        <span class="hdr-badge-rev">REVEALED</span>
+      </div>
+      <div class="gbody">
+        <div class="q-card">She _____ to school every day.</div>
+        <div class="answer-card">
+          <div class="answer-lbl">Correct Answer</div>
+          <div class="answer-text">walks</div>
+        </div>
+        <div class="buzz-list">
+          <div class="be wrong-done">
+            <span class="be-pos">⚡</span>
+            <div><div class="be-name">BETA</div><div class="be-time">2.3s</div></div>
+            <span class="result-badge rb-wrong">✗ wrong</span>
+          </div>
+          <div class="be correct-done">
+            <span class="be-pos">2</span>
+            <div><div class="be-name">ALPHA</div><div class="be-time">3.1s</div></div>
+            <span class="result-badge rb-correct">✓ +300</span>
+          </div>
+          <div class="be waiting">
+            <span class="be-pos">3</span>
+            <div class="be-name">DELTA</div>
+          </div>
+        </div>
+        <button class="btn-next">→ NEXT QUESTION</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p style="font-size:10px;color:#4a637d;margin-top:8px;">
+  · If all teams wrong → NEXT QUESTION appears with no points awarded<br>
+  · Points are flat (e.g. 300pts fixed) regardless of buzz position<br>
+  · NEXT QUESTION only appears after ✓ or all teams exhausted
+</p>
+
+</body>
+</html>

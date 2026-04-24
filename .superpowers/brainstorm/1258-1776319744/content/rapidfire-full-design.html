@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapid Fire — Full Design</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #07090f; color: #dce8f5; font-family: 'JetBrains Mono', monospace; padding: 28px 24px; }
+
+  h1 { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: #ff4d8f; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .subtitle { font-size: 11px; color: #4a637d; margin-bottom: 28px; letter-spacing: 0.06em; }
+  .section { margin-bottom: 28px; }
+  .label { font-size: 10px; color: #4a637d; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+
+  /* ── Game window ── */
+  .gw { background: #07090f; border-radius: 12px; overflow: hidden; border: 1px solid #1c2a40; max-width: 680px; }
+
+  /* header */
+  .hdr { height: 54px; background: #0a0d18; border-bottom: 1px solid #1c2a40; display: flex; align-items: center; padding: 0 28px; gap: 14px; }
+  .hdr-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 800; color: #ff4d8f; letter-spacing: 0.1em; }
+  .hdr-div { width: 1px; height: 20px; background: #1c2a40; }
+  .hdr-seq { font-size: 11px; color: #4a637d; letter-spacing: 0.06em; }
+  .hdr-badge { font-size: 10px; background: rgba(255,77,143,0.1); color: #ff4d8f; border: 1px solid rgba(255,77,143,0.2); border-radius: 20px; padding: 2px 9px; letter-spacing: 0.06em; }
+  .hdr-badge-rev { font-size: 10px; color: #00e87a; letter-spacing: 0.08em; }
+
+  /* circular timer */
+  .tc { position: relative; width: 44px; height: 44px; flex-shrink: 0; margin-left: auto; }
+  .tc svg { width: 44px; height: 44px; transform: rotate(-90deg); }
+  .tc-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #ff4d8f; }
+  .tc-num.urgent { color: #ff4444; animation: urgP 0.6s ease-in-out infinite alternate; }
+  @keyframes urgP { from{opacity:1} to{opacity:0.4} }
+
+  /* progress bar */
+  .pbar { height: 3px; background: #131b2b; }
+  .pfill { height: 3px; background: linear-gradient(90deg,#ff4d8f,rgba(255,77,143,0.2)); border-radius: 0 2px 2px 0; }
+  .pfill.urgent { background: linear-gradient(90deg,#ff4444,rgba(255,68,68,0.2)); }
+
+  /* body */
+  .gbody { padding: 22px 40px 26px; display: flex; flex-direction: column; align-items: center; gap: 16px; background: radial-gradient(ellipse at 50% 0%, rgba(255,77,143,0.04) 0%, transparent 60%); }
+
+  .prompt-lbl { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; color: #dce8f5; text-transform: uppercase; opacity: 0.55; }
+  .prompt-rev { color: #00e87a; opacity: 1; }
+
+  /* question card */
+  .q-card { background: #0d1424; border: 1.5px solid rgba(255,77,143,0.2); border-radius: 10px; padding: 18px 24px; max-width: 580px; width: 100%; text-align: center; position: relative; }
+  .q-card::before,.q-card::after { content:''; position:absolute; width:7px; height:7px; border-color:rgba(255,77,143,0.3); border-style:solid; }
+  .q-card::before { top:7px; left:7px; border-width:1.5px 0 0 1.5px; }
+  .q-card::after  { bottom:7px; right:7px; border-width:0 1.5px 1.5px 0; }
+  .q-text { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; color: #dce8f5; line-height: 1.5; }
+
+  /* MC tiles */
+  .mc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 580px; }
+  .mc-tile { height: 62px; border-radius: 8px; display: flex; align-items: center; gap: 12px; padding: 0 18px; background: #0d1424; border: 1.5px solid rgba(255,77,143,0.2); position: relative; overflow: hidden; }
+  .mc-tile::before,.mc-tile::after { content:''; position:absolute; width:5px; height:5px; border-color:rgba(255,77,143,0.25); border-style:solid; }
+  .mc-tile::before { top:5px; left:5px; border-width:1px 0 0 1px; }
+  .mc-tile::after  { bottom:5px; right:5px; border-width:0 1px 1px 0; }
+  .mc-tile.correct { background:#061610; border-color:#00e87a; }
+  .mc-tile.dim { opacity: 0.18; border-color: #1c2a40; }
+  .mc-ltr { font-size: 11px; font-weight: 700; color: #ff4d8f; background: rgba(255,77,143,0.1); border: 1px solid rgba(255,77,143,0.25); border-radius: 3px; padding: 2px 7px; flex-shrink: 0; letter-spacing: 0.06em; }
+  .mc-tile.correct .mc-ltr { color:#00e87a; background:rgba(0,232,122,0.1); border-color:rgba(0,232,122,0.3); }
+  .mc-word { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 800; color: #dce8f5; }
+  .mc-tile.correct .mc-word { color:#00e87a; }
+  .mc-tile.dim .mc-ltr,.mc-tile.dim .mc-word { color:#4a637d; }
+
+  /* team chips */
+  .chips-row { display: flex; gap: 7px; flex-wrap: wrap; justify-content: center; }
+  .chip { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; border-radius: 5px; padding: 5px 12px; border: 1px solid #243347; color: #4a637d; }
+  .chip.locked { border-color: rgba(255,77,143,0.4); color: #ff4d8f; background: rgba(255,77,143,0.08); }
+  .chip.correct { border-color: rgba(0,232,122,0.4); color: #00e87a; background: rgba(0,232,122,0.08); }
+  .chip.wrong { border-color: rgba(255,68,68,0.3); color: #ff4444; background: rgba(255,68,68,0.06); }
+
+  /* speed ranking */
+  .rank-block { border-top: 1px solid #1c2a40; padding-top: 12px; width: 100%; max-width: 580px; }
+  .rank-title { font-size: 10px; letter-spacing: 0.12em; color: #4a637d; text-transform: uppercase; margin-bottom: 8px; text-align: center; }
+  .rank-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .rank-chip { border-radius: 6px; padding: 5px 13px; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .r1 { background:rgba(255,200,67,0.12); border:1px solid rgba(255,200,67,0.4); color:#ffc843; }
+  .r2 { background:rgba(220,232,245,0.06); border:1px solid rgba(220,232,245,0.2); color:#dce8f5; }
+  .r3 { background:rgba(255,125,59,0.1); border:1px solid rgba(255,125,59,0.3); color:#ff7d3b; }
+  .r-wait { border:1px solid #1c2a40; color:#4a637d; }
+
+  /* buzz queue */
+  .buzz-list { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 580px; }
+  .buzz-entry { border-radius: 8px; padding: 10px 16px; display: flex; align-items: center; gap: 12px; }
+  .buzz-entry.first { background: rgba(255,77,143,0.08); border: 1.5px solid #ff4d8f; }
+  .buzz-entry.second { background: rgba(255,77,143,0.04); border: 1px solid rgba(255,77,143,0.3); }
+  .buzz-entry.queued { background: transparent; border: 1px solid #1c2a40; opacity: 0.6; }
+  .buzz-pos { font-size: 16px; flex-shrink: 0; }
+  .buzz-name { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 800; }
+  .buzz-entry.first .buzz-name { color: #ff4d8f; }
+  .buzz-entry.second .buzz-name { color: #dce8f5; }
+  .buzz-entry.queued .buzz-name { color: #4a637d; }
+  .buzz-time { font-size: 10px; color: #4a637d; margin-left: auto; }
+  .buzz-award { background: rgba(0,232,122,0.12); border: 1px solid rgba(0,232,122,0.35); color: #00e87a; border-radius: 5px; padding: 4px 10px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; cursor: pointer; margin-left: auto; }
+  .buzz-awarded { background: rgba(0,232,122,0.08); border: 1px solid rgba(0,232,122,0.3); color: #00e87a; border-radius: 5px; padding: 4px 10px; font-size: 10px; letter-spacing: 0.06em; margin-left: auto; }
+
+  /* answer reveal card */
+  .answer-card { background: #0d1424; border: 1.5px solid rgba(0,232,122,0.2); border-radius: 10px; padding: 14px 24px; width: 100%; max-width: 580px; text-align: center; }
+  .answer-label { font-size: 10px; letter-spacing: 0.12em; color: #4a637d; text-transform: uppercase; margin-bottom: 6px; }
+  .answer-text { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: #00e87a; }
+
+  /* buttons */
+  .btn-reveal { background: #ff4d8f; color: #000; border: none; border-radius: 7px; padding: 11px 36px; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; letter-spacing: 0.1em; cursor: pointer; box-shadow: 0 4px 20px rgba(255,77,143,0.25); }
+  .btn-next { background: transparent; border: 1px solid rgba(255,77,143,0.3); color: #ff4d8f; border-radius: 7px; padding: 11px 32px; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; letter-spacing: 0.1em; cursor: pointer; }
+  .btns-row { display: flex; gap: 10px; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<h1>RAPID FIRE — Full Design</h1>
+<p class="subtitle">Pink identity · 4 states · Approx projector scale</p>
+
+<!-- ═══ STATE 1: MC PLAYING ═══ -->
+<div class="section">
+  <div class="label">MC Mode — Playing (teams locking in)</div>
+  <div class="gw">
+    <div class="hdr">
+      <span class="hdr-title">RAPID FIRE</span>
+      <div class="hdr-div"></div>
+      <span class="hdr-seq">QUESTION_04</span>
+      <span class="hdr-badge">MULTIPLE CHOICE</span>
+      <div class="tc">
+        <svg viewBox="0 0 44 44">
+          <defs><linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ff4d8f"/><stop offset="100%" stop-color="rgba(255,77,143,0.3)"/></linearGradient></defs>
+          <circle fill="none" stroke="#1c2a40" stroke-width="3.5" cx="22" cy="22" r="18"/>
+          <circle fill="none" stroke="url(#pg)" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="113.1" stroke-dashoffset="45" cx="22" cy="22" r="18"/>
+        </svg>
+        <div class="tc-num">11</div>
+      </div>
+    </div>
+    <div class="pbar"><div class="pfill" style="width:73%"></div></div>
+    <div class="gbody">
+      <div class="prompt-lbl">Choose the correct answer</div>
+      <div class="q-card">
+        <div class="q-text">Which word best completes: "She _____ to school every day."</div>
+      </div>
+      <div class="mc-grid">
+        <div class="mc-tile"><span class="mc-ltr">A</span><span class="mc-word">walk</span></div>
+        <div class="mc-tile"><span class="mc-ltr">B</span><span class="mc-word">walks</span></div>
+        <div class="mc-tile"><span class="mc-ltr">C</span><span class="mc-word">walked</span></div>
+        <div class="mc-tile"><span class="mc-ltr">D</span><span class="mc-word">walking</span></div>
+      </div>
+      <div class="chips-row">
+        <div class="chip locked">🔒 ALPHA</div>
+        <div class="chip locked" style="border-color:rgba(0,200,240,0.4);color:#00c8f0;background:rgba(0,200,240,0.07);">🔒 BETA</div>
+        <div class="chip">· GAMMA</div>
+        <div class="chip">· DELTA</div>
+      </div>
+      <div class="btns-row">
+        <button class="btn-reveal">✦ REVEAL ANSWER</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ STATE 2: MC REVEALED ═══ -->
+<div class="section">
+  <div class="label">MC Mode — Revealed (speed ranking)</div>
+  <div class="gw">
+    <div class="hdr">
+      <span class="hdr-title">RAPID FIRE</span>
+      <div class="hdr-div"></div>
+      <span class="hdr-seq">QUESTION_04</span>
+      <span class="hdr-badge-rev">ANSWER REVEALED</span>
+    </div>
+    <div class="pbar"><div class="pfill" style="width:0%"></div></div>
+    <div class="gbody">
+      <div class="prompt-lbl prompt-rev">Answer Revealed</div>
+      <div class="q-card">
+        <div class="q-text">Which word best completes: "She _____ to school every day."</div>
+      </div>
+      <div class="mc-grid">
+        <div class="mc-tile dim"><span class="mc-ltr">A</span><span class="mc-word">walk</span></div>
+        <div class="mc-tile correct"><span class="mc-ltr">B</span><span class="mc-word">walks</span></div>
+        <div class="mc-tile dim"><span class="mc-ltr">C</span><span class="mc-word">walked</span></div>
+        <div class="mc-tile dim"><span class="mc-ltr">D</span><span class="mc-word">walking</span></div>
+      </div>
+      <div class="rank-block">
+        <div class="rank-title">⚡ Speed Ranking</div>
+        <div class="rank-row">
+          <div class="rank-chip r1">🥇 BETA +500</div>
+          <div class="rank-chip r2">🥈 ALPHA +400</div>
+          <div class="rank-chip r3">🥉 DELTA +300</div>
+          <div class="rank-chip r-wait">GAMMA —</div>
+        </div>
+      </div>
+      <div class="btns-row">
+        <button class="btn-next">→ NEXT QUESTION</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ STATE 3: BUZZER PLAYING ═══ -->
+<div class="section">
+  <div class="label">Buzzer Mode — Playing (3 buzzes in, queue shown)</div>
+  <div class="gw">
+    <div class="hdr">
+      <span class="hdr-title">RAPID FIRE</span>
+      <div class="hdr-div"></div>
+      <span class="hdr-seq">QUESTION_04</span>
+      <span class="hdr-badge">BUZZER</span>
+      <div class="tc">
+        <svg viewBox="0 0 44 44">
+          <circle fill="none" stroke="#1c2a40" stroke-width="3.5" cx="22" cy="22" r="18"/>
+          <circle fill="none" stroke="url(#pg)" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="113.1" stroke-dashoffset="45" cx="22" cy="22" r="18"/>
+        </svg>
+        <div class="tc-num">11</div>
+      </div>
+    </div>
+    <div class="pbar"><div class="pfill" style="width:73%"></div></div>
+    <div class="gbody">
+      <div class="prompt-lbl">Buzz in to answer</div>
+      <div class="q-card">
+        <div class="q-text">Which word best completes: "She _____ to school every day."</div>
+      </div>
+      <div class="buzz-list">
+        <div class="buzz-entry first">
+          <span class="buzz-pos">⚡</span>
+          <div><div class="buzz-name">BETA</div><div style="font-size:9px;color:#4a637d;margin-top:1px;">First to buzz</div></div>
+          <div class="buzz-time">2.3s</div>
+        </div>
+        <div class="buzz-entry second">
+          <span class="buzz-pos">2nd</span>
+          <div class="buzz-name">ALPHA</div>
+          <div class="buzz-time">3.1s</div>
+        </div>
+        <div class="buzz-entry queued">
+          <span class="buzz-pos">3rd</span>
+          <div class="buzz-name">DELTA</div>
+          <div class="buzz-time">4.7s</div>
+        </div>
+      </div>
+      <div class="chips-row">
+        <div class="chip">· GAMMA</div>
+      </div>
+      <div class="btns-row">
+        <button class="btn-reveal">✦ REVEAL ANSWER</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ STATE 4: BUZZER REVEALED ═══ -->
+<div class="section">
+  <div class="label">Buzzer Mode — Revealed (answer visible, teacher awards points)</div>
+  <div class="gw">
+    <div class="hdr">
+      <span class="hdr-title">RAPID FIRE</span>
+      <div class="hdr-div"></div>
+      <span class="hdr-seq">QUESTION_04</span>
+      <span class="hdr-badge-rev">ANSWER REVEALED</span>
+    </div>
+    <div class="pbar"><div class="pfill" style="width:0%"></div></div>
+    <div class="gbody">
+      <div class="prompt-lbl prompt-rev">Answer Revealed</div>
+      <div class="q-card">
+        <div class="q-text">Which word best completes: "She _____ to school every day."</div>
+      </div>
+      <!-- Answer visible on projector -->
+      <div class="answer-card">
+        <div class="answer-label">Correct Answer</div>
+        <div class="answer-text">walks</div>
+      </div>
+      <!-- Buzz queue with award buttons -->
+      <div class="buzz-list">
+        <div class="buzz-entry first">
+          <span class="buzz-pos">⚡</span>
+          <div><div class="buzz-name">BETA</div><div style="font-size:9px;color:#4a637d;margin-top:1px;">2.3s</div></div>
+          <div class="buzz-awarded">✓ +300 pts</div>
+        </div>
+        <div class="buzz-entry second">
+          <span class="buzz-pos">2nd</span>
+          <div class="buzz-name">ALPHA</div>
+          <button class="buzz-award">✓ CORRECT</button>
+        </div>
+        <div class="buzz-entry queued">
+          <span class="buzz-pos">3rd</span>
+          <div class="buzz-name">DELTA</div>
+          <button class="buzz-award">✓ CORRECT</button>
+        </div>
+      </div>
+      <div class="btns-row">
+        <button class="btn-next">→ NEXT QUESTION</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

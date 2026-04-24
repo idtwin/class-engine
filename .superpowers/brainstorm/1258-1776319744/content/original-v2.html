@@ -1,0 +1,256 @@
+<h2>OOO Projector — Refined</h2>
+<p class="subtitle">Clean identity, clear prompt, compact circular timer with drama.</p>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+
+  .gw { font-family:'JetBrains Mono','Syne',monospace; background:#07090f; border-radius:14px; overflow:hidden; border:1px solid #1c2a40; margin-top:10px; }
+
+  /* ── HEADER ── */
+  .game-hdr {
+    background:#0a0d18; border-bottom:1px solid #1c2a40;
+    height:62px; display:flex; align-items:center; padding:0 36px; gap:16px;
+  }
+  .gh-title { font-size:17px; font-weight:800; color:#b06eff; letter-spacing:0.1em; font-family:'Syne',sans-serif; }
+  .gh-div { width:1px; height:22px; background:#1c2a40; }
+  .gh-seq { font-size:12px; color:#4a637d; letter-spacing:0.06em; }
+  .gh-level { font-size:11px; background:rgba(176,110,255,0.1); color:#b06eff; border:1px solid rgba(176,110,255,0.2); border-radius:20px; padding:2px 10px; letter-spacing:0.06em; }
+
+  /* ── CIRCULAR TIMER ── */
+  .timer-wrap { margin-left:auto; position:relative; width:48px; height:48px; flex-shrink:0; }
+  .timer-svg { width:48px; height:48px; transform:rotate(-90deg); }
+  .timer-track { fill:none; stroke:#1c2a40; stroke-width:3.5; }
+  .timer-ring  { fill:none; stroke-width:3.5; stroke-linecap:round;
+    stroke-dasharray:125.6; stroke-dashoffset:32; /* ~65% remaining */
+    stroke:url(#timerGrad);
+    transition: stroke-dashoffset 1s linear;
+  }
+  .timer-ring.urgent { stroke:#ff4444; animation: urgentPulse 0.6s ease-in-out infinite alternate; }
+  @keyframes urgentPulse { from { opacity:1 } to { opacity:0.55 } }
+  .timer-num {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:15px; font-weight:700; color:#b06eff; letter-spacing:0;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .timer-num.mid { color:#ffc843; }
+  .timer-num.urgent { color:#ff4444; }
+
+  /* ── TIMER BAR ── */
+  .tbar  { height:3px; background:#131b2b; }
+  .tfill { height:3px; width:65%; background:linear-gradient(90deg,#b06eff,rgba(176,110,255,0.25)); border-radius:0 2px 2px 0; }
+
+  /* ── BODY ── */
+  .gbody {
+    padding:28px 56px 32px;
+    display:flex; flex-direction:column; align-items:center; gap:20px;
+    background:radial-gradient(ellipse at 50% 0%, rgba(176,110,255,0.05) 0%, transparent 60%);
+  }
+
+  .prompt-label {
+    font-size:13px; font-weight:700; letter-spacing:0.14em;
+    color:#dce8f5; text-transform:uppercase; opacity:0.6;
+  }
+
+  /* ── WORD TILES ── */
+  .wgrid { display:grid; grid-template-columns:1fr 1fr; gap:16px; width:100%; max-width:760px; }
+  .wtile {
+    height:120px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:36px; font-weight:800; color:#dce8f5; letter-spacing:0.06em;
+    font-family:'Syne',sans-serif;
+    background:#0d1424;
+    border:1.5px solid rgba(176,110,255,0.3);
+    box-shadow:0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(176,110,255,0.08);
+    position:relative; overflow:hidden; cursor:pointer;
+    transition:border-color 0.2s, box-shadow 0.2s;
+  }
+  .wtile::before, .wtile::after {
+    content:''; position:absolute; width:8px; height:8px;
+    border-color:rgba(176,110,255,0.3); border-style:solid;
+  }
+  .wtile::before { top:8px; left:8px; border-width:1.5px 0 0 1.5px; }
+  .wtile::after  { bottom:8px; right:8px; border-width:0 1.5px 1.5px 0; }
+
+  .wtile.correct {
+    background:#061610; border-color:#00e87a; color:#00e87a;
+    box-shadow:0 4px 20px rgba(0,0,0,0.5), 0 0 40px rgba(0,232,122,0.15), inset 0 1px 0 rgba(0,232,122,0.1);
+  }
+  .wtile.correct::before, .wtile.correct::after { border-color:rgba(0,232,122,0.4); }
+  .wtile.dimmed  { opacity:0.18; box-shadow:none; border-color:#1c2a40; }
+
+  /* ── TEAM CHIPS ── */
+  .srow { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+  .schip {
+    font-size:12px; font-weight:700; letter-spacing:0.06em;
+    border-radius:6px; padding:6px 14px; border:1px solid;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .s-locked  { background:rgba(0,232,122,0.08);  border-color:rgba(0,232,122,0.4);  color:#00e87a; }
+  .s-locked2 { background:rgba(0,200,240,0.08);  border-color:rgba(0,200,240,0.4);  color:#00c8f0; }
+  .s-wait    { background:transparent; border-color:#243347; color:#4a637d; }
+  .s-correct { background:rgba(0,232,122,0.08);  border-color:rgba(0,232,122,0.4);  color:#00e87a; }
+  .s-wrong   { background:rgba(255,68,68,0.06);  border-color:rgba(255,68,68,0.3);  color:#ff4444; }
+
+  /* ── EXPLAIN ── */
+  .explain {
+    background:#0e1420; border:1px solid rgba(176,110,255,0.15); border-radius:10px;
+    padding:14px 28px; max-width:640px; text-align:center;
+    font-size:14px; color:#4a637d; line-height:1.6;
+    letter-spacing:0.02em;
+  }
+  .explain strong { color:#b06eff; }
+  .score-pop { color:#00e87a; font-weight:700; }
+
+  /* ── BUTTONS ── */
+  .brow { display:flex; gap:12px; margin-top:4px; }
+  .btn-reveal {
+    background:#b06eff; color:#000; border:none; border-radius:8px;
+    padding:13px 40px; font-size:14px; font-weight:700; font-family:'JetBrains Mono',monospace;
+    letter-spacing:0.1em; cursor:pointer; box-shadow:0 4px 24px rgba(176,110,255,0.3);
+  }
+  .btn-hint {
+    background:transparent; border:1px dashed rgba(176,110,255,0.35); color:#b06eff;
+    border-radius:8px; padding:12px 20px; font-size:13px; font-family:'JetBrains Mono',monospace;
+    letter-spacing:0.06em; cursor:pointer;
+  }
+  .btn-next {
+    background:transparent; border:1px solid rgba(176,110,255,0.3); color:#b06eff;
+    border-radius:8px; padding:13px 36px; font-size:14px; font-weight:700;
+    font-family:'JetBrains Mono',monospace; letter-spacing:0.1em; cursor:pointer;
+  }
+  .btn-new {
+    background:transparent; border:1px solid #1c2a40; color:#4a637d;
+    border-radius:8px; padding:12px 18px; font-size:12px;
+    font-family:'JetBrains Mono',monospace; cursor:pointer;
+  }
+</style>
+
+<!-- ══ STATE 1: PRE-REVEAL ══ -->
+<div class="section">
+  <div class="label">Before reveal — 2 teams locked in</div>
+  <div class="gw">
+    <div class="game-hdr">
+      <span class="gh-title">ODD ONE OUT</span>
+      <div class="gh-div"></div>
+      <span class="gh-seq">SEQUENCE_03</span>
+      <span class="gh-level">INTERMEDIATE</span>
+
+      <!-- Compact circular timer -->
+      <div class="timer-wrap">
+        <svg class="timer-svg" viewBox="0 0 48 48">
+          <defs>
+            <linearGradient id="timerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#b06eff"/>
+              <stop offset="100%" stop-color="#ffc843"/>
+            </linearGradient>
+          </defs>
+          <circle class="timer-track" cx="24" cy="24" r="20"/>
+          <circle class="timer-ring"  cx="24" cy="24" r="20"/>
+        </svg>
+        <div class="timer-num">38</div>
+      </div>
+    </div>
+    <div class="tbar"><div class="tfill"></div></div>
+
+    <div class="gbody">
+      <div class="prompt-label">Pick the word that doesn't belong</div>
+      <div class="wgrid">
+        <div class="wtile">APPLE</div>
+        <div class="wtile">MANGO</div>
+        <div class="wtile">CARROT</div>
+        <div class="wtile">BANANA</div>
+      </div>
+      <div class="srow">
+        <div class="schip s-locked">🔒 ALPHA</div>
+        <div class="schip s-locked2">🔒 BETA</div>
+        <div class="schip s-wait">· GAMMA</div>
+        <div class="schip s-wait">· DELTA</div>
+      </div>
+      <div class="brow">
+        <button class="btn-reveal">✦ INITIATE REVEAL</button>
+        <button class="btn-hint">💡 DEPLOY HINT</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STATE 2: TIMER URGENT (example) ══ -->
+<div class="section" style="margin-top:32px;">
+  <div class="label">Timer low — ring turns red, number pulses</div>
+  <div class="gw">
+    <div class="game-hdr">
+      <span class="gh-title">ODD ONE OUT</span>
+      <div class="gh-div"></div>
+      <span class="gh-seq">SEQUENCE_03</span>
+      <span class="gh-level">INTERMEDIATE</span>
+
+      <div class="timer-wrap">
+        <svg class="timer-svg" viewBox="0 0 48 48">
+          <circle class="timer-track" cx="24" cy="24" r="20"/>
+          <!-- nearly empty ring in red -->
+          <circle class="timer-ring urgent" cx="24" cy="24" r="20"
+            style="stroke:#ff4444; stroke-dashoffset:112;"/>
+        </svg>
+        <div class="timer-num urgent" style="animation:urgentPulse 0.6s ease-in-out infinite alternate;">7</div>
+      </div>
+    </div>
+    <div class="tbar" style="background:#131b2b;"><div style="height:3px;width:15%;background:linear-gradient(90deg,#ff4444,rgba(255,68,68,0.3));border-radius:0 2px 2px 0;"></div></div>
+
+    <div class="gbody">
+      <div class="prompt-label">Pick the word that doesn't belong</div>
+      <div class="wgrid">
+        <div class="wtile">APPLE</div>
+        <div class="wtile">MANGO</div>
+        <div class="wtile">CARROT</div>
+        <div class="wtile">BANANA</div>
+      </div>
+      <div class="srow">
+        <div class="schip s-locked">🔒 ALPHA</div>
+        <div class="schip s-wait">· BETA</div>
+        <div class="schip s-wait">· GAMMA</div>
+        <div class="schip s-wait">· DELTA</div>
+      </div>
+      <div class="brow">
+        <button class="btn-reveal">✦ INITIATE REVEAL</button>
+        <button class="btn-hint">💡 DEPLOY HINT</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STATE 3: POST-REVEAL ══ -->
+<div class="section" style="margin-top:32px;">
+  <div class="label">After reveal — CARROT was the anomaly</div>
+  <div class="gw">
+    <div class="game-hdr">
+      <span class="gh-title">ODD ONE OUT</span>
+      <div class="gh-div"></div>
+      <span class="gh-seq">SEQUENCE_03</span>
+      <span class="gh-level">INTERMEDIATE</span>
+    </div>
+    <div class="tbar"></div>
+
+    <div class="gbody">
+      <div class="prompt-label" style="color:#00e87a; opacity:1; letter-spacing:0.12em;">Answer Revealed</div>
+      <div class="wgrid">
+        <div class="wtile dimmed">APPLE</div>
+        <div class="wtile dimmed">MANGO</div>
+        <div class="wtile correct">CARROT ◆</div>
+        <div class="wtile dimmed">BANANA</div>
+      </div>
+      <div class="explain">
+        <strong>CARROT</strong> is a vegetable — Apple, Mango, and Banana are all fruits.
+      </div>
+      <div class="srow">
+        <div class="schip s-correct">✓ ALPHA <span class="score-pop">+500</span></div>
+        <div class="schip s-wrong">✗ BETA</div>
+        <div class="schip s-wrong">✗ GAMMA</div>
+        <div class="schip s-wait">— DELTA</div>
+      </div>
+      <div class="brow">
+        <button class="btn-next">NEXT SEQUENCE →</button>
+        <button class="btn-new">← NEW GAME</button>
+      </div>
+    </div>
+  </div>
+</div>

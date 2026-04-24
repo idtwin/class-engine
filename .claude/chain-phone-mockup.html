@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chain Reaction — Phone Mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #07090f;
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 24px;
+    gap: 48px;
+  }
+
+  h1 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    color: #4a637d;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  .row {
+    display: flex;
+    gap: 64px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .mockup-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .mockup-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: #4a637d;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  .mockup-sublabel {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: #2a3d50;
+    text-transform: uppercase;
+    text-align: center;
+    margin-top: -10px;
+  }
+
+  /* Phone shell */
+  .phone {
+    width: 360px;
+    height: 740px;
+    background: #07090f;
+    border-radius: 36px;
+    border: 2px solid #1c2a40;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  }
+
+  /* ── Status bar ── */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px 8px;
+    background: #07090f;
+    flex-shrink: 0;
+  }
+  .status-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: #dce8f5;
+  }
+  .status-icons {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .status-icons span {
+    font-size: 11px;
+    color: #dce8f5;
+  }
+
+  /* ── Game header ── */
+  .game-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 20px 10px;
+    background: #0e1420;
+    border-bottom: 1px solid #1c2a40;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .game-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: #00c8f0;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .hd-dot { width:1px; height:14px; background:#1c2a40; }
+  .hd-chain {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #4a637d;
+    letter-spacing: 0.08em;
+  }
+  .hd-chain b { color: #dce8f5; }
+  .hd-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: #00c8f0;
+    background: rgba(0,200,240,0.1);
+    border: 1px solid rgba(0,200,240,0.25);
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+  .hd-spacer { flex: 1; }
+
+  /* ── Turn banner ── */
+  .turn-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    background: rgba(0,232,122,0.06);
+    border-bottom: 1px solid rgba(0,232,122,0.15);
+    flex-shrink: 0;
+  }
+  .turn-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #00e87a;
+    box-shadow: 0 0 8px rgba(0,232,122,0.6);
+  }
+  .turn-text {
+    font-size: 13px;
+    font-weight: 800;
+    color: #00e87a;
+    flex: 1;
+  }
+  .turn-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: #4a637d;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .turn-banner.watching {
+    background: rgba(74,99,125,0.08);
+    border-bottom-color: rgba(74,99,125,0.15);
+  }
+  .turn-banner.watching .turn-dot {
+    background: #4a637d;
+    box-shadow: none;
+  }
+  .turn-banner.watching .turn-text { color: #4a637d; }
+
+  /* ── Scroll body ── */
+  .phone-body {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* ─── OPTION A: FULL BOARD ─── */
+
+  .board-section {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex: 1;
+  }
+
+  .word-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-left: 2px solid transparent;
+    border-radius: 6px;
+  }
+  .word-row.active {
+    background: rgba(0,200,240,0.05);
+    border-left-color: #00c8f0;
+  }
+  .word-row.given {
+    background: rgba(0,200,240,0.04);
+    border-left-color: rgba(0,200,240,0.3);
+  }
+  .word-row.solved {
+    background: rgba(0,232,122,0.04);
+    border-left-color: rgba(0,232,122,0.25);
+  }
+  .word-row.inactive { opacity: 0.35; }
+
+  .row-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: #4a637d;
+    width: 14px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .word-row.active .row-num { color: #00c8f0; }
+
+  .tiles-mini {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+  }
+
+  .tile-mini {
+    width: 28px; height: 28px;
+    border-radius: 5px;
+    background: #131b2b;
+    border: 1px solid #1c2a40;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: #4a637d;
+  }
+  /* Active row: slightly bigger tiles */
+  .word-row.active .tile-mini {
+    width: 34px; height: 34px;
+    font-size: 14px;
+    border-radius: 6px;
+  }
+  .tile-mini.revealed {
+    background: rgba(0,200,240,0.15);
+    border-color: #00c8f0;
+    color: #00c8f0;
+  }
+  .tile-mini.typed {
+    background: rgba(0,200,240,0.25);
+    border-color: #00c8f0;
+    color: #fff;
+    font-weight: 900;
+    box-shadow: 0 0 8px rgba(0,200,240,0.3);
+  }
+  .tile-mini.cursor {
+    border-color: #00c8f0;
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink {
+    0%,100% { border-color: #00c8f0; }
+    50%      { border-color: #1c2a40; }
+  }
+  .tile-mini.solved-tile {
+    background: rgba(0,232,122,0.15);
+    border-color: #00e87a;
+    color: #00e87a;
+  }
+
+  .row-divider {
+    height: 1px;
+    background: #1c2a40;
+    margin: 0 8px;
+    opacity: 0.4;
+  }
+
+  /* ─── OPTION B: ACTIVE WORD ONLY ─── */
+
+  .active-word-section {
+    padding: 20px 16px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+  }
+
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+  .progress-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: #4a637d;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .progress-bar {
+    flex: 1;
+    height: 3px;
+    background: #1c2a40;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: #00c8f0;
+    border-radius: 2px;
+    width: 33%;
+  }
+  .progress-frac {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: #dce8f5;
+    font-weight: 700;
+  }
+
+  /* Context: previous word */
+  .context-word {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+  }
+  .context-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    color: #4a637d;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .context-tiles {
+    display: flex;
+    gap: 4px;
+  }
+  .tile-context {
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    background: rgba(0,200,240,0.1);
+    border: 1px solid rgba(0,200,240,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(0,200,240,0.5);
+  }
+
+  /* Arrow connector */
+  .connector {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #243347;
+    letter-spacing: 0.1em;
+  }
+
+  /* Big active tiles */
+  .big-tiles {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .tile-big {
+    width: 52px; height: 56px;
+    border-radius: 10px;
+    background: #131b2b;
+    border: 1.5px solid #1c2a40;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 900;
+    color: #4a637d;
+  }
+  .tile-big.revealed {
+    background: rgba(0,200,240,0.15);
+    border-color: #00c8f0;
+    color: #00c8f0;
+    box-shadow: 0 0 12px rgba(0,200,240,0.25);
+  }
+  .tile-big.typed {
+    background: rgba(0,200,240,0.25);
+    border-color: #00c8f0;
+    color: #fff;
+    box-shadow: 0 0 16px rgba(0,200,240,0.4);
+  }
+  .tile-big.cursor {
+    border-color: #00c8f0;
+    animation: blink 1s step-end infinite;
+  }
+
+  /* Next word placeholder */
+  .next-word-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+  }
+  .next-tiles {
+    display: flex;
+    gap: 4px;
+  }
+  .tile-next {
+    width: 28px; height: 28px;
+    border-radius: 5px;
+    background: #0e1420;
+    border: 1px dashed #1c2a40;
+  }
+
+  /* ── Input area (shared by both) ── */
+  .input-section {
+    padding: 12px 16px 16px;
+    border-top: 1px solid #1c2a40;
+    background: #0e1420;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .input-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    color: #4a637d;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .input-box {
+    background: #07090f;
+    border: 1.5px solid #00c8f0;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: 0.15em;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    box-shadow: 0 0 16px rgba(0,200,240,0.15);
+    min-height: 52px;
+  }
+  .input-cursor {
+    width: 2px; height: 22px;
+    background: #00c8f0;
+    animation: cur 1s step-end infinite;
+    border-radius: 1px;
+  }
+  @keyframes cur {
+    0%,100% { opacity:1; }
+    50%      { opacity:0; }
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-submit {
+    flex: 1;
+    background: rgba(0,200,240,0.15);
+    border: 1.5px solid #00c8f0;
+    border-radius: 10px;
+    padding: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #00c8f0;
+    text-align: center;
+  }
+
+  .btn-clear {
+    background: rgba(255,68,68,0.08);
+    border: 1.5px solid rgba(255,68,68,0.3);
+    border-radius: 10px;
+    padding: 13px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(255,100,100,0.7);
+    text-align: center;
+  }
+
+  /* Watching state input */
+  .watching-notice {
+    text-align: center;
+    padding: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #4a637d;
+    letter-spacing: 0.02em;
+    line-height: 1.5;
+  }
+  .watching-notice span {
+    display: block;
+    font-size: 11px;
+    font-weight: 400;
+    color: #2a3d50;
+    margin-top: 4px;
+  }
+
+  /* Sync indicator */
+  .sync-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    justify-content: center;
+  }
+  .sync-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #00e87a;
+    box-shadow: 0 0 6px rgba(0,232,122,0.6);
+    animation: syncPulse 2s ease-in-out infinite;
+  }
+  @keyframes syncPulse {
+    0%,100% { opacity:1; }
+    50%      { opacity:0.4; }
+  }
+  .sync-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    color: #00e87a;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 12px;
+    padding: 0 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+    flex-shrink: 0;
+    padding-bottom: 10px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .legend-tile {
+    width: 14px; height: 14px;
+    border-radius: 3px;
+    border: 1px solid;
+  }
+  .legend-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    color: #4a637d;
+    letter-spacing: 0.06em;
+  }
+</style>
+</head>
+<body>
+
+<h1>Chain Reaction — Phone Mockups</h1>
+
+<div class="row">
+
+  <!-- ══ OPTION A: FULL BOARD ══ -->
+  <div class="mockup-wrap">
+    <div class="mockup-label">Option A — Full Board</div>
+    <div class="mockup-sublabel">Active team can see entire chain · types below</div>
+
+    <div class="phone">
+      <!-- Status bar -->
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+      </div>
+
+      <!-- Game header -->
+      <div class="game-header">
+        <span class="game-name">Chain Reaction</span>
+        <div class="hd-dot"></div>
+        <span class="hd-chain">Chain <b>1</b> / 5</span>
+        <div class="hd-pill">EASY</div>
+        <div class="hd-spacer"></div>
+      </div>
+
+      <!-- Turn banner -->
+      <div class="turn-banner">
+        <div class="turn-dot"></div>
+        <div class="turn-text">Team Green — Your Turn</div>
+        <div class="turn-badge">Word 2 / 5</div>
+      </div>
+
+      <!-- Board -->
+      <div class="phone-body">
+        <div class="board-section">
+
+          <!-- Word 1: given (first) -->
+          <div class="word-row given">
+            <div class="row-num">1</div>
+            <div class="tiles-mini">
+              <div class="tile-mini revealed">S</div>
+              <div class="tile-mini revealed">U</div>
+              <div class="tile-mini revealed">N</div>
+            </div>
+          </div>
+          <div class="row-divider"></div>
+
+          <!-- Word 2: active -->
+          <div class="word-row active">
+            <div class="row-num">2</div>
+            <div class="tiles-mini">
+              <div class="tile-mini revealed">L</div>
+              <div class="tile-mini typed">I</div>
+              <div class="tile-mini typed">G</div>
+              <div class="tile-mini cursor"></div>
+              <div class="tile-mini"></div>
+            </div>
+          </div>
+          <div class="row-divider"></div>
+
+          <!-- Word 3: inactive -->
+          <div class="word-row inactive">
+            <div class="row-num">3</div>
+            <div class="tiles-mini">
+              <div class="tile-mini revealed">H</div>
+              <div class="tile-mini"></div>
+              <div class="tile-mini"></div>
+              <div class="tile-mini"></div>
+              <div class="tile-mini"></div>
+            </div>
+          </div>
+          <div class="row-divider"></div>
+
+          <!-- Word 4: inactive -->
+          <div class="word-row inactive">
+            <div class="row-num">4</div>
+            <div class="tiles-mini">
+              <div class="tile-mini revealed">W</div>
+              <div class="tile-mini"></div>
+              <div class="tile-mini"></div>
+              <div class="tile-mini"></div>
+            </div>
+          </div>
+          <div class="row-divider"></div>
+
+          <!-- Word 5: given (last) — easy mode -->
+          <div class="word-row given">
+            <div class="row-num">5</div>
+            <div class="tiles-mini">
+              <div class="tile-mini revealed">D</div>
+              <div class="tile-mini revealed">A</div>
+              <div class="tile-mini revealed">Y</div>
+            </div>
+          </div>
+
+          <!-- Legend -->
+          <div class="legend" style="margin-top:12px;">
+            <div class="legend-item">
+              <div class="legend-tile" style="background:rgba(0,200,240,0.15);border-color:#00c8f0;"></div>
+              <span class="legend-text">Given / Hint</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-tile" style="background:rgba(0,200,240,0.25);border-color:#00c8f0;"></div>
+              <span class="legend-text">You typed</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-tile" style="background:rgba(0,232,122,0.15);border-color:#00e87a;"></div>
+              <span class="legend-text">Solved</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input (active team) -->
+        <div class="input-section">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="input-label">Type your answer</div>
+            <div class="sync-badge">
+              <div class="sync-dot"></div>
+              <span class="sync-text">Live on projector</span>
+            </div>
+          </div>
+          <div class="input-box">
+            LIG<div class="input-cursor"></div>
+          </div>
+          <div class="input-row">
+            <div class="btn-submit">↵ SUBMIT</div>
+            <div class="btn-clear">✕</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /Option A active -->
+
+  <!-- Option A: Watching team -->
+  <div class="mockup-wrap">
+    <div class="mockup-label">Option A — Watching Team</div>
+    <div class="mockup-sublabel">Non-active team still sees the board</div>
+
+    <div class="phone">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+      </div>
+      <div class="game-header">
+        <span class="game-name">Chain Reaction</span>
+        <div class="hd-dot"></div>
+        <span class="hd-chain">Chain <b>1</b> / 5</span>
+        <div class="hd-pill">EASY</div>
+        <div class="hd-spacer"></div>
+      </div>
+
+      <div class="turn-banner watching">
+        <div class="turn-dot"></div>
+        <div class="turn-text">Team Green is guessing…</div>
+        <div class="turn-badge">Watch projector</div>
+      </div>
+
+      <div class="phone-body">
+        <div class="board-section">
+          <div class="word-row given">
+            <div class="row-num">1</div>
+            <div class="tiles-mini">
+              <div class="tile-mini revealed">S</div>
+              <div class="tile-mini revealed">U</div>
+              <div class="tile-mini revealed">N</div>
+            </div>
+          </div>
+          <div class="row-divider"></div>
+          <div class="word-row active">
+            <div class="row-num">2</div>
+            <div class="tiles-mini">
+              <div class="tile-mini revealed">L</div>
+              <div class="tile-mini revealed">I</div>
+              <div class="tile-mini revealed">G</div>
+              <div class="tile-mini"></div>
+              <div class="tile-mini"></div>
+            </div>
+          </div>
+          <div class="row-divider"></div>
+          <div class="word-row inactive">
+            <div class="row-num">3</div>
+            <div class="tiles-mini">
+              <div class="tile-mini revealed">H</div>
+              <div class="tile-mini"></div>
+              <div class="tile-mini"></div>
+              <div class="tile-mini"></div>
+              <div class="tile-mini"></div>
+            </div>
+          </div>
+          <div class="row-divider"></div>
+          <div class="word-row inactive">
+            <div class="row-num">4</div>
+            <div class="tiles-mini">
+              <div class="tile-mini revealed">W</div>
+              <div class="tile-mini"></div>
+              <div class="tile-mini"></div>
+              <div class="tile-mini"></div>
+            </div>
+          </div>
+          <div class="row-divider"></div>
+          <div class="word-row given">
+            <div class="row-num">5</div>
+            <div class="tiles-mini">
+              <div class="tile-mini revealed">D</div>
+              <div class="tile-mini revealed">A</div>
+              <div class="tile-mini revealed">Y</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="input-section">
+          <div class="watching-notice">
+            Waiting for Team Green…
+            <span>Your turn is next if they get it wrong</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /Option A watching -->
+
+
+  <!-- ══ OPTION B: ACTIVE WORD ONLY ══ -->
+  <div class="mockup-wrap">
+    <div class="mockup-label">Option B — Active Word Focus</div>
+    <div class="mockup-sublabel">Big tiles for current word · context words shown small</div>
+
+    <div class="phone">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+      </div>
+      <div class="game-header">
+        <span class="game-name">Chain Reaction</span>
+        <div class="hd-dot"></div>
+        <span class="hd-chain">Chain <b>1</b> / 5</span>
+        <div class="hd-pill">EASY</div>
+        <div class="hd-spacer"></div>
+      </div>
+
+      <div class="turn-banner">
+        <div class="turn-dot"></div>
+        <div class="turn-text">Team Green — Your Turn</div>
+        <div class="turn-badge">Word 2 / 5</div>
+      </div>
+
+      <div class="phone-body">
+        <div class="active-word-section">
+
+          <!-- Progress bar -->
+          <div class="progress-row">
+            <div class="progress-label">Progress</div>
+            <div class="progress-bar"><div class="progress-fill"></div></div>
+            <div class="progress-frac">2/5</div>
+          </div>
+
+          <!-- Previous word (context) -->
+          <div class="context-word">
+            <div class="context-label">Previous word</div>
+            <div class="context-tiles">
+              <div class="tile-context">S</div>
+              <div class="tile-context">U</div>
+              <div class="tile-context">N</div>
+            </div>
+          </div>
+
+          <div class="connector">↓ connects to ↓</div>
+
+          <!-- Big active word -->
+          <div class="big-tiles">
+            <div class="tile-big revealed">L</div>
+            <div class="tile-big typed">I</div>
+            <div class="tile-big typed">G</div>
+            <div class="tile-big cursor"></div>
+            <div class="tile-big"></div>
+          </div>
+
+          <div class="connector">↓ connects to ↓</div>
+
+          <!-- Next word placeholder -->
+          <div class="next-word-row">
+            <div class="context-label">Next word</div>
+            <div class="next-tiles">
+              <div class="tile-next"></div>
+              <div class="tile-next"></div>
+              <div class="tile-next"></div>
+              <div class="tile-next"></div>
+              <div class="tile-next"></div>
+            </div>
+          </div>
+
+          <!-- Legend -->
+          <div class="legend" style="margin-top:auto;">
+            <div class="legend-item">
+              <div class="legend-tile" style="background:rgba(0,200,240,0.15);border-color:#00c8f0;"></div>
+              <span class="legend-text">Given / Hint</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-tile" style="background:rgba(0,200,240,0.25);border-color:#00c8f0;"></div>
+              <span class="legend-text">You typed</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input -->
+        <div class="input-section">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="input-label">Type your answer</div>
+            <div class="sync-badge">
+              <div class="sync-dot"></div>
+              <span class="sync-text">Live on projector</span>
+            </div>
+          </div>
+          <div class="input-box">
+            LIG<div class="input-cursor"></div>
+          </div>
+          <div class="input-row">
+            <div class="btn-submit">↵ SUBMIT</div>
+            <div class="btn-clear">✕</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /Option B active -->
+
+  <!-- Option B: Watching -->
+  <div class="mockup-wrap">
+    <div class="mockup-label">Option B — Watching Team</div>
+    <div class="mockup-sublabel">Non-active team sees active word only</div>
+
+    <div class="phone">
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+      </div>
+      <div class="game-header">
+        <span class="game-name">Chain Reaction</span>
+        <div class="hd-dot"></div>
+        <span class="hd-chain">Chain <b>1</b> / 5</span>
+        <div class="hd-pill">EASY</div>
+        <div class="hd-spacer"></div>
+      </div>
+
+      <div class="turn-banner watching">
+        <div class="turn-dot"></div>
+        <div class="turn-text">Team Green is guessing…</div>
+        <div class="turn-badge">Word 2 / 5</div>
+      </div>
+
+      <div class="phone-body">
+        <div class="active-word-section">
+          <div class="progress-row">
+            <div class="progress-label">Progress</div>
+            <div class="progress-bar"><div class="progress-fill"></div></div>
+            <div class="progress-frac">2/5</div>
+          </div>
+
+          <div class="context-word">
+            <div class="context-label">Previous word</div>
+            <div class="context-tiles">
+              <div class="tile-context">S</div>
+              <div class="tile-context">U</div>
+              <div class="tile-context">N</div>
+            </div>
+          </div>
+
+          <div class="connector">↓ connects to ↓</div>
+
+          <!-- Watching: see what team Green typed, no cursor -->
+          <div class="big-tiles">
+            <div class="tile-big revealed">L</div>
+            <div class="tile-big typed">I</div>
+            <div class="tile-big typed">G</div>
+            <div class="tile-big"></div>
+            <div class="tile-big"></div>
+          </div>
+
+          <div class="connector">↓ connects to ↓</div>
+
+          <div class="next-word-row">
+            <div class="context-label">Next word</div>
+            <div class="next-tiles">
+              <div class="tile-next"></div>
+              <div class="tile-next"></div>
+              <div class="tile-next"></div>
+              <div class="tile-next"></div>
+              <div class="tile-next"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="input-section">
+          <div class="watching-notice">
+            Watching Team Green…
+            <span>Pay attention — it could be your turn next</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /Option B watching -->
+
+</div><!-- /row -->
+
+</body>
+</html>

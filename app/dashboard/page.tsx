@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import styles from "./dashboard.module.css";
-import { useClassroomStore, SessionEntry, ClassData } from "../store/useClassroomStore";
+import { useClassroomStore, SessionEntry, ClassData, Student } from "../store/useClassroomStore";
+import RankIcon from "../components/RankIcon";
+import Link from "next/link";
+import { getRankForXp } from "@/utils/ranks";
 
 const MOCK_TIME_RANGES = [
   { id: "week", label: "This Week" },
@@ -19,6 +22,54 @@ export default function Dashboard() {
 
   const [activeDrillId, setActiveDrillId] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState("month");
+  const [mounted, setMounted] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [isGlobalLeaderboard, setIsGlobalLeaderboard] = useState(true);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Fetch Leaderboard
+  useEffect(() => {
+    async function fetchLeaderboard() {
+      setLoadingLeaderboard(true);
+      try {
+        const activeClass = classes.find((c) => c.id === activeDrillId);
+        const url = isGlobalLeaderboard 
+          ? '/api/xp/leaderboard?limit=5' 
+          : `/api/xp/leaderboard?limit=5&class_name=${encodeURIComponent(activeClass?.name || '')}`;
+        
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        if (data.success) {
+          // Reconcile with local names
+          const reconciled = data.leaderboard.map((entry: any) => {
+            const student = classes
+              .flatMap(c => c.students)
+              .find(s => s.id === entry.student_id);
+            
+            return {
+              ...entry,
+              name: student?.name || `OPERATIVE ${entry.student_id.slice(0, 4)}`,
+              gender: student?.gender || 'male',
+              tier: student?.tier || getRankForXp(entry.total_xp).tier,
+              rank: student?.rank || getRankForXp(entry.total_xp).stars
+            };
+          });
+          setLeaderboard(reconciled);
+        }
+      } catch (err) {
+        console.error("Failed to fetch leaderboard", err);
+      } finally {
+        setLoadingLeaderboard(false);
+      }
+    }
+    
+    if (mounted) fetchLeaderboard();
+  }, [mounted, isGlobalLeaderboard, activeDrillId, classes]);
 
   // --- Selectors ---
   
@@ -94,13 +145,14 @@ export default function Dashboard() {
 
   return (
     <div className={styles.page}>
+      <div className={styles.headerBanner} />
       {/* Header */}
       <div className={styles.pageHeader}>
-        <div>
+        <div style={{ position: 'relative', zIndex: 2 }}>
           <div className={styles.breadcrumb}>SYSTEM // <span>Analytics</span></div>
           <h1 className={styles.headerTitle}>Commander Dashboard</h1>
         </div>
-        <div className={styles.headerControls}>
+        <div className={styles.headerControls} style={{ position: 'relative', zIndex: 2 }}>
           <select 
             className={styles.timeSelect} 
             value={timeRange} 
@@ -114,8 +166,9 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Overview Stats */}
-      <div className={styles.sectionTitle}>Global Intelligence — {MOCK_TIME_RANGES.find(r => r.id === timeRange)?.label}</div>
+      <div className={styles.view}>
+        {/* Overview Stats */}
+        <div className={styles.sectionTitle}>Global Intelligence — {MOCK_TIME_RANGES.find(r => r.id === timeRange)?.label}</div>
       <div className={styles.overviewGrid}>
         <div className={styles.overviewCard}>
           <div className={styles.overviewCardGlow} style={{ background: "var(--cyan)" }}></div>
@@ -225,16 +278,103 @@ export default function Dashboard() {
                   <tbody>
                     {activeClass.students.slice(0, 5).map((s, i) => (
                       <tr key={s.id}>
-                        <td style={{ fontWeight: 700 }}>{s.name}</td>
-                        <td style={{ color: "var(--muted)" }}>{Math.floor(Math.random() * 10) + 5} Cycles</td>
                         <td>
-                          <span style={{ color: "var(--green)", fontWeight: 700 }}>{80 + Math.floor(Math.random() * 15)}%</span>
+                            <Link href={`/profile/${s.id}`} style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none', color: 'inherit' }}>
+                            <div className={styles.tableAvatar}>
+                              <img 
+                                src={s.gender === 'female' ? '/images/avatar_girl.png' : '/images/avatar_boy.png'} 
+                                alt=""
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                              </div>
+                            <span style={{ fontWeight: 700 }}>{s.name}</span>
+                            </Link>
+                        </td>
+                        <td style={{ color: "var(--muted)" }}>
+                          {mounted ? Math.floor(Math.random() * 10) + 5 : "--"} Cycles
+                        </td>
+                        <td>
+                          <span style={{ color: "var(--green)", fontWeight: 700 }}>
+                            {mounted ? 80 + Math.floor(Math.random() * 15) : "--"}%
+                          </span>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+
+          {/* Hall of Fame / Leaderboard Section */}
+          <div className={styles.sectionTitle}>
+            Strategic Hall of Fame — {isGlobalLeaderboard ? "Global Rankings" : `Top in ${activeClass.name}`}
+          </div>
+          <div className={styles.leaderboardContainer}>
+            <div className={styles.leaderboardHeader}>
+              <div className={styles.leaderboardIcon}>🏆</div>
+              <div style={{ flex: 1 }}>
+                <div className={styles.leaderboardTitle}>Top Performers</div>
+                <div className={styles.leaderboardSub}>Aggregated XP metrics from current deployment cycles</div>
+              </div>
+              <div className={styles.toggleWrap}>
+                <button 
+                  className={`${styles.toggleBtn} ${isGlobalLeaderboard ? styles.toggleBtnActive : ""}`}
+                  onClick={() => setIsGlobalLeaderboard(true)}
+                >
+                  GLOBAL
+                </button>
+                <button 
+                  className={`${styles.toggleBtn} ${!isGlobalLeaderboard ? styles.toggleBtnActive : ""}`}
+                  onClick={() => setIsGlobalLeaderboard(false)}
+                >
+                  CLUSTER
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.leaderboardGrid}>
+              {loadingLeaderboard ? (
+                <div className={styles.loadingPulse}>Acquiring signal...</div>
+              ) : leaderboard.length === 0 ? (
+                <div className={styles.emptyLeaderboard}>Awaiting deployment data...</div>
+              ) : (
+                leaderboard.map((entry, index) => (
+                  <Link 
+                    key={entry.student_id} 
+                    href={`/profile/${entry.student_id}`}
+                    className={styles.leaderboardRow}
+                  >
+                    <div className={styles.leaderboardRank}>
+                      {index === 0 ? "➊" : index === 1 ? "➋" : index === 2 ? "➌" : (index + 1)}
+                    </div>
+                    <div className={styles.leaderboardAvatar}>
+                      <img 
+                        src={entry.gender === 'female' ? '/images/avatar_girl.png' : '/images/avatar_boy.png'} 
+                        alt=""
+                      />
+                    </div>
+                    <div className={styles.leaderboardInfo}>
+                      <div className={styles.leaderboardName}>{entry.name}</div>
+                      <div className={styles.leaderboardClass}>{entry.class_name}</div>
+                    </div>
+                    <div className={styles.leaderboardBadge}>
+                      <RankIcon tier={entry.tier} stars={entry.rank} size={28} />
+                    </div>
+                    <div className={styles.leaderboardXp}>
+                      <div className={styles.xpVal}>{(entry.total_xp || 0).toLocaleString()}</div>
+                      <div className={styles.xpLabel}>XP</div>
+                    </div>
+                    <div 
+                      className={styles.leaderboardProgressBar} 
+                      style={{ 
+                        "--progress": `${Math.min(100, (entry.total_xp / (leaderboard[0]?.total_xp || 1)) * 100)}%`,
+                        "--color": index === 0 ? "var(--team-green)" : index === 1 ? "var(--cyan)" : index === 2 ? "var(--yellow)" : "rgba(255,255,255,0.2)"
+                      } as any}
+                    />
+                  </Link>
+                ))
+              )}
             </div>
           </div>
         </>
@@ -264,7 +404,7 @@ export default function Dashboard() {
           </div>
         )}
       </div>
-
     </div>
+  </div>
   );
 }

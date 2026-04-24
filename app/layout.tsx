@@ -4,6 +4,7 @@ import "./globals.css";
 import TwistOverlay from "./components/TwistOverlay";
 import ScoreboardOverlay from "./components/ScoreboardOverlay";
 import TopNav from "./components/TopNav";
+import RankUpToast from "./components/RankUpToast";
 
 const syne = Syne({
   variable: "--font-syne",
@@ -24,8 +25,8 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "Ayo!",
-  description: "The Classroom Engine",
+  title: "ESL ARENA V2.0 | Command Bridge",
+  description: "Tactical Classroom Command System",
 };
 
 export default function RootLayout({
@@ -34,12 +35,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${syne.variable} ${jetbrainsMono.variable} ${nunito.variable}`}>
+    <html lang="en" className={`${syne.variable} ${jetbrainsMono.variable} ${nunito.variable} bg-black`}>
       <body>
         <TopNav />
-        {children}
+        <main className="main-content">
+          <div className="radar-sweep" />
+          {children}
+        </main>
         <TwistOverlay />
         <ScoreboardOverlay />
+        <RankUpToast />
       </body>
     </html>
   );

@@ -27,7 +27,7 @@ const HIDDEN_PATHS = new Set(["/", "/dashboard", "/teams", "/games", "/join", "/
 
 export default function ScoreboardOverlay() {
   const pathname = usePathname();
-  const { currentTeams, updateTeamScore, setTeamScore, activeAwardAmount } = useClassroomStore();
+  const { currentTeams, updateTeamScore, setTeamScore, activeAwardAmount, activeClassId, awardStudentXp } = useClassroomStore();
   const [mounted, setMounted] = useState(false);
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -110,7 +110,13 @@ export default function ScoreboardOverlay() {
 
             {/* Hidden admin adjust buttons on hover (or top) -- we'll keep them subtle */}
             <div className={styles.adjustLayer}>
-              <button className={styles.adjustBtn} onClick={() => updateTeamScore(t.id, activeAwardAmount)}>+</button>
+              <button className={styles.adjustBtn} onClick={() => {
+                updateTeamScore(t.id, activeAwardAmount);
+                // Award 20 XP per student on the team for a positive manual award
+                if (activeAwardAmount > 0 && activeClassId) {
+                  t.students.forEach(s => awardStudentXp(activeClassId, s.id, 20, 'manual_award'));
+                }
+              }}>+</button>
               <button className={styles.adjustBtn} onClick={() => updateTeamScore(t.id, -activeAwardAmount)}>−</button>
             </div>
           </div>

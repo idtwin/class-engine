@@ -1,47 +1,93 @@
 /* =====================================================
-   ARCADE_COMMAND — OFFICIAL DESIGN SYSTEM
-   Theme: Dark Terminal (Teacher) / Energetic Mobile (Student)
+   ESL ARENA V2.0 — TACTICAL DESIGN SYSTEM
+   Theme: Industrial Military Command Interface
    ===================================================== */
 
 :root {
-  /* --- Core Surfaces --- */
-  --bg: #07090f;
-  --surface: #0e1420;
-  --surface2: #131b2b;
-  --border: #1c2a40;
-  --border2: #243347;
+  /* --- Depth & Elevation Structure --- */
+  /* Level 0: The Void (Scanline background) */
+  --bg: #05070A;
+  --bg-rgb: 5, 7, 10;
+  /* Level 1: HUD Panels & Containers */
+  --surface: #0C121A;
+  --surface-rgb: 12, 18, 26;
+  /* Level 2: Interactive Tiles & Modals */
+  --surface-lifted: #151F2B;
+  --surface-lifted-rgb: 21, 31, 43;
+  
+  --depth-shadow: #000000;
 
-  /* --- Accent Colors --- */
-  --green: #00e87a;
-  --cyan: #00c8f0;
-  --orange: #ff7d3b;
+  /* --- Radar Signal Colors --- */
+  --electric-mint: #00FFD5;
+  --electric-mint-rgb: 0, 255, 213;
+  --radar-blue: #00D1FF;
+  --radar-blue-rgb: 0, 209, 255;
+
+  /* --- Borders --- */
+  --border: rgba(0, 255, 213, 0.4);
+  --border2: rgba(0, 255, 213, 0.2);
+  --border-rgb: 0, 255, 213;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-hard: #1a2533;
+
+  /* --- Design System Semantic Roles --- */
+  --command-orange: var(--electric-mint);
+  --command-orange-rgb: var(--electric-mint-rgb);
+  
+  --data-silver: #D1D9E6;
+  --data-silver-rgb: 209, 217, 230;
+  
+  --ice-blue: var(--radar-blue);
+  --ice-blue-rgb: var(--radar-blue-rgb);
+  
+  --titanium-silver: var(--data-silver);
+  --team-green: #BEEF00; /* Re-introduce green for positive signals */
+  --team-green-rgb: 190, 239, 0;
+  
+  /* --- Semantic Mappings --- */
+  --text: #C8D2DD;
+  --text-bright: #FFFFFF;
+  --muted: #627284;
+  --dim: #324254;
+  --cyan: #AEE6FF;
+  --orange: var(--ice-blue);
   --purple: #b06eff;
-  --yellow: #ffc843;
+  --yellow: var(--ice-blue);
   --pink: #ff4d8f;
-  --red: #ff4444;
+  
+  /* --- Alert & Destructive Signals --- */
+  --alert-red: #ff3b3b;
+  --alert-red-rgb: 255, 59, 59;
+  --red: var(--alert-red);
 
   /* --- Team Colors --- */
-  --t1: #00e87a;
-  --t2: #00c8f0;
-  --t3: #ffc843;
+  --t1: var(--ice-blue);
+  --t2: #AEE6FF;
+  --t3: var(--ice-blue);
   --t4: #ff4d8f;
   --t5: #b06eff;
-  --t6: #ff7d3b;
+  --t6: #00e87a;
   --t7: #e2e8f0;
 
   /* --- Layout Heights --- */
-  --nav-h: 60px;
+  --nav-h: 64px;
   --scoreboard-h: 88px;
 
   /* --- Typography --- */
-  --text: #dce8f5;
-  --muted: #4a637d;
-  --dim: #1e2e42;
+  --text: #e8e8e8;
+  --text-bright: #ffffff;
+  --muted: rgba(255, 255, 255, 0.5);
+  --dim: rgba(255, 255, 255, 0.2);
   
   /* Next.js Font Mappings */
   --font-main: var(--font-syne);
   --font-mono: var(--font-jetbrains);
   --font-phone: var(--font-nunito);
+
+  /* --- HUD Elements --- */
+  --hud-corner-size: 12px;
+  --hud-border-width: 2px;
+  --scanline-opacity: 0.03;
 }
 
 /* ── Base Reset ── */
@@ -66,24 +112,87 @@ body.no-scroll {
   height: 100vh;
 }
 
-/* Subtle grid background */
+/* Tactical Grid Background */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   background-image:
-    linear-gradient(rgba(0,232,122,0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,232,122,0.015) 1px, transparent 1px);
-  background-size: 40px 40px;
+    linear-gradient(rgba(var(--electric-mint-rgb), 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--electric-mint-rgb), 0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
   pointer-events: none;
   z-index: 0;
+}
+
+/* Scanline Effect Overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, var(--scanline-opacity)) 2px,
+    rgba(0, 0, 0, var(--scanline-opacity)) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Atmospheric Void Effect (Option C) */
+.radar-sweep {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.radar-sweep::before,
+.radar-sweep::after {
+  content: '';
+  position: absolute;
+  width: 150%;
+  height: 150%;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.55; /* Increased base opacity */
+}
+
+.radar-sweep::before {
+  background: radial-gradient(circle at center, rgba(var(--command-orange-rgb), 0.15), transparent 75%);
+  top: -25%;
+  left: -25%;
+  animation: drift-alpha 20s ease-in-out infinite alternate; /* Faster drift */
+}
+
+.radar-sweep::after {
+  background: radial-gradient(circle at center, rgba(var(--radar-blue-rgb), 0.12), transparent 75%);
+  bottom: -25%;
+  right: -25%;
+  animation: drift-beta 25s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes drift-alpha {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(10%, 15%) scale(1.1); }
+  100% { transform: translate(-5%, 5%) scale(0.9); }
+}
+
+@keyframes drift-beta {
+  0% { transform: translate(0, 0) scale(1.1); }
+  50% { transform: translate(-15%, -10%) scale(0.9); }
+  100% { transform: translate(5%, -15%) scale(1.05); }
 }
 
 /* ── Typography ── */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-main), sans-serif;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 p, span, div, button {
@@ -94,41 +203,125 @@ p, span, div, button {
   font-family: var(--font-mono), monospace;
 }
 
+.main-content {
+  position: relative;
+  z-index: 1;
+  background: var(--bg);
+  min-height: calc(100vh - var(--nav-h));
+}
+
+/* ── HUD Panel Base ── */
+.hud-panel {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border-hard);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+/* HUD Corner Brackets */
+.hud-panel::before,
+.hud-panel::after {
+  content: '';
+  position: absolute;
+  width: var(--hud-corner-size);
+  height: var(--hud-corner-size);
+  border-color: var(--command-orange);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.hud-panel::before {
+  top: -1px;
+  left: -1px;
+  border-width: var(--hud-border-width) 0 0 var(--hud-border-width);
+}
+
+.hud-panel::after {
+  top: -1px;
+  right: -1px;
+  border-width: var(--hud-border-width) var(--hud-border-width) 0 0;
+}
+
+/* Bottom corners via inner element */
+.hud-panel-inner::before,
+.hud-panel-inner::after {
+  content: '';
+  position: absolute;
+  width: var(--hud-corner-size);
+  height: var(--hud-corner-size);
+  border-color: var(--command-orange);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.hud-panel-inner::before {
+  bottom: -1px;
+  left: -1px;
+  border-width: 0 0 var(--hud-border-width) var(--hud-border-width);
+}
+
+.hud-panel-inner::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 var(--hud-border-width) var(--hud-border-width) 0;
+}
+
 /* ── Common Components ── */
 .btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: 10px 20px;
   font-family: var(--font-mono), monospace;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
   border: none;
-  transition: all 0.15s;
+  transition: all 0.2s ease;
+  position: relative;
+  clip-path: polygon(
+    0 0,
+    calc(100% - 8px) 0,
+    100% 8px,
+    100% 100%,
+    8px 100%,
+    0 calc(100% - 8px)
+  );
 }
 
 .btn-ghost {
   background: transparent;
-  border: 1px solid var(--border2);
+  border: 1px solid var(--border);
   color: var(--muted);
+  clip-path: none;
 }
 
 .btn-ghost:hover {
-  border-color: var(--text);
-  color: var(--text);
+  border-color: var(--command-orange);
+  color: var(--command-orange);
+  box-shadow: 0 0 20px rgba(var(--command-orange-rgb), 0.2);
 }
 
 .btn-primary {
-  background: var(--green);
+  background: var(--command-orange);
   color: #000;
 }
 
 .btn-primary:hover {
-  background: #00ff88;
+  background: #E0F5FF;
+  box-shadow: 0 0 30px rgba(var(--command-orange-rgb), 0.4);
+}
+
+.btn-success {
+  background: var(--team-green);
+  color: #000;
+}
+
+.btn-success:hover {
+  background: #d4ff00;
+  box-shadow: 0 0 30px rgba(var(--team-green-rgb), 0.4);
 }
 
 /* ── Tags ── */
@@ -136,19 +329,140 @@ p, span, div, button {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 10px;
-  border-radius: 99px;
+  padding: 4px 12px;
   font-family: var(--font-mono), monospace;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
+  background: rgba(var(--command-orange-rgb), 0.15);
+  border: 1px solid var(--border);
+  color: var(--command-orange);
+}
+
+/* ── Tactical Progress Bar ── */
+.tactical-progress {
+  position: relative;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.tactical-progress::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    var(--team-green) 0%,
+    var(--team-green) var(--progress, 50%),
+    transparent var(--progress, 50%)
+  );
+}
+
+/* Animated glow effect */
+.tactical-progress::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: var(--progress, 50%);
+  transform: translateX(-100%);
+  width: 20px;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(var(--team-green-rgb), 0.8),
+    transparent
+  );
+  animation: progress-glow 2s ease-in-out infinite;
+}
+
+@keyframes progress-glow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* ── Data Display ── */
+.data-label {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.data-value {
+  font-family: var(--font-mono), monospace;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--team-green);
+}
+
+/* ── Status Indicators ── */
+.status-online {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--team-green);
+}
+
+.status-online::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--team-green);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(var(--team-green-rgb), 0.7);
+  }
+  50% { 
+    opacity: 0.7;
+    box-shadow: 0 0 0 4px rgba(var(--team-green-rgb), 0);
+  }
 }
 
 /* ── Utility ── */
 .container {
-  max-width: 1100px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 32px;
+}
+
+/* ── Scrollbar Styling ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--command-orange);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--radar-blue);
+}
+
+/* ── Selection ── */
+::selection {
+  background: rgba(var(--command-orange-rgb), 0.3);
+  color: var(--text-bright);
 }

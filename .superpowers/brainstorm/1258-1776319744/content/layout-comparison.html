@@ -1,0 +1,127 @@
+<h2>Odd One Out — Projector Redesign</h2>
+<p class="subtitle">The current playing view vs. Fix It's layout. Which direction should we go?</p>
+
+<div class="split">
+
+  <div class="mockup">
+    <div class="mockup-header">❌ Current Odd One Out</div>
+    <div class="mockup-body" style="background:#07090f; border-radius:8px; overflow:hidden; font-family:'JetBrains Mono',monospace;">
+      <!-- Header -->
+      <div style="height:40px; background:#0e1420; border-bottom:1px solid #1c2a40; display:flex; align-items:center; padding:0 16px; gap:12px;">
+        <span style="font-size:11px; font-weight:700; color:#b06eff;">ODD ONE OUT</span>
+        <span style="font-size:10px; color:#4a637d;">Q 1/12</span>
+        <span style="margin-left:auto; font-size:11px; color:#b06eff;">0:45</span>
+      </div>
+      <!-- Two column split -->
+      <div style="display:flex; gap:12px; padding:10px; height:200px;">
+        <!-- Left col -->
+        <div style="flex:1.6; display:flex; flex-direction:column; gap:8px;">
+          <div style="font-size:8px; color:#4a637d; letter-spacing:0.15em;">LAT: 3.1390°N · LNG: 101.6869°E · STREAM_ID: 0x4A2F</div>
+          <div style="font-size:9px; color:#b06eff; letter-spacing:0.12em;">SEQUENCE_01 // INTERMEDIATE</div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:11px; font-weight:700; color:#dce8f5; letter-spacing:0.08em;">ISOLATE THE ANOMALY.</span>
+            <div style="width:32px; height:32px; border-radius:50%; border:2px solid #b06eff; display:flex; align-items:center; justify-content:center; font-size:10px; color:#b06eff; margin-left:auto;">45</div>
+          </div>
+          <!-- Word grid -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; flex:1;">
+            <div style="background:rgba(176,110,255,0.06); border:1px solid rgba(176,110,255,0.2); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#dce8f5; position:relative;">
+              <span style="position:absolute; top:2px; left:3px; font-size:6px; color:#b06eff;">◆</span>APPLE
+            </div>
+            <div style="background:rgba(176,110,255,0.06); border:1px solid rgba(176,110,255,0.2); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#dce8f5;">MANGO</div>
+            <div style="background:rgba(176,110,255,0.06); border:1px solid rgba(176,110,255,0.2); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#dce8f5;">CARROT</div>
+            <div style="background:rgba(176,110,255,0.06); border:1px solid rgba(176,110,255,0.2); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#dce8f5;">BANANA</div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button style="background:#b06eff; color:#000; border:none; border-radius:4px; padding:4px 10px; font-size:9px; font-family:inherit; font-weight:700; letter-spacing:0.08em;">✦ INITIATE REVEAL</button>
+            <button style="background:transparent; border:1px dashed rgba(176,110,255,0.4); color:#b06eff; border-radius:4px; padding:4px 8px; font-size:9px; font-family:inherit;">💡 DEPLOY HINT</button>
+          </div>
+        </div>
+        <!-- Right col / sidebar -->
+        <div style="flex:1; background:#0a0f1a; border:1px solid #1c2a40; border-radius:6px; padding:6px; overflow:hidden;">
+          <div style="font-size:8px; color:#4a637d; letter-spacing:0.12em; border-bottom:1px solid #1c2a40; padding-bottom:4px; margin-bottom:4px;">// SYSTEM_LOG</div>
+          <div style="font-size:8px; color:#4a637d; line-height:1.6;">
+            <div><span style="color:#b06eff;">01</span> Room connected</div>
+            <div><span style="color:#b06eff;">02</span> 6 students active</div>
+            <div><span style="color:#b06eff;">03</span> Q01 dispatched</div>
+            <div><span style="color:#00e87a;">04</span> Team Alpha locked</div>
+          </div>
+          <div style="margin-top:8px; font-size:8px; color:#4a637d; letter-spacing:0.12em; border-bottom:1px solid #1c2a40; padding-bottom:4px; margin-bottom:4px;">// NETWORK_STATUS</div>
+          <div style="font-size:8px; color:#dce8f5; line-height:1.8;">
+            <div>🔒 Team Alpha</div>
+            <div>⏳ Team Beta</div>
+            <div>⏳ Team Gamma</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">✅ Fix It (target style)</div>
+    <div class="mockup-body" style="background:#07090f; border-radius:8px; overflow:hidden; font-family:'JetBrains Mono',monospace;">
+      <!-- Header -->
+      <div style="height:40px; background:#0e1420; border-bottom:1px solid #1c2a40; display:flex; align-items:center; padding:0 16px; gap:12px;">
+        <span style="font-size:11px; font-weight:700; color:#ffc843;">FIX IT</span>
+        <span style="font-size:9px; background:rgba(255,200,67,0.12); color:#ffc843; padding:2px 8px; border-radius:10px;">EASY</span>
+        <span style="font-size:10px; color:#4a637d; margin-left:4px;">Q 1/10</span>
+        <span style="margin-left:auto; font-size:11px; color:#ffc843;">0:45</span>
+      </div>
+      <!-- Centered single column -->
+      <div style="display:flex; flex-direction:column; align-items:center; padding:16px 20px; gap:12px;">
+        <div style="font-size:9px; color:#4a637d; letter-spacing:0.08em;">Error type: <span style="color:#ff4444;">WRONG WORD</span></div>
+        <!-- Sentence -->
+        <div style="background:#0e1420; border:1px solid #1c2a40; border-radius:8px; padding:10px 14px; width:100%; text-align:center; font-size:11px; color:#dce8f5; line-height:1.6;">
+          She <span style="background:rgba(255,68,68,0.15); border-bottom:2px solid #ff4444; color:#ff4444; padding:1px 3px; border-radius:2px;">go</span> to school every day.
+        </div>
+        <!-- Options grid -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; width:100%;">
+          <div style="background:#0e1420; border:1px solid #1c2a40; border-radius:6px; padding:7px 10px; display:flex; align-items:center; gap:6px; font-size:10px; color:#dce8f5;">
+            <span style="background:#1c2a40; color:#4a637d; border-radius:4px; padding:1px 5px; font-size:9px;">A</span> goes
+          </div>
+          <div style="background:#0e1420; border:1px solid #1c2a40; border-radius:6px; padding:7px 10px; display:flex; align-items:center; gap:6px; font-size:10px; color:#dce8f5;">
+            <span style="background:#1c2a40; color:#4a637d; border-radius:4px; padding:1px 5px; font-size:9px;">B</span> went
+          </div>
+          <div style="background:#0e1420; border:1px solid #1c2a40; border-radius:6px; padding:7px 10px; display:flex; align-items:center; gap:6px; font-size:10px; color:#dce8f5;">
+            <span style="background:#1c2a40; color:#4a637d; border-radius:4px; padding:1px 5px; font-size:9px;">C</span> going
+          </div>
+          <div style="background:#0e1420; border:1px solid #1c2a40; border-radius:6px; padding:7px 10px; display:flex; align-items:center; gap:6px; font-size:10px; color:#dce8f5;">
+            <span style="background:#1c2a40; color:#4a637d; border-radius:4px; padding:1px 5px; font-size:9px;">D</span> to go
+          </div>
+        </div>
+        <!-- Student chips -->
+        <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:center;">
+          <div style="background:#0e1420; border:1px solid #1c2a40; border-radius:12px; padding:3px 8px; font-size:9px; color:#00e87a;">🔒 Team Alpha</div>
+          <div style="background:#0e1420; border:1px solid #1c2a40; border-radius:12px; padding:3px 8px; font-size:9px; color:#4a637d;">⏳ Team Beta</div>
+          <div style="background:#0e1420; border:1px solid #1c2a40; border-radius:12px; padding:3px 8px; font-size:9px; color:#4a637d;">⏳ Team Gamma</div>
+        </div>
+        <!-- Button -->
+        <button style="background:#ffc843; color:#000; border:none; border-radius:6px; padding:7px 20px; font-size:10px; font-family:inherit; font-weight:700; cursor:pointer;">Reveal Answer</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="options" style="margin-top:24px;">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Match Fix It exactly</h3>
+      <p>Same centered single-column layout, same button style, same student chips. Only the content changes (word grid instead of sentence). Purple accent replaces yellow. Maximum cohesion.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Fix It structure, OOO personality</h3>
+      <p>Adopt the centered layout and clean button style from Fix It, but keep OOO's purple identity more visible — bolder word cards with glow effects, a category label above the grid. Same structure, more character.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Keep the sidebar, clean up the theming</h3>
+      <p>Keep the two-column split (useful for watching student responses live), but remove the tech-noir decoration — no lat/lng, no system log, clean buttons. Less cohesive with Fix It but retains the most teacher utility.</p>
+    </div>
+  </div>
+</div>

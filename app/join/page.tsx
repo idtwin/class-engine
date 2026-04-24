@@ -4,88 +4,135 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import styles from "./join.module.css";
 
-// Team color tokens matching the design system
-const TEAM_COLORS = [
-  "#00e87a", // T1 green
-  "#00c8f0", // T2 cyan
-  "#ffc843", // T3 yellow
-  "#ff4d8f", // T4 pink
-  "#b06eff", // T5 purple
-  "#ff7d3b", // T6 orange
-  "#e2e8f0", // T7 white
-];
-
 function JoinLogic() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialCode = searchParams.get("code") || "";
-
-  const [code, setCode] = useState(initialCode);
-  const [step, setStep] = useState(initialCode.length === 4 ? 2 : 1);
+  const code = searchParams.get("code");
+  
+  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [teams, setTeams] = useState<any[]>([]);
-  const [selectedValue, setSelectedValue] = useState("");
-
-  const handleFetchRoom = async () => {
-    if (code.length !== 4) return;
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch(`/api/room/get?code=${code}`);
-      const data = await res.json();
-      if (res.ok) {
-        setTeams(data.teams || []);
-        setStep(2);
-      } else {
-        setError(data.error || "Room not found");
-        if (step === 2) setStep(1);
-      }
-    } catch (e: any) {
-      setError(e.message);
-      if (step === 2) setStep(1);
-    }
-    setLoading(false);
-  };
+  
+  const [roster, setRoster] = useState<{ id: string; name: string; class_name: string }[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<string>("");
+  const [otp, setOtp] = useState("");
 
   useEffect(() => {
-    if (initialCode && initialCode.length === 4) {
-      setCode(initialCode);
-      handleFetchRoom();
+    if (!code) return; // If code isn't parsed yet from search params, wait
+
+    // 1. Check if they already bypassed this room via old local storage mapping
+    const localId = localStorage.getItem(`studentId_${code}`);
+    const localName = localStorage.getItem(`studentName_${code}`);
+
+    // 2. Check if they have a global trusted identity from a recent OTP
+    const globalId = localStorage.getItem('globalStudentId');
+    const globalName = localStorage.getItem('globalStudentName');
+    
+    if (localId && localName) {
+      router.replace(`/play/${code}`); // Already joined this room
+    } else if (globalId && globalName) {
+      // Sync their identity to this specific game room code
+      localStorage.setItem(`studentId_${code}`, globalId);
+      localStorage.setItem(`studentName_${code}`, globalName);
+      router.replace(`/play/${code}`);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialCode]);
+  }, [code, router]);
 
-  const parsed = selectedValue ? JSON.parse(selectedValue) : null;
+  useEffect(() => {
+    const fetchData = async () => {
+      console.log(`[JOIN] Fetching roster for code: ${code || 'NONE'}`);
+      try {
+        // 1. Primary: Fetch from global Supabase roster (most stable connection)
+        const res = await fetch('/api/roster');
+        const data = await res.json();
+        
+        if (data.roster && data.roster.length > 0) {
+          console.log(`[JOIN] Supabase roster loaded: ${data.roster.length} students.`);
+          setRoster(data.roster);
+          
+          // Only stop here if we actually have names. 
+          // If Supabase is empty, we still try Redis.
+          return;
+        }
 
-  const handleJoin = async () => {
-    if (!parsed) return setError("Please select your name");
+        // 2. Fallback: If Supabase is empty, try the live Redis room (might be slower due to peering)
+        if (code) {
+          console.log(`[JOIN] Supabase empty, trying live Redis room...`);
+          const roomRes = await fetch(`/api/room/get?code=${code}`);
+          if (roomRes.ok) {
+            const roomData = await roomRes.json();
+            if (roomData.activeRoster) {
+              const studentsOnly = roomData.activeRoster
+                .filter((p: any) => p.type === "student")
+                .map((p: any) => ({
+                   id: p.id,
+                   name: p.name,
+                   class_name: p.class_name || "Class"
+                }));
+              
+              if (studentsOnly.length > 0) {
+                setRoster(studentsOnly);
+                return;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error("[JOIN] Failed to load roster", err);
+      }
+    };
+    
+    fetchData();
+  }, [code]);
+
+  // Group roster by class
+  const groupedRoster = roster.reduce((acc, student) => {
+    if (!acc[student.class_name]) acc[student.class_name] = [];
+    acc[student.class_name].push(student);
+    return acc;
+  }, {} as Record<string, typeof roster>);
+
+  const handleVerifyOtp = async () => {
+    if (otp.length !== 4) return;
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/room/join", {
+      const res = await fetch("/api/auth/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          code,
-          name: parsed.name,
-          teamId: parsed.teamId,
-          teamName: parsed.teamName,
+          roster_id: selectedStudent,
+          otp: otp
         }),
       });
       const data = await res.json();
       if (res.ok) {
+        // Drop cookie handled by server, we can just redirect!
+        // Store global identity to bypass future logins
+        localStorage.setItem(`globalStudentId`, data.studentId);
+        localStorage.setItem(`globalStudentName`, data.studentName);
+        // Sync it to this specific room so game logic immediately picks it up
         localStorage.setItem(`studentId_${code}`, data.studentId);
-        localStorage.setItem(`studentName_${code}`, parsed.name);
-        router.push(`/play/${code}`);
+        localStorage.setItem(`studentName_${code}`, data.studentName);
+        
+        if (code) {
+          router.push(`/play/${code}`);
+        } else {
+          setError("No room code provided. Please scan the QR code on the projector again.");
+          setOtp("");
+        }
       } else {
-        setError(data.error);
+        setError(data.error || "Invalid Authorization Code");
+        setOtp("");
       }
     } catch (e: any) {
       setError(e.message);
+      setOtp("");
     }
     setLoading(false);
   };
+
+  const selectedStudentData = roster.find(s => s.id === selectedStudent);
 
   return (
     <div className={styles.card}>
@@ -97,94 +144,57 @@ function JoinLogic() {
 
       {/* Hero */}
       <h1 className={styles.title}>
-        {step === 1 ? "Join a Game" : "Ready to Play?"}
+        {step === 1 ? "Choose Operator" : "Authorization"}
       </h1>
       <p className={styles.subtitle}>
         {step === 1
-          ? "Enter the 4-digit code on the projector"
-          : "Select your name to join"}
+          ? "Select your identity to connect"
+          : `Enter the code provided by the Commander`}
       </p>
 
-      {/* Step 1 — Code entry */}
+      {/* Step 1 — Name select */}
       {step === 1 && (
-        <div className={styles.codeWrap}>
-          <label className={styles.fieldLabel}>Room Code</label>
-          <input
-            type="text"
-            className={styles.codeInput}
-            maxLength={4}
-            placeholder="XXXX"
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            onKeyDown={(e) => e.key === "Enter" && handleFetchRoom()}
-            autoFocus
-            autoComplete="off"
-          />
-          {error && <div className={styles.error}>{error}</div>}
-          <button
-            className={styles.joinBtn}
-            onClick={handleFetchRoom}
-            disabled={code.length !== 4 || loading}
-          >
-            {loading ? "Searching..." : "Find Room →"}
-          </button>
-        </div>
-      )}
-
-      {/* Step 2 — Name select */}
-      {step === 2 && (
         <div className={styles.nameWrap}>
-          <label className={styles.fieldLabel}>Your Name</label>
+          <label className={styles.fieldLabel}>Global Roster</label>
           <select
             className={styles.nameSelect}
-            value={selectedValue}
-            onChange={(e) => setSelectedValue(e.target.value)}
+            value={selectedStudent}
+            onChange={(e) => setSelectedStudent(e.target.value)}
           >
             <option value="" disabled>
-              Choose your name...
+              Select your name...
             </option>
-            {teams.map((team, tIdx) => {
-              const color = TEAM_COLORS[tIdx % TEAM_COLORS.length];
-              return (
-                <optgroup key={team.id} label={`── ${team.name} ──`}>
-                  {team.students?.map((s: any) => (
-                    <option
-                      key={s.id}
-                      value={JSON.stringify({
-                        name: s.name,
-                        teamId: team.id,
-                        teamName: team.name,
-                        color,
-                      })}
-                    >
+            {Object.keys(groupedRoster).map(className => (
+                <optgroup key={className} label={`── ${className} ──`}>
+                  {groupedRoster[className].map(s => (
+                    <option key={s.id} value={s.id}>
                       {s.name}
                     </option>
                   ))}
                 </optgroup>
-              );
-            })}
+            ))}
           </select>
 
-          {/* Team preview */}
-          {parsed && (
+          {/* Identity preview */}
+          {selectedStudentData && (
             <div
               className={styles.teamPreview}
               style={{
-                border: `1.5px solid ${parsed.color}30`,
-                background: `${parsed.color}0d`,
+                border: `1.5px solid rgba(190, 239, 0, 0.3)`,
+                background: `rgba(190, 239, 0, 0.05)`,
               }}
             >
               <div
                 className={styles.teamPreviewDot}
-                style={{ background: parsed.color, boxShadow: `0 0 8px ${parsed.color}80` }}
+                style={{ background: 'var(--team-green)', boxShadow: `0 0 8px var(--team-green)` }}
               />
               <div className={styles.teamPreviewInfo}>
-                <span className={styles.teamPreviewLabel}>Your Team</span>
+                <span className={styles.teamPreviewLabel}>Selected Operator</span>
                 <span
                   className={styles.teamPreviewName}
-                  style={{ color: parsed.color }}
+                  style={{ color: 'var(--team-green)' }}
                 >
-                  {parsed.teamName}
+                  {selectedStudentData.name}
                 </span>
               </div>
             </div>
@@ -194,25 +204,49 @@ function JoinLogic() {
 
           <button
             className={styles.joinBtn}
-            onClick={handleJoin}
-            disabled={!parsed || loading}
+            onClick={() => setStep(2)}
+            disabled={!selectedStudent || loading}
           >
-            {loading
-              ? "Connecting..."
-              : parsed
-              ? `Join as ${parsed.name} →`
-              : "Select your name above"}
+            Proceed →
+          </button>
+        </div>
+      )}
+
+      {/* Step 2 — Code entry */}
+      {step === 2 && (
+        <div className={styles.codeWrap}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '-8px' }}>
+             <label className={styles.fieldLabel}>4-Digit Authorization Code</label>
+             <button onClick={() => setStep(1)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '12px', cursor: 'pointer' }}>Change Operator</button>
+          </div>
+          
+          <input
+            type="tel"
+            className={styles.codeInput}
+            maxLength={4}
+            placeholder="XXXX"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value.toUpperCase())}
+            onKeyDown={(e) => e.key === "Enter" && handleVerifyOtp()}
+            autoFocus
+            autoComplete="off"
+          />
+          {error && <div className={styles.error}>{error}</div>}
+          <button
+            className={styles.joinBtn}
+            onClick={handleVerifyOtp}
+            disabled={otp.length !== 4 || loading}
+          >
+            {loading ? "Authenticating..." : "Connect →"}
           </button>
         </div>
       )}
 
       {/* Class badge */}
-      <div className={styles.classBadge}>
+      <div className={styles.classBadge} style={{ marginTop: '32px' }}>
         <div className={styles.classBadgeDot} />
         <span className={styles.classBadgeText}>
-          {step === 2 && teams.length > 0
-            ? `${teams.reduce((n, t) => n + (t.students?.length || 0), 0)} Students · ${teams.length} Teams`
-            : "SMA · English Class"}
+          SECURE NEURAL LINK • ENCRYPTED
         </span>
       </div>
     </div>

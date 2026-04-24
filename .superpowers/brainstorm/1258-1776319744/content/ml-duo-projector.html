@@ -1,0 +1,150 @@
+<h2>Mobile Legends × Duolingo — Projector Redesign</h2>
+<p class="subtitle">Dramatic dark energy + chunky readable cards. Two states below — before and after reveal.</p>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap');
+  .game-wrap { font-family: 'Nunito', sans-serif; background: #07090f; border-radius: 14px; overflow: hidden; border: 1px solid #1c2a40; margin-top: 10px; }
+  .game-header { background: #0a0d18; border-bottom: 1px solid #1c2a40; height: 60px; display: flex; align-items: center; padding: 0 36px; gap: 16px; }
+  .g-dot { width: 10px; height: 10px; border-radius: 50%; background: #b06eff; box-shadow: 0 0 10px #b06eff; flex-shrink: 0; }
+  .g-title { font-size: 17px; font-weight: 900; color: #b06eff; letter-spacing: 0.08em; }
+  .g-div { width: 1px; height: 22px; background: #1c2a40; }
+  .g-qcount { font-size: 14px; color: #4a637d; font-family: 'JetBrains Mono', monospace; }
+  .g-timer { font-size: 24px; font-weight: 900; color: #ffc843; font-family: 'JetBrains Mono', monospace; margin-left: auto; }
+  .timer-bar { height: 5px; background: #131b2b; }
+  .timer-fill { height: 5px; width: 65%; background: linear-gradient(90deg, #b06eff 0%, #ffc843 100%); }
+  .game-body { padding: 28px 44px 32px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+  .g-prompt { font-size: 14px; font-weight: 700; color: #4a637d; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  /* Word tiles */
+  .word-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 720px; }
+  .word-tile {
+    background: #0e1420;
+    border: 2.5px solid rgba(176,110,255,0.25);
+    border-radius: 18px;
+    padding: 0 16px;
+    height: 110px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; font-weight: 900; color: #dce8f5;
+    letter-spacing: 0.05em;
+    box-shadow: inset 0 1px 0 rgba(176,110,255,0.1), 0 4px 20px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+  }
+  .word-tile::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(160deg, rgba(176,110,255,0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .word-tile.correct {
+    background: #071a10;
+    border-color: #00e87a;
+    color: #00e87a;
+    box-shadow: inset 0 1px 0 rgba(0,232,122,0.2), 0 0 40px rgba(0,232,122,0.2), 0 4px 20px rgba(0,0,0,0.4);
+  }
+  .word-tile.correct::before { background: linear-gradient(160deg, rgba(0,232,122,0.1) 0%, transparent 60%); }
+  .word-tile.dimmed { opacity: 0.22; box-shadow: none; border-color: #1c2a40; }
+
+  /* Team chips */
+  .teams-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .team-chip {
+    border-radius: 12px; padding: 9px 22px;
+    font-size: 15px; font-weight: 900;
+    border: 2.5px solid;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .team-locked-g  { background: rgba(0,232,122,0.1);  border-color: #00e87a; color: #00e87a; }
+  .team-locked-c  { background: rgba(0,200,240,0.1);  border-color: #00c8f0; color: #00c8f0; }
+  .team-locked-y  { background: rgba(255,200,67,0.1); border-color: #ffc843; color: #ffc843; }
+  .team-waiting   { background: #0e1420; border-color: #243347; color: #4a637d; }
+  .team-correct-g { background: rgba(0,232,122,0.12); border-color: #00e87a; color: #00e87a; }
+  .team-wrong     { background: rgba(255,68,68,0.1);  border-color: #ff4444; color: #ff4444; }
+  .team-none      { background: #0e1420; border-color: #243347; color: #4a637d; }
+
+  /* Buttons */
+  .btn-reveal { background: #b06eff; color: #000; border: none; border-radius: 14px; padding: 15px 48px; font-size: 17px; font-weight: 900; font-family: inherit; cursor: pointer; box-shadow: 0 4px 24px rgba(176,110,255,0.35); letter-spacing: 0.03em; }
+  .btn-hint   { background: transparent; border: 2.5px solid rgba(176,110,255,0.25); color: #b06eff; border-radius: 14px; padding: 14px 22px; font-size: 16px; font-family: inherit; cursor: pointer; }
+  .btn-next   { background: transparent; border: 2.5px solid rgba(176,110,255,0.3); color: #b06eff; border-radius: 14px; padding: 14px 40px; font-size: 17px; font-weight: 900; font-family: inherit; cursor: pointer; }
+  .btn-new    { background: transparent; border: 2px solid #1c2a40; color: #4a637d; border-radius: 14px; padding: 14px 22px; font-size: 15px; font-family: inherit; cursor: pointer; }
+
+  /* Explain card */
+  .explain-card {
+    background: #0e1420; border: 1.5px solid rgba(0,232,122,0.2); border-radius: 14px;
+    padding: 14px 28px; max-width: 660px; text-align: center;
+    font-size: 16px; color: #8899aa; line-height: 1.55;
+  }
+  .explain-card strong { color: #dce8f5; }
+
+  /* Score burst */
+  .score-burst { font-size: 22px; font-weight: 900; color: #00e87a; }
+</style>
+
+<!-- STATE 1: PRE-REVEAL -->
+<div class="section">
+  <div class="label">Before reveal — 2 of 4 teams locked in</div>
+  <div class="game-wrap">
+    <div class="game-header">
+      <div class="g-dot"></div>
+      <span class="g-title">ODD ONE OUT</span>
+      <div class="g-div"></div>
+      <span class="g-qcount">Q 3 / 12</span>
+      <span class="g-timer">0:38</span>
+    </div>
+    <div class="timer-bar"><div class="timer-fill"></div></div>
+    <div class="game-body">
+      <div class="g-prompt">Which word doesn't belong?</div>
+      <div class="word-grid">
+        <div class="word-tile">APPLE</div>
+        <div class="word-tile">MANGO</div>
+        <div class="word-tile">CARROT</div>
+        <div class="word-tile">BANANA</div>
+      </div>
+      <div class="teams-row">
+        <div class="team-chip team-locked-g">🔒 Alpha</div>
+        <div class="team-chip team-locked-c">🔒 Beta</div>
+        <div class="team-chip team-waiting">· · · Gamma</div>
+        <div class="team-chip team-waiting">· · · Delta</div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:4px;">
+        <button class="btn-reveal">Reveal Answer</button>
+        <button class="btn-hint">💡 Hint</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STATE 2: POST-REVEAL -->
+<div class="section" style="margin-top:32px;">
+  <div class="label">After reveal — CARROT was the odd one out</div>
+  <div class="game-wrap">
+    <div class="game-header">
+      <div class="g-dot"></div>
+      <span class="g-title">ODD ONE OUT</span>
+      <div class="g-div"></div>
+      <span class="g-qcount">Q 3 / 12</span>
+    </div>
+    <div class="timer-bar"></div>
+    <div class="game-body">
+      <div class="g-prompt">The odd one out was...</div>
+      <div class="word-grid">
+        <div class="word-tile dimmed">APPLE</div>
+        <div class="word-tile dimmed">MANGO</div>
+        <div class="word-tile correct">CARROT ✓</div>
+        <div class="word-tile dimmed">BANANA</div>
+      </div>
+      <div class="explain-card">
+        💡 <strong>CARROT</strong> is a vegetable — Apple, Mango, and Banana are all fruits.
+      </div>
+      <div class="teams-row">
+        <div class="team-chip team-correct-g">✓ Alpha <span class="score-burst">+500</span></div>
+        <div class="team-chip team-wrong">✗ Beta</div>
+        <div class="team-chip team-wrong">✗ Gamma</div>
+        <div class="team-chip team-none">— Delta</div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:4px;">
+        <button class="btn-next">Next Question →</button>
+        <button class="btn-new">← New Game</button>
+      </div>
+    </div>
+  </div>
+</div>

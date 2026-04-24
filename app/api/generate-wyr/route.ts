@@ -22,8 +22,10 @@ Return ONLY raw JSON in this exact structure:
 Rules:
 1. Provide exactly 10 debate scenarios.
 2. The choices should be bizarre, funny, or difficult decisions matched to the topic.
-3. Keep text for options extremely concise (1-2 sentences max).
-4. Return ONLY pure raw JSON. No markdown.`;
+3. CRITICAL: "optionA" and "optionB" MUST be separate strings. Never put "or" between them.
+4. Keep text for options extremely concise (under 10 words each).
+5. Return ONLY pure raw JSON. No markdown backticks. No extra text.
+6. If the topic is inappropriate, generate high-quality ESL debate prompts about "Learning English" instead.`;
 
     const userPrompt = `Topic: ${topic}\nLevel: ${level}\nGenerate JSON now!`;
 

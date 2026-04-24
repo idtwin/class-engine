@@ -20,7 +20,12 @@ export default function MultiplayerHost({ gameMode, forceShow = false }: { gameM
     setIsOpen(true);
     try {
       const activeClass = classes.find(c => c.id === activeClassId);
-      const studentMap = activeClass ? activeClass.students.map(s => ({ id: s.id, name: s.name, type: "student" })) : [];
+      const studentMap = activeClass ? activeClass.students.map(s => ({
+        id: s.id,
+        name: s.name,
+        class_name: activeClass.name,
+        type: "student"
+      })) : [];
       const colors = ["#ef4444", "#3b82f6", "#22c55e", "#eab308", "#a855f7", "#f97316", "#ec4899", "#06b6d4"];
       const teamsPayload = currentTeams.map((t, i) => ({
          id: t.id,
@@ -120,8 +125,8 @@ export default function MultiplayerHost({ gameMode, forceShow = false }: { gameM
     );
   }
 
-  const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost';
-  const siteUrl = isLocal ? 'https://class-engine.vercel.app' : (typeof window !== 'undefined' ? window.location.origin : '');
+  const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.') || window.location.hostname.startsWith('10.'));
+  const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://class-engine.vercel.app';
   const joinUrl = `${siteUrl}/join?code=${activeRoomCode}`;
 
   return (
