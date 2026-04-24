@@ -423,7 +423,12 @@
 }
 
 .studentCardSide {
-  display: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
 }
 
 .studentHeader {
@@ -545,12 +550,12 @@
   opacity: 1;
 }
 
-.fluencyColor { background: rgba(0,200,240,0.3); }
-.fluencyColor.lit { background: #00c8f0; }
-.energyColor { background: rgba(255,200,67,0.3); }
-.energyColor.lit { background: #ffc843; }
+.fluencyColor { background: rgba(255,136,136,0.3); }
+.fluencyColor.lit { background: #00e87a; box-shadow: 0 0 8px rgba(0,232,122,0.4); }
+.energyColor { background: rgba(0,200,240,0.3); }
+.energyColor.lit { background: #00c8f0; box-shadow: 0 0 8px rgba(0,200,240,0.4); }
 .confColor { background: rgba(176,110,255,0.3); }
-.confColor.lit { background: #b06eff; }
+.confColor.lit { background: #b06eff; box-shadow: 0 0 8px rgba(176,110,255,0.4); }
 
 .studentActionRow {
   display: flex;
@@ -608,19 +613,48 @@
 }
 
 .avatarFrame {
-  display: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  gap: 4px;
 }
 
 .avatarImgContainer {
-  display: none;
+  width: 60px;
+  height: 60px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.3);
 }
 
 .avatarImg {
-  display: none;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .avatarGenderTag {
-  display: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: bold;
+  color: white;
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  border: 1px solid var(--bg);
 }
 
 .studentCardTop {
