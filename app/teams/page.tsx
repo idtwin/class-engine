@@ -590,44 +590,59 @@ export default function TeamsPage() {
 
                           <div className={styles.cardBody}>
                             <div className={styles.statRows}>
-                              {/* ROW 1: FLUENCY */}
-                              <div className={styles.statRow}>
-                                <div className={styles.statHeader}>
-                                  <span className={styles.statLabel}>FLUENCY</span>
-                                  <span className={styles.statValue} style={{ color: 'var(--stat-power)' }}>{s.level || 'MID'}</span>
-                                </div>
-                                <div className={styles.segmentedBar}>
-                                  <div className={`${styles.segment} ${styles.fluencyColor} ${['Low', 'Mid', 'High'].indexOf(s.level || 'Mid') >= 0 ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'level', 'Low', e)} />
-                                  <div className={`${styles.segment} ${styles.fluencyColor} ${['Mid', 'High'].indexOf(s.level || 'Mid') >= 0 ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'level', 'Mid', e)} />
-                                  <div className={`${styles.segment} ${styles.fluencyColor} ${['High'].indexOf(s.level || 'Mid') >= 0 ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'level', 'High', e)} />
-                                </div>
-                              </div>
+                              {/* ROW 1: POWER (level: Low/Mid/High → Red/Yellow/Cyan) */}
+                              {(() => {
+                                const lv = s.level || 'Mid';
+                                const c = lv === 'Low' ? styles.statLow : lv === 'High' ? styles.statHigh : styles.statMid;
+                                return (
+                                  <div className={styles.statRow}>
+                                    <div className={styles.statHeader}>
+                                      <span className={styles.statLabel}>POWER</span>
+                                    </div>
+                                    <div className={styles.segmentedBar}>
+                                      <div className={`${styles.segment} ${c} ${styles.lit}`} onClick={(e) => setStat(s.id, 'level', 'Low', e)} />
+                                      <div className={`${styles.segment} ${c} ${['Mid','High'].includes(lv) ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'level', 'Mid', e)} />
+                                      <div className={`${styles.segment} ${c} ${lv === 'High' ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'level', 'High', e)} />
+                                    </div>
+                                  </div>
+                                );
+                              })()}
 
-                              {/* ROW 2: ENERGY */}
-                              <div className={styles.statRow}>
-                                <div className={styles.statHeader}>
-                                  <span className={styles.statLabel}>ENERGY</span>
-                                  <span className={styles.statValue} style={{ color: 'var(--stat-energy)' }}>{s.energy || 'NORMAL'}</span>
-                                </div>
-                                <div className={styles.segmentedBar}>
-                                  <div className={`${styles.segment} ${styles.energyColor} ${['Passive', 'Normal', 'Active'].indexOf(s.energy || 'Normal') >= 0 ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'energy', 'Passive', e)} />
-                                  <div className={`${styles.segment} ${styles.energyColor} ${['Normal', 'Active'].indexOf(s.energy || 'Normal') >= 0 ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'energy', 'Normal', e)} />
-                                  <div className={`${styles.segment} ${styles.energyColor} ${['Active'].indexOf(s.energy || 'Normal') >= 0 ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'energy', 'Active', e)} />
-                                </div>
-                              </div>
+                              {/* ROW 2: ENERGY (Passive/Normal/Active → Red/Yellow/Cyan) */}
+                              {(() => {
+                                const en = s.energy || 'Normal';
+                                const c = en === 'Passive' ? styles.statLow : en === 'Active' ? styles.statHigh : styles.statMid;
+                                return (
+                                  <div className={styles.statRow}>
+                                    <div className={styles.statHeader}>
+                                      <span className={styles.statLabel}>ENERGY</span>
+                                    </div>
+                                    <div className={styles.segmentedBar}>
+                                      <div className={`${styles.segment} ${c} ${styles.lit}`} onClick={(e) => setStat(s.id, 'energy', 'Passive', e)} />
+                                      <div className={`${styles.segment} ${c} ${['Normal','Active'].includes(en) ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'energy', 'Normal', e)} />
+                                      <div className={`${styles.segment} ${c} ${en === 'Active' ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'energy', 'Active', e)} />
+                                    </div>
+                                  </div>
+                                );
+                              })()}
 
-                              {/* ROW 3: COMMAND */}
-                              <div className={styles.statRow}>
-                                <div className={styles.statHeader}>
-                                  <span className={styles.statLabel}>COMMAND</span>
-                                  <span className={styles.statValue} style={{ color: 'var(--stat-command)' }}>{s.confidence || 'MID'}</span>
-                                </div>
-                                <div className={styles.segmentedBar}>
-                                  <div className={`${styles.segment} ${styles.confColor} ${['Low', 'Mid', 'High'].indexOf(s.confidence || 'Mid') >= 0 ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'confidence', 'Low', e)} />
-                                  <div className={`${styles.segment} ${styles.confColor} ${['Mid', 'High'].indexOf(s.confidence || 'Mid') >= 0 ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'confidence', 'Mid', e)} />
-                                  <div className={`${styles.segment} ${styles.confColor} ${['High'].indexOf(s.confidence || 'Mid') >= 0 ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'confidence', 'High', e)} />
-                                </div>
-                              </div>
+                              {/* ROW 3: COMMAND (Low/Mid/High → Red/Yellow/Cyan) */}
+                              {(() => {
+                                const co = s.confidence || 'Mid';
+                                const c = co === 'Low' ? styles.statLow : co === 'High' ? styles.statHigh : styles.statMid;
+                                return (
+                                  <div className={styles.statRow}>
+                                    <div className={styles.statHeader}>
+                                      <span className={styles.statLabel}>COMMAND</span>
+                                    </div>
+                                    <div className={styles.segmentedBar}>
+                                      <div className={`${styles.segment} ${c} ${styles.lit}`} onClick={(e) => setStat(s.id, 'confidence', 'Low', e)} />
+                                      <div className={`${styles.segment} ${c} ${['Mid','High'].includes(co) ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'confidence', 'Mid', e)} />
+                                      <div className={`${styles.segment} ${c} ${co === 'High' ? styles.lit : ''}`} onClick={(e) => setStat(s.id, 'confidence', 'High', e)} />
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                             </div>
 
                             <div className={styles.studentActionRow}>
