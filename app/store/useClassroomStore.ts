@@ -61,9 +61,13 @@ interface ClassroomState {
   activeClassId: string | null;
   presentStudentIds: string[]; // Global tracking for roster presence
   currentTeams: Team[];
+  unassignedStudents: Student[]; // Bench/holding area for students not in teams
   sessionHistory: SessionEntry[];
   
   // App state
+  currentStep: number;
+  setStep: (step: number) => void;
+
   twistVisible: boolean;
   currentTwist: string;
   triggerTwist: () => void;
@@ -120,6 +124,7 @@ interface ClassroomState {
   setTeamScore: (teamId: string, score: number) => void;
   updateTeamName: (teamId: string, name: string) => void;
   moveStudentToTeam: (studentId: string, targetTeamId: string) => void;
+  moveStudentToBench: (studentId: string) => void;
   resetTeamsState: () => void;
   
   activeAwardAmount: number;
@@ -174,6 +179,7 @@ export const useClassroomStore = create<ClassroomState>()(
       activeClassId: "demo-class-1",
       presentStudentIds: DEMO_STUDENTS.map(s => s.id),
       currentTeams: [],
+      unassignedStudents: [],
       sessionHistory: [],
 
       // --- Session Logic ---
@@ -468,15 +474,33 @@ export const useClassroomStore = create<ClassroomState>()(
           const target = newTeams.find(t => t.id === targetTeamId);
           if (target) target.students.push(studentToMove);
         }
+        return { currentTeams: newTeams, unassignedStudents: state.unassignedStudents.filter(s => s.id !== studentId) };
+      }),
+
+      moveStudentToBench: (studentId) => set((state) => {
+        let studentToMove: Student | undefined;
+        const newTeams = state.currentTeams.map(t => {
+          const student = t.students.find(s => s.id === studentId);
+          if (student) studentToMove = student;
+          return { ...t, students: t.students.filter(s => s.id !== studentId) };
+        });
+        if (studentToMove && !state.unassignedStudents.find(s => s.id === studentId)) {
+          return { currentTeams: newTeams, unassignedStudents: [...state.unassignedStudents, studentToMove] };
+        }
         return { currentTeams: newTeams };
       }),
 
       resetTeamsState: () => set((state) => ({
-        currentTeams: state.currentTeams.map((t, i) => ({ ...t, name: `Team ${i + 1}`, score: 0 }))
+        currentTeams: state.currentTeams.map((t, i) => ({ ...t, name: `Team ${i + 1}`, score: 0 })),
+        unassignedStudents: []
       })),
 
       activeAwardAmount: 100,
       setActiveAwardAmount: (amt) => set({ activeAwardAmount: amt }),
+
+      // --- Step Navigation ---
+      currentStep: 0,
+      setStep: (step) => set({ currentStep: step }),
 
       // --- App State ---
       twistVisible: false,
