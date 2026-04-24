@@ -312,9 +312,9 @@ export default function TeamsPage() {
   // ─── Data ─────────────────────────────────────────────────────────────────
 
   const teamHex = ['#00e87a', '#00c8f0', '#ffc843', '#ff4d8f', '#b06eff', '#ff7d3b', '#e2e8f0'];
-  const flColor = { Low: '#0088cc', Mid: '#00bbff', High: '#00f3ff' };
-  const enColor = { Passive: '#cc9900', Normal: '#ffbb00', Active: '#ffc843' };
-  const coColor = { Low: '#cc0066', Mid: '#ff0088', High: '#ff2e88' };
+  const flColor = { Low: '#ff8080', Mid: '#ffc843', High: '#00c8f0' };
+  const enColor = { Passive: '#4a637d', Normal: '#00c8f0', Active: '#ff7d3b' };
+  const coColor = { Low: '#ff8080', Mid: '#ffc843', High: '#ffc843' };
 
   const filteredStudents = (activeClass?.students ?? [])
     .filter(s => {

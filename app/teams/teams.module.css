@@ -551,12 +551,12 @@
   opacity: 1;
 }
 
-.fluencyColor { background: rgba(255,136,136,0.3); }
-.fluencyColor.lit { background: #00e87a; box-shadow: 0 0 8px rgba(0,232,122,0.4); }
+.fluencyColor { background: rgba(0,200,240,0.3); }
+.fluencyColor.lit { background: #00c8f0; box-shadow: 0 0 8px rgba(0,200,240,0.4); }
 .energyColor { background: rgba(0,200,240,0.3); }
 .energyColor.lit { background: #00c8f0; box-shadow: 0 0 8px rgba(0,200,240,0.4); }
-.confColor { background: rgba(176,110,255,0.3); }
-.confColor.lit { background: #b06eff; box-shadow: 0 0 8px rgba(176,110,255,0.4); }
+.confColor { background: rgba(255,200,67,0.3); }
+.confColor.lit { background: #ffc843; box-shadow: 0 0 8px rgba(255,200,67,0.4); }
 
 .studentActionRow {
   display: flex;
