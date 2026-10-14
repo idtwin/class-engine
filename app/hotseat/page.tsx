@@ -33,8 +33,17 @@ export default function HotSeatMode() {
     activeTeamIndex,
     updateTeamScore, 
     getActiveApiKey, 
-    mistralModel, 
+    getActiveModel,
     llmProvider,
+    setLlmProvider,
+    groqModel,
+    setGroqModel,
+    groqKey,
+    setGroqKey,
+    geminiKey,
+    setGeminiKey,
+    mistralKey,
+    setMistralKey,
     showTranslations,
     setShowTranslations
   } = useClassroomStore();
@@ -42,6 +51,7 @@ export default function HotSeatMode() {
   const [topic, setTopic] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
+  const [showAiSettings, setShowAiSettings] = useState(false);
   const [words, setWords] = useState<any[]>(STARTER_HOTSEAT_WORDS);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [level, setLevel] = useState("A1-A2");
@@ -148,7 +158,7 @@ export default function HotSeatMode() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           apiKey: getActiveApiKey(),
-          mistralModel,
+          mistralModel: getActiveModel(),
           provider: llmProvider,
           topic,
           level,
@@ -280,6 +290,81 @@ export default function HotSeatMode() {
                     <option value="B1-B2">B1 - B2 (Intermediate)</option>
                     <option value="C1-C2">C1 - C2 (Advanced)</option>
                   </select>
+                </div>
+
+                {/* Collapsible AI Engine Settings */}
+                <div style={{ marginTop: 8, marginBottom: 16, border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 12px", background: "rgba(0,0,0,0.25)" }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowAiSettings(!showAiSettings)}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", background: "none", border: "none", color: "var(--muted)", fontSize: 11, fontFamily: "var(--font-mono)", cursor: "pointer", padding: "4px 0" }}
+                  >
+                    <span>⚙️ AI Engine: <strong style={{ color: "#ff7d3b" }}>{llmProvider.toUpperCase()}</strong> ({getActiveModel()})</span>
+                    <span style={{ color: "#ff7d3b" }}>{showAiSettings ? "▲ Hide" : "▼ Change Key / Model"}</span>
+                  </button>
+                  {showAiSettings && (
+                    <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 10, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 10 }}>
+                      <div>
+                        <label style={{ display: "block", fontSize: 10, color: "var(--muted)", textTransform: "uppercase", marginBottom: 4 }}>Provider</label>
+                        <select
+                          value={llmProvider}
+                          onChange={(e) => setLlmProvider(e.target.value as any)}
+                          className={styles.setupSelect}
+                        >
+                          <option value="groq">Groq (Ultra-fast LPU)</option>
+                          <option value="gemini">Google Gemini</option>
+                          <option value="mistral">Mistral AI</option>
+                          <option value="lmstudio">LM Studio (Local)</option>
+                        </select>
+                      </div>
+                      {llmProvider === "groq" && (
+                        <div>
+                          <label style={{ display: "block", fontSize: 10, color: "var(--muted)", textTransform: "uppercase", marginBottom: 4 }}>Groq Model Name</label>
+                          <input
+                            type="text"
+                            value={groqModel}
+                            onChange={(e) => setGroqModel(e.target.value)}
+                            className={styles.setupInput}
+                            placeholder="llama-3.3-70b-versatile"
+                          />
+                          <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                            <button
+                              type="button"
+                              onClick={() => setGroqModel("llama-3.3-70b-versatile")}
+                              style={{ fontSize: 10, padding: "2px 6px", background: "rgba(255,255,255,0.06)", border: "1px solid var(--border)", borderRadius: 4, color: "#cbd5e1", cursor: "pointer" }}
+                            >
+                              llama-3.3-70b-versatile (Recommended)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setGroqModel("llama-3.1-8b-instant")}
+                              style={{ fontSize: 10, padding: "2px 6px", background: "rgba(255,255,255,0.06)", border: "1px solid var(--border)", borderRadius: 4, color: "#cbd5e1", cursor: "pointer" }}
+                            >
+                              llama-3.1-8b-instant (Fastest)
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {llmProvider !== "lmstudio" && (
+                        <div>
+                          <label style={{ display: "block", fontSize: 10, color: "var(--muted)", textTransform: "uppercase", marginBottom: 4 }}>
+                            {llmProvider === "groq" ? "Groq API Key (gsk_...)" : llmProvider === "gemini" ? "Gemini API Key (AIza...)" : "Mistral API Key"}
+                          </label>
+                          <input
+                            type="password"
+                            value={llmProvider === "groq" ? groqKey : llmProvider === "gemini" ? geminiKey : mistralKey}
+                            onChange={(e) => {
+                              if (llmProvider === "groq") setGroqKey(e.target.value);
+                              else if (llmProvider === "gemini") setGeminiKey(e.target.value);
+                              else setMistralKey(e.target.value);
+                            }}
+                            className={styles.setupInput}
+                            placeholder={llmProvider === "groq" ? "gsk_..." : llmProvider === "gemini" ? "AIza..." : "your-api-key..."}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ display: "flex", gap: 12, alignItems: "center" }}>

@@ -766,7 +766,7 @@ export const useClassroomStore = create<ClassroomState>()(
       setMistralKey: (key) => set({ mistralKey: key }),
       groqKey: "",
       setGroqKey: (key) => set({ groqKey: key }),
-      geminiModel: "gemini-2.5-flash",
+      geminiModel: "gemini-2.0-flash",
       setGeminiModel: (m) => set({ geminiModel: m }),
       mistralModel: "mistral-small-latest",
       setMistralModel: (m) => set({ mistralModel: m }),
