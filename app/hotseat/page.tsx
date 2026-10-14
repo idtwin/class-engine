@@ -8,7 +8,6 @@ import { Sparkles, SlidersHorizontal, ArrowLeft } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
 import FloatingReactionsOverlay from "../components/FloatingReactionsOverlay";
 // @ts-ignore
-import { Textfit } from "react-textfit";
 import { useLiveRoomHost } from "@/app/lib/useLiveRoomHost";
 import { playSFX } from "../lib/audio";
 
@@ -320,13 +319,14 @@ export default function HotSeatMode() {
           {currentIndex < words.length && timeLeft > 0 && (
             <div key={currentIndex} className={styles.hsCard}>
               <div className={styles.hsTargetWord}>
-                <Textfit 
-                  mode="single" 
-                  max={500} 
+                <div 
                   className={styles.hsMainWordFit}
+                  style={{
+                    fontSize: main.length > 14 ? "3.5rem" : main.length > 9 ? "5rem" : "6.5rem",
+                  }}
                 >
                   {main}
-                </Textfit>
+                </div>
                 {sub && <div className={styles.hsTranslation}>{sub}</div>}
               </div>
 
