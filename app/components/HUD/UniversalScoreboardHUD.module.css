@@ -1,0 +1,288 @@
+.scoreboardContainer {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 255, 213, 0.1);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Collapsed Pill Dock */
+.collapsedPill {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 38px;
+  padding: 0 18px;
+  background: var(--surface);
+  border: 1px solid rgba(0, 255, 213, 0.3);
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 12px rgba(0, 255, 213, 0.15);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.collapsedPill:hover {
+  border-color: #00FFD5;
+  box-shadow: 0 0 20px rgba(0, 255, 213, 0.35);
+  transform: translateX(-50%) translateY(-2px);
+}
+
+.pillHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pillIcon {
+  color: #00FFD5;
+}
+
+.pillTitle {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #00FFD5;
+}
+
+.pillScores {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
+}
+
+.pillTeamScore {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pillExpandBtn {
+  background: transparent;
+  border: none;
+  color: #00FFD5;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  margin-left: 4px;
+}
+
+.collapseHandleBtn {
+  position: absolute;
+  top: -10px;
+  right: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.collapseHandleBtn:hover {
+  color: #00FFD5;
+  border-color: #00FFD5;
+  transform: scale(1.15);
+}
+
+.teamsList {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.teamCard {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.teamCard:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.activeTeamCard {
+  border-color: var(--team-color, #00FFD5) !important;
+  background: rgba(0, 255, 213, 0.06) !important;
+  box-shadow: 0 0 12px var(--team-color-glow, rgba(0, 255, 213, 0.3));
+}
+
+.teamColorIndicator {
+  width: 8px;
+  height: 24px;
+  border-radius: 4px;
+  background: var(--team-color, #00FFD5);
+  box-shadow: 0 0 8px var(--team-color, #00FFD5);
+}
+
+.teamInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.teamName {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #FFFFFF;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.teamMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.scoreValue {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--team-color, #00FFD5);
+  min-width: 40px;
+  text-align: right;
+}
+
+.adjusters {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-left: 4px;
+}
+
+.adjBtn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  width: 18px;
+  height: 14px;
+  line-height: 12px;
+  padding: 0;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.adjBtn:hover {
+  background: var(--team-color, #00FFD5);
+  color: #0f172a;
+  border-color: var(--team-color, #00FFD5);
+}
+
+.streakBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 5px;
+  background: rgba(255, 78, 0, 0.2);
+  border: 1px solid var(--orange);
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--orange);
+}
+
+.divider {
+  width: 1px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 4px;
+}
+
+.actionControls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hudActionBtn {
+  background: rgba(0, 255, 213, 0.1);
+  border: 1px solid rgba(0, 255, 213, 0.3);
+  color: #00FFD5;
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.hudActionBtn:hover {
+  background: rgba(0, 255, 213, 0.25);
+  box-shadow: 0 0 12px rgba(0, 255, 213, 0.4);
+  transform: translateY(-1px);
+}
+
+.floatingPoint {
+  position: absolute;
+  top: -24px;
+  right: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 800;
+  animation: floatUpFade 1s forwards ease-out;
+  pointer-events: none;
+}
+
+@keyframes floatUpFade {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-24px) scale(1.3);
+  }
+}

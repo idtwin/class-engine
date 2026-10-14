@@ -1,0 +1,137 @@
+.header {
+  height: 52px;
+  background: #060810;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  user-select: none;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 50;
+}
+
+.leftGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rightGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modeBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.modeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.teamTag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid;
+  background: rgba(255, 255, 255, 0.03);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  font-weight: 700;
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.teamColorDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.rankBadge {
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  background: rgba(0, 232, 122, 0.15);
+  color: #00e87a;
+  margin-left: 2px;
+}
+
+.timerChip {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  font-weight: 800;
+  color: #beef00;
+  background: rgba(190, 239, 0, 0.1);
+  border: 1px solid rgba(190, 239, 0, 0.3);
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+
+.pingIndicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 255, 213, 0.06);
+  border: 1px solid rgba(0, 255, 213, 0.2);
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+
+.pingOffline {
+  background: rgba(255, 77, 77, 0.1);
+  border-color: rgba(255, 77, 77, 0.3);
+}
+
+.pingDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #00ffd5;
+}
+
+.pingDotRed {
+  background: #ff4d4d;
+}
+
+.pingDotYellow {
+  background: #ffc843;
+}
+
+.pingText {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.profileBtn, .infoBtn {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 7px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: #dce8f5;
+  text-decoration: none;
+  cursor: pointer;
+}

@@ -6,25 +6,38 @@ import styles from "./story.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
 import { Sparkles } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
+import { useLiveRoomHost } from "@/app/lib/useLiveRoomHost";
+import FloatingReactionsOverlay from "../components/FloatingReactionsOverlay";
 
 const TEAM_COLORS = ['#00e87a','#00c8f0','#ffc843','#ff4d8f','#b06eff','#ff7d3b','#e2e8f0'];
 const PTS_PER_TURN = 50;
 const SC_CIRC = 125.66;
 
+const STARTER_STORY_STARTER = "On a stormy night, Captain Nova detected an unidentified signal pulsing from an abandoned orbital station...";
+const STARTER_STORY_ROUNDS = [
+  { words: ["mystery", "emergency", "airlock"] },
+  { words: ["shadow", "whisper", "decrypt"] },
+  { words: ["power surge", "escape", "companion"] },
+  { words: ["discovery", "beacon", "alliance"] },
+  { words: ["triumph", "galaxy", "legend"] },
+];
+
 export default function StoryChainMode() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider } = useClassroomStore();
+  const { setQuestion, reactions } = useLiveRoomHost("story");
+  const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider, showTranslations, setShowTranslations } = useClassroomStore();
 
   const [topic, setTopic]             = useState("");
   const [level, setLevel]             = useState("Mixed Level");
   const [timerDuration, setTimerDuration] = useState(20);
   const [isGenerating, setIsGenerating]   = useState(false);
+  const [showSetupModal, setShowSetupModal] = useState(false);
 
-  const [starter, setStarter]           = useState("");
-  const [rounds, setRounds]             = useState<{ words: string[] }[]>([]);
-  const [currentRound, setCurrentRound] = useState(-1);
-  const [story, setStory]               = useState<string[]>([]);
+  const [starter, setStarter]           = useState(STARTER_STORY_STARTER);
+  const [rounds, setRounds]             = useState<{ words: string[] }[]>(STARTER_STORY_ROUNDS);
+  const [currentRound, setCurrentRound] = useState(0);
+  const [story, setStory]               = useState<string[]>([STARTER_STORY_STARTER]);
   const [currentInput, setCurrentInput] = useState("");
   const [timeLeft, setTimeLeft]         = useState(20);
   const [timerActive, setTimerActive]   = useState(false);
@@ -34,6 +47,17 @@ export default function StoryChainMode() {
   const inputRef    = useRef<HTMLInputElement>(null);
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (rounds[currentRound]) {
+      setQuestion({
+        starter,
+        currentWords: rounds[currentRound].words,
+        currentRound: currentRound + 1,
+        totalRounds: rounds.length
+      });
+    }
+  }, [currentRound, rounds, starter, setQuestion]);
 
   // Timer countdown (skipped when timerDuration === 0)
   useEffect(() => {
@@ -82,7 +106,7 @@ export default function StoryChainMode() {
       const res = await fetch("/api/generate-story", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: getActiveApiKey(), mistralModel, provider: llmProvider, topic, level }),
+        body: JSON.stringify({ apiKey: getActiveApiKey(), mistralModel, provider: llmProvider, topic, level, showTranslations }),
       });
       const data = await res.json();
       if (res.ok && data.rounds) {
@@ -91,6 +115,7 @@ export default function StoryChainMode() {
         setCurrentRound(0);
         setTimeLeft(timerDuration);
         setTimerActive(timerDuration > 0);
+        setShowSetupModal(false);
         setTimeout(() => inputRef.current?.focus(), 100);
       } else {
         alert("Error: " + (data.error || "Unknown error"));
@@ -123,10 +148,22 @@ export default function StoryChainMode() {
   return (
     <>
       {/* ── Setup modal ── */}
-      {(rounds.length === 0 || isGenerating) && (
+      {(showSetupModal || isGenerating || rounds.length === 0) && (
         <div className={styles.setupOverlay}>
           <div className={styles.setupModal}>
             <div className={styles.setupTitleRow}>
+              {rounds.length > 0 && !isGenerating && (
+                <button
+                  onClick={() => setShowSetupModal(false)}
+                  style={{
+                    background: "transparent", border: "1px solid var(--border2)",
+                    borderRadius: 8, padding: "6px 12px", cursor: "pointer",
+                    fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)",
+                  }}
+                >
+                  ✕ Close
+                </button>
+              )}
               <div className={styles.setupTitleIcon}>📖</div>
               <div>
                 <div className={styles.setupTitleText}>Story Chain</div>
@@ -183,11 +220,19 @@ export default function StoryChainMode() {
                   <button className={styles.btnGenerate} onClick={handleGenerate} disabled={!topic.trim()}>
                     <Sparkles size={16} /> Generate Story Setup
                   </button>
+                  <label className={styles.translationToggle}>
+                    <input 
+                      type="checkbox" 
+                      checked={showTranslations} 
+                      onChange={(e) => setShowTranslations(e.target.checked)}
+                    />
+                    <span>INDONESIA (ID)</span>
+                  </label>
                   <button
                     style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 10, padding: '14px 20px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 12, cursor: 'pointer' }}
                     onClick={() => router.push('/games')}
                   >
-                    ← Back to Arcade
+                    ← Back to Missions
                   </button>
                 </div>
               </>
@@ -249,6 +294,12 @@ export default function StoryChainMode() {
 
             <button
               style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 8, padding: '6px 14px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer' }}
+              onClick={() => setShowSetupModal(true)}
+            >
+              ✨ AI Story
+            </button>
+            <button
+              style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 8, padding: '6px 14px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer', marginLeft: 8 }}
               onClick={reset}
             >
               ← New Story
@@ -256,7 +307,41 @@ export default function StoryChainMode() {
           </div>
 
           {/* Body */}
-          <div className={styles.scBody}>
+          <div className={styles.scBody} style={{ position: "relative" }}>
+            {reactions && reactions.length > 0 && (
+              <div style={{
+                position: "absolute",
+                top: 10,
+                right: 10,
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                zIndex: 100,
+                pointerEvents: "none"
+              }}>
+                {reactions.slice(-5).map((r) => {
+                  const emoji = r.reaction === "cheer" ? "🎉" : r.reaction === "clap" ? "👏" : r.reaction === "pass" ? "⏩" : r.reaction === "boost" ? "⚡" : `⭐ ${r.value}`;
+                  return (
+                    <div key={r.id} style={{
+                      background: "rgba(14,21,32,0.92)",
+                      border: "1px solid #00c8f0",
+                      borderRadius: 20,
+                      padding: "6px 14px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: "#00c8f0"
+                    }}>
+                      <span style={{ fontSize: 18 }}>{emoji}</span>
+                      <span>{r.studentName}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Story accumulator */}
             <div className={styles.scStoryBox}>
@@ -312,6 +397,9 @@ export default function StoryChainMode() {
           </div>
         </div>
       )}
+
+      {/* Real-time audience reactions overlay */}
+      <FloatingReactionsOverlay reactions={reactions} />
     </>
   );
 }

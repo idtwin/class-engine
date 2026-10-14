@@ -4,77 +4,124 @@ import React, { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import styles from "./TopNav.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
+import { soundEngine } from "../utils/soundEngine";
 
-const HIDDEN_PATHS = new Set(["/", "/join", "/play"]);
+const HIDDEN_PATHS = new Set(["/join", "/play"]);
 
 export default function TopNav() {
   const router = useRouter();
   const pathname = usePathname();
-  const { soundEnabled, setSoundEnabled } = useClassroomStore();
+  const { soundEnabled, setSoundEnabled, theme, toggleTheme, classes, activeClassId, presentStudentIds } = useClassroomStore();
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    if (typeof document !== "undefined" && theme) {
+      document.documentElement.setAttribute("data-theme", theme);
+    }
+  }, [theme]);
 
   if (!mounted) return null;
-  
-  const isHidden = Array.from(HIDDEN_PATHS).some(path => 
+
+  const isHidden = Array.from(HIDDEN_PATHS).some((path) =>
     pathname === path || pathname.startsWith("/play/")
   );
+
   if (isHidden) return null;
 
-  // Route markers
-  const GAME_PATHS = ["/fix-it","/odd-one-out","/jeopardy","/rapid-fire","/chain-reaction","/hotseat","/reveal","/story","/wyr","/prompts","/wheel"];
-  const isArcade = pathname.startsWith("/games") || GAME_PATHS.some(p => pathname === p);
-  const isTeams = pathname === "/teams";
-  const isAnalytics = pathname === "/dashboard";
+  const GAME_PATHS = ["/category-sprint", "/fix-it", "/odd-one-out", "/jeopardy", "/rapid-fire", "/chain-reaction", "/hotseat", "/reveal", "/story", "/wyr", "/word-surge", "/prompts", "/wheel"];
+  const isArcade = pathname.startsWith("/games") || GAME_PATHS.some((p) => pathname === p);
+  const isRoster = pathname === "/teams";
+
+  const activeClass = classes.find((c) => c.id === activeClassId);
+  const activeStudentsCount = activeClass ? activeClass.students.filter((s) => presentStudentIds.includes(s.id)).length : 0;
 
   return (
-    <nav className={styles.nav}>
-      <div 
-        className={styles.navBrand} 
-        onClick={() => router.push("/games")}
-      >
-        <div className={styles.navBrandIcon}>⊞</div>
-        ARCADE_COMMAND
-      </div>
-      
-      <ul className={styles.navLinks}>
-        <li>
-          <button 
-            className={`${styles.navLink} ${isArcade ? styles.active : ""}`}
-            style={isArcade ? ({ "--accent": "var(--orange)" } as React.CSSProperties) : {}}
-            onClick={() => router.push("/games")}
-          >
-            Arcade
-          </button>
-        </li>
-        <li>
-          <button 
-            className={`${styles.navLink} ${isTeams ? styles.active : ""}`}
-            style={isTeams ? ({ "--accent": "var(--cyan)" } as React.CSSProperties) : {}}
-            onClick={() => router.push("/teams")}
-          >
-            Teams & Roster
-          </button>
-        </li>
-        <li>
-          <button 
-            className={`${styles.navLink} ${isAnalytics ? styles.active : ""}`}
-            style={isAnalytics ? ({ "--accent": "var(--purple)" } as React.CSSProperties) : {}}
-            onClick={() => router.push("/dashboard")}
-          >
-            Analytics
-          </button>
-        </li>
-      </ul>
+    <header className={styles.navbar}>
+      <div className={styles.container}>
+        {/* BRAND LOGO */}
+        <div
+          className={styles.brand}
+          onClick={() => {
+            soundEngine.playClick(soundEnabled);
+            router.push("/");
+          }}
+          onMouseEnter={() => soundEngine.playHover(soundEnabled)}
+        >
+          <div className={styles.brandIcon}>📖</div>
+          <div className={styles.brandText}>
+            <span className={styles.brandTitle}>CLASS ENGINE</span>
+            <span className={styles.brandSubtitle}>Teacher Studio</span>
+          </div>
+        </div>
 
-      <button 
-        className={styles.navRight}
-        onClick={() => setSoundEnabled(!soundEnabled)}
-      >
-        <div className={soundEnabled ? styles.soundDot : styles.soundDotOff}></div>
-        {soundEnabled ? "SOUND: ON" : "SOUND: OFF"}
-      </button>
-    </nav>
+        {/* NAVIGATION LINKS */}
+        <nav className={styles.navGroup}>
+          <button
+            className={`${styles.navItem} ${pathname === "/" ? styles.active : ""}`}
+            onClick={() => {
+              soundEngine.playClick(soundEnabled);
+              router.push("/");
+            }}
+            onMouseEnter={() => soundEngine.playHover(soundEnabled)}
+          >
+            Lesson Hub
+          </button>
+
+          <button
+            className={`${styles.navItem} ${pathname === "/activities" || isArcade ? styles.active : ""}`}
+            onClick={() => {
+              soundEngine.playClick(soundEnabled);
+              router.push("/activities");
+            }}
+            onMouseEnter={() => soundEngine.playHover(soundEnabled)}
+          >
+            Teaching Tools
+          </button>
+
+          <button
+            className={`${styles.navItem} ${isRoster ? styles.active : ""}`}
+            onClick={() => {
+              soundEngine.playClick(soundEnabled);
+              router.push("/teams");
+            }}
+            onMouseEnter={() => soundEngine.playHover(soundEnabled)}
+          >
+            Squad Roster
+          </button>
+        </nav>
+
+        {/* RIGHT CONTROLS */}
+        <div className={styles.controls}>
+          {/* STUDENT PRESENCE PILL */}
+          <div className={styles.presencePill}>
+            <span className={styles.dot} />
+            <span>{activeStudentsCount} Students Present</span>
+          </div>
+
+          {/* THEME TOGGLE */}
+          <button
+            className={styles.iconBtn}
+            onClick={() => {
+              soundEngine.playClick(soundEnabled);
+              toggleTheme();
+            }}
+            onMouseEnter={() => soundEngine.playHover(soundEnabled)}
+            title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Studio`}
+          >
+            {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
+          </button>
+
+          {/* SOUND TOGGLE */}
+          <button
+            className={styles.iconBtn}
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            title={soundEnabled ? "Mute Audio" : "Enable Audio"}
+          >
+            {soundEnabled ? "🔊 Sound On" : "🔇 Muted"}
+          </button>
+        </div>
+      </div>
+    </header>
   );
 }

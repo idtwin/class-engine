@@ -1,0 +1,122 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 12px;
+  width: 100%;
+}
+
+.titleTag {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  font-weight: 800;
+  color: #00e87a;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.deckBtn {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 2px solid;
+  cursor: pointer;
+  text-align: left;
+  user-select: none;
+  transition: transform 0.12s ease;
+}
+
+.deckBtn:active {
+  transform: scale(0.98);
+}
+
+.deckA {
+  background: rgba(0, 232, 122, 0.08);
+  border-color: rgba(0, 232, 122, 0.4);
+  color: #f0fff6;
+}
+
+.deckB {
+  background: rgba(0, 200, 240, 0.08);
+  border-color: rgba(0, 200, 240, 0.4);
+  color: #f0fbff;
+}
+
+.selectedDeck {
+  transform: scale(1.02);
+  filter: brightness(1.2);
+}
+
+.deckHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.deckTag {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.pctTag {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.deckText {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.statusLocked {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  font-weight: 800;
+  color: #00ffd5;
+  letter-spacing: 0.06em;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dividerLine {
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dividerVs {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.telemetryBar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.barFillA {
+  background: #00e87a;
+  transition: width 0.4s ease;
+}
+
+.barFillB {
+  background: #00c8f0;
+  transition: width 0.4s ease;
+}

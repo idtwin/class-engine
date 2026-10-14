@@ -1,37 +1,74 @@
-import { Redis } from "@upstash/redis";
 import { NextResponse } from "next/server";
-import { nanoid } from "nanoid";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 export async function POST(req: Request) {
   try {
-    const { code, name, id, teamId, teamName } = await req.json();
-    
-    if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-      return NextResponse.json({ error: "Missing Upstash Credentials" }, { status: 500 });
+    const { code, id, name, teamId, teamName } = await req.json();
+    if (!code) return NextResponse.json({ error: "Missing room code" }, { status: 400 });
+
+    let room: any = null;
+    const supabaseAdmin = createAdminClient();
+
+    // 1. Try Supabase
+    try {
+      const { data: roomRow, error: fetchError } = await supabaseAdmin
+        .from("live_rooms")
+        .select("state")
+        .eq("code", code)
+        .single();
+
+      if (!fetchError && roomRow?.state) {
+        room = roomRow.state;
+      }
+    } catch (e) {}
+
+    // 2. Fallback to Local Store if Supabase offline/empty
+    if (!room) {
+      const { getLocalRoom } = await import("@/app/lib/localRoomStore");
+      const local = getLocalRoom(code);
+      if (local) {
+        room = JSON.parse(JSON.stringify(local));
+      }
     }
 
-    const redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    });
-
-    const roomCode = `room:${code}`;
-    const room: any = await redis.get(roomCode);
-
-    if (!room) return NextResponse.json({ error: "Room not found" }, { status: 404 });
-
-    const studentId = id || nanoid();
-    
-    // Check if student already actively joined
-    const exists = room.students.find((s: any) => s.id === studentId || s.name === name);
-    if (!exists) {
-      room.students.push({ id: studentId, name, teamId: teamId || null, teamName: teamName || null, answered: false, lastAnswer: null });
-      await redis.set(roomCode, room, { ex: 14400 }); // Refresh TTL on modify
+    if (!room) {
+      return NextResponse.json({ error: "Room not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ studentId, name });
+    if (!room.students) room.students = [];
+
+    // Update or add student
+    const existingIdx = room.students.findIndex((s: any) => s.id === id);
+    const studentData = { 
+      id, 
+      name, 
+      teamId, 
+      teamName, 
+      joinedAt: Date.now(),
+      lastSeen: Date.now() 
+    };
+
+    if (existingIdx > -1) {
+      room.students[existingIdx] = { ...room.students[existingIdx], ...studentData };
+    } else {
+      room.students.push(studentData);
+    }
+
+    // Try persisting back to Supabase
+    try {
+      await supabaseAdmin
+        .from("live_rooms")
+        .update({ state: room, updated_at: new Date().toISOString() })
+        .eq("code", code);
+    } catch (e) {}
+
+    // Always update local store
+    const { updateLocalRoom } = await import("@/app/lib/localRoomStore");
+    updateLocalRoom(code, () => room);
+
+    return NextResponse.json({ success: true, room });
   } catch (error: any) {
-    console.error("Room Join Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[ROOM_JOIN] Error:", error);
+    return NextResponse.json({ error: error?.message || "Join failed" }, { status: 500 });
   }
 }

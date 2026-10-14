@@ -1,0 +1,267 @@
+.hudContainer {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  background-color: rgba(7, 9, 15, 0.95);
+  backdrop-filter: blur(12px);
+  min-height: 100vh;
+  color: #fff;
+  font-family: var(--font-sans), sans-serif;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+
+  /* Tier-specific theme variables */
+  --tier-color: #818cf8;
+  --tier-color-soft: rgba(129, 140, 248, 0.1);
+}
+
+.hudContainer[data-tier="Bronze"] { 
+  --tier-color: #cd7f32; 
+  --tier-color-soft: rgba(205, 127, 50, 0.1);
+}
+.hudContainer[data-tier="Silver"] { 
+  --tier-color: #94a3b8; 
+  --tier-color-soft: rgba(148, 163, 184, 0.1);
+}
+.hudContainer[data-tier="Gold"] { 
+  --tier-color: #f59e0b; 
+  --tier-color-soft: rgba(245, 158, 11, 0.1);
+}
+.hudContainer[data-tier="Platinum"] { 
+  --tier-color: #22d3ee; 
+  --tier-color-soft: rgba(34, 211, 238, 0.1);
+}
+
+.hudBgDecor {
+  position: absolute;
+  top: -100px;
+  left: -100px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(176,110,255,0.15) 0%, rgba(0,0,0,0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.rankBanner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+  margin-bottom: 32px;
+  position: relative;
+  z-index: 2;
+}
+
+.rankBadge {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  position: relative;
+}
+
+.rankBadge::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 140%;
+  height: 140%;
+  background: var(--tier-color);
+  filter: blur(30px);
+  opacity: 0.1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  animation: auraPulse 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes auraPulse {
+  0%, 100% { opacity: 0.08; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.2; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+.rankBadgeInner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+  position: relative;
+  z-index: 1;
+}
+
+.rankInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rankTitle {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-weight: 800;
+  font-family: var(--font-mono), monospace;
+  text-shadow: 0 0 10px rgba(0,0,0,0.5);
+  color: var(--tier-color);
+}
+
+.playerName {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.profileLink {
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  font-weight: 800;
+  color: #00c8f0;
+  background: rgba(0, 200, 240, 0.1);
+  border: 1px solid rgba(0, 200, 240, 0.3);
+  padding: 4px 10px;
+  border-radius: 4px;
+  text-decoration: none;
+  letter-spacing: 0.1em;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.profileLink:hover {
+  background: rgba(0, 200, 240, 0.2);
+  border-color: #00c8f0;
+  transform: translateY(-1px);
+}
+
+.xpCard {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 2;
+}
+
+.xpHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+
+.xpTotal {
+  font-size: 20px;
+  font-weight: 800;
+  color: #f7f9fc;
+}
+
+.xpNext {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #4a637d;
+  font-family: var(--font-mono), monospace;
+}
+
+.xpBarTrack {
+  width: 100%;
+  height: 8px;
+  background: rgba(0,0,0,0.4);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.xpBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, 
+    var(--tier-color) 0%, 
+    var(--tier-color) 40%, 
+    #fff 50%, 
+    var(--tier-color) 60%, 
+    var(--tier-color) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: 4px;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 15px var(--tier-color-soft);
+  animation: sweep 3s linear infinite;
+}
+
+@keyframes sweep {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+.statsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 40px;
+  position: relative;
+  z-index: 2;
+}
+
+.statCard {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.statLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #4a637d;
+  font-family: var(--font-mono), monospace;
+}
+
+.statValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--tier-color);
+}
+
+.waitingLabel {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: var(--font-mono), monospace;
+  padding: 24px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 12px;
+  border: 1px dashed rgba(255,255,255,0.1);
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.1);
+  border-top-color: var(--tier-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

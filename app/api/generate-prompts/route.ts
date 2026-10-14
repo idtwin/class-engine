@@ -3,11 +3,17 @@ import { generateJSON } from "../../lib/llm";
 
 export async function POST(req: Request) {
   try {
-    const { apiKey, provider, mistralModel, topic, count } = await req.json();
+    const { apiKey, provider, mistralModel, topic, count, showTranslations } = await req.json();
+
+    const translationInstruction = showTranslations 
+      ? `CRITICAL: Provide Indonesian translations for EVERY prompt in parenthesis. Example: "What is your favorite animal? (Apa hewan favoritmu?)"` 
+      : `Provide content in English ONLY.`;
 
     const systemPrompt = `You are a creative ESL teacher generating speaking prompts for classroom discussion.
 
 Generate exactly ${count || 6} speaking/discussion prompts related to the given topic.
+
+${translationInstruction}
 
 RULES:
 1. Prompts should be engaging, thought-provoking, and encourage conversation

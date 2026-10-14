@@ -59,7 +59,7 @@
 
 .genBtn {
   background: #BC13FE;
-  color: #000;
+  color: #0f172a;
   border: none;
   padding: 0.8rem 1.5rem;
   border-radius: 4px;
@@ -226,7 +226,7 @@
 
 .wordCorrect {
   background: #BC13FE !important;
-  color: #000 !important;
+  color: #0f172a !important;
   border-color: white !important;
   transform: scale(1.02);
   box-shadow: 0 0 50px rgba(188, 19, 254, 0.8) !important;
@@ -261,7 +261,7 @@
 
 .btnSolidMagenta {
   background: #BC13FE;
-  color: #000;
+  color: #0f172a;
   border: none;
   font-family: monospace;
   font-weight: 800;
@@ -472,7 +472,7 @@
 }
 .setupRow { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .btnGenerate {
-  background: #b06eff; color: #000; border: none;
+  background: #b06eff; color: #0f172a; border: none;
   border-radius: 10px; padding: 14px 24px;
   font-family: var(--font-mono, 'JetBrains Mono'), monospace;
   font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
@@ -534,7 +534,7 @@
 }
 .lobbyActions { display: flex; gap: 12px; align-items: center; }
 .btnLaunch {
-  background: #b06eff; color: #000; border: none;
+  background: #b06eff; color: #0f172a; border: none;
   border-radius: 10px; padding: 14px 28px;
   font-family: var(--font-mono, 'JetBrains Mono'), monospace;
   font-size: 13px; font-weight: 700; letter-spacing: 0.1em;
@@ -788,7 +788,7 @@
 .actionsRow { display: flex; gap: 12px; margin-top: 4px; }
 .btnReveal {
   background: var(--purple, #b06eff);
-  color: #000;
+  color: #0f172a;
   border: none;
   border-radius: 8px;
   padding: 13px 40px;
@@ -836,4 +836,29 @@
   font-size: 12px;
   font-family: var(--font-mono, 'JetBrains Mono'), monospace;
   cursor: pointer;
+}
+
+.translationToggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 18px;
+  cursor: pointer;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  transition: all 0.2s;
+  user-select: none;
+}
+.translationToggle:hover {
+  border-color: var(--purple);
+  color: var(--text);
+}
+.translationToggle input {
+  cursor: pointer;
+  accent-color: var(--purple);
+  width: 16px;
+  height: 16px;
 }

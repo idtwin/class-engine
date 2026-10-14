@@ -1,0 +1,172 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 10, 12, 0.92);
+  backdrop-filter: blur(20px) saturate(200%);
+  -webkit-backdrop-filter: blur(20px) saturate(200%);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal {
+  width: 90%;
+  max-width: 900px;
+  background: #0D0F12;
+  border: 1px solid rgba(0, 255, 213, 0.3);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 0 50px rgba(0, 255, 213, 0.15), 0 20px 40px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.header {
+  text-align: center;
+}
+
+.title {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #00FFD5;
+  text-transform: uppercase;
+  margin: 0;
+  text-shadow: 0 0 15px rgba(0, 255, 213, 0.4);
+}
+
+.subtitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 4px;
+}
+
+.podium {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+  margin: 16px 0;
+}
+
+.podiumCard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: transform 0.3s ease;
+}
+
+.winnerCard {
+  border-color: #FFD700 !important;
+  background: linear-gradient(180deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.02) 100%) !important;
+  transform: translateY(-12px);
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.25);
+}
+
+.rankBadge {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.winnerBadge {
+  background: #FFD700;
+  color: #0f172a;
+}
+
+.runnerBadge {
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+}
+
+.teamName {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.teamScore {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--team-color, #00FFD5);
+  margin-bottom: 12px;
+}
+
+.studentList {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.studentChip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.xpNotice {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #BEEF00;
+  background: rgba(190, 239, 0, 0.1);
+  border: 1px solid rgba(190, 239, 0, 0.3);
+  padding: 8px 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.closeBtn {
+  background: #00FFD5;
+  color: #0f172a;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 12px 28px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+}
+
+.closeBtn:hover {
+  background: #00E0BD;
+  box-shadow: 0 0 20px rgba(0, 255, 213, 0.5);
+  transform: translateY(-2px);
+}

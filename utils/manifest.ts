@@ -1,0 +1,23 @@
+export const CARGO_MANIFEST = [
+  "A Blue Pen",
+  "A Red Pencil",
+  "A Green Marker",
+  "A Ruler",
+  "An Eraser",
+  "A Water Bottle",
+  "A Textbook",
+  "A Notebook",
+  "A Glue Stick",
+  "A Pair of Scissors",
+  "A Yellow Folder",
+  "A Piece of Paper",
+  "A Backpack",
+  "A Pencil Case",
+  "A Calculator",
+  "A Stapler",
+  "A Roll of Tape",
+  "A Highlighter",
+  "A Whiteboard Marker",
+  "A Colored Pencil",
+  "A Sharpener"
+];

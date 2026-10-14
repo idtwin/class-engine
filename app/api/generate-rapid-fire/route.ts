@@ -3,7 +3,11 @@ import { generateJSON } from "../../lib/llm";
 
 export async function POST(req: Request) {
   try {
-    const { apiKey, provider, mistralModel, topic, level, mode, replaceOne, existingQuestions } = await req.json();
+    const { apiKey, provider, mistralModel, topic, level, mode, replaceOne, existingQuestions, showTranslations } = await req.json();
+
+    const translationInstruction = showTranslations 
+      ? `CRITICAL: Provide Indonesian translations for the "text", "answer", and all "options" fields in parenthesis. Example: "Very tired (Sangat lelah)".` 
+      : `Provide content in English ONLY.`;
 
     let systemPrompt: string;
     let userPrompt: string;
@@ -11,8 +15,12 @@ export async function POST(req: Request) {
     if (replaceOne) {
       const ismc = mode === "mc";
       systemPrompt = ismc
-        ? `You are a creative ESL teacher designing a multiple choice trivia question. Generate exactly 1 new question that is DIFFERENT from the existing ones. Return valid JSON with this schema: {"text":"...","options":{"A":"...","B":"...","C":"...","D":"..."},"correctLetter":"B","level":"Mid","type":"Definition"}. No markdown.`
-        : `You are a creative ESL teacher designing a rapid-fire trivia question. Generate exactly 1 new question that is DIFFERENT from the existing ones. Return valid JSON with this schema: {"text":"...","answer":"...","level":"Mid","type":"Definition"}. No markdown.`;
+        ? `You are a creative ESL teacher designing a multiple choice trivia question. Generate exactly 1 new question that is DIFFERENT from the existing ones. 
+${translationInstruction}
+Return valid JSON with this schema: {"text":"...","options":{"A":"...","B":"...","C":"...","D":"..."},"correctLetter":"B","level":"Mid","type":"Definition"}. No markdown.`
+        : `You are a creative ESL teacher designing a rapid-fire trivia question. Generate exactly 1 new question that is DIFFERENT from the existing ones. 
+${translationInstruction}
+Return valid JSON with this schema: {"text":"...","answer":"...","level":"Mid","type":"Definition"}. No markdown.`;
       userPrompt = `Topic: ${topic}\nLevel: ${level}\nExisting questions (do NOT repeat):\n${(existingQuestions || []).join('\n')}\n\nGenerate 1 replacement question now.`;
       const parsed = await generateJSON(apiKey, { systemPrompt, userPrompt, temperature: 0.9, mistralModel, provider });
       return NextResponse.json({ question: parsed });
@@ -21,6 +29,8 @@ export async function POST(req: Request) {
     if (mode === "mc") {
       systemPrompt = `You are a creative ESL teacher designing a multiple choice trivia game.
 Generate 12 engaging questions based on the topic. Each question has 4 answer choices (A, B, C, D) and one correct answer.
+
+${translationInstruction}
 
 Return valid JSON — an array of exactly 12 question objects with this schema:
 [
@@ -39,6 +49,8 @@ Make the distractors plausible but clearly wrong. Match the target class level (
     } else {
       systemPrompt = `You are a creative ESL teacher designing a rapid-fire trivia game.
 Generate 15 engaging, fast-paced questions based on the topic.
+
+${translationInstruction}
 
 Return valid JSON — an array of exactly 15 question objects with this schema:
 [

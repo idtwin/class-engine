@@ -3,11 +3,17 @@ import { generateJSON } from "../../lib/llm";
 
 export async function POST(req: Request) {
   try {
-    const { apiKey, provider, mistralModel, topic, level } = await req.json();
+    const { apiKey, provider, mistralModel, topic, level, showTranslations } = await req.json();
+
+    const translationInstruction = showTranslations 
+      ? `CRITICAL: Provide Indonesian translations for the "starter" sentence and all items in the "words" arrays in parenthesis. Example: "starter": "Once upon a time (Pada zaman dahulu kala)", "words": ["Apple (Apel)", "Sword (Pedang)", "Castle (Istana)"].` 
+      : `Provide content in English ONLY.`;
 
     const systemPrompt = `You are a creative ESL teacher running an improv "Story Chain" game.
 Topic: ${topic}
 Level: ${level}
+
+${translationInstruction}
 
 Return ONLY raw JSON in this exact structure:
 {

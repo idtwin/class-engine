@@ -264,6 +264,41 @@
   50% { opacity: 0.3; }
 }
 
+.profileBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(0, 200, 240, 0.08);
+  border: 1px solid rgba(0, 200, 240, 0.25);
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.profileBadge:active {
+  transform: scale(0.96);
+  background: rgba(0, 200, 240, 0.2);
+}
+
+.profileBadgeIcon {
+  font-size: 14px;
+}
+
+.profileBadgeTxt {
+  font-size: 9px;
+  font-weight: 800;
+  color: #00c8f0;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  letter-spacing: 0.1em;
+}
+
+.tacticalProfileIcon:active {
+  transform: scale(0.9);
+  background: rgba(0, 200, 240, 0.2);
+}
+
 .gameTimer {
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
   font-size: 20px;
@@ -522,7 +557,7 @@
   font-family: var(--font-phone), 'Nunito', sans-serif;
   font-size: 19px;
   font-weight: 900;
-  color: #000;
+  color: #0f172a;
   cursor: pointer;
   letter-spacing: 0.01em;
   box-shadow: 0 8px 24px rgba(255, 200, 67, 0.35);
@@ -738,30 +773,30 @@
 }
 
 .buzzLabel {
-  font-family: var(--font-mono), 'JetBrains Mono', monospace;
-  font-size: 11px;
+  font-family: var(--font-phone), 'Nunito', sans-serif;
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
   color: #4a637d;
+  text-align: center;
 }
 
 .buzzBtn {
   width: 180px;
   height: 180px;
   border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, rgba(255, 125, 59, 0.9), rgba(210, 45, 0, 0.95));
-  border: none;
+  background: radial-gradient(circle at 40% 35%, #ff9f5a, #ff5500 60%, #cc3300);
+  border: 3px solid rgba(255, 120, 50, 0.4);
   box-shadow:
-    0 0 0 10px rgba(255, 125, 59, 0.12),
-    0 0 0 20px rgba(255, 125, 59, 0.06),
-    0 24px 64px rgba(255, 100, 0, 0.4);
+    0 0 0 10px rgba(255, 100, 30, 0.1),
+    0 0 0 20px rgba(255, 80, 20, 0.05),
+    0 24px 64px rgba(255, 80, 20, 0.45);
   cursor: pointer;
   font-family: var(--font-phone), 'Nunito', sans-serif;
   font-size: 26px;
   font-weight: 900;
   color: #fff;
   letter-spacing: 0.03em;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
   transition: all 0.12s ease;
   animation: buzzPulse 2s ease-in-out infinite;
   display: flex;
@@ -772,29 +807,31 @@
 @keyframes buzzPulse {
   0%, 100% {
     box-shadow:
-      0 0 0 10px rgba(255, 125, 59, 0.12),
-      0 0 0 20px rgba(255, 125, 59, 0.06),
-      0 24px 64px rgba(255, 100, 0, 0.4);
+      0 0 0 10px rgba(255, 100, 30, 0.1),
+      0 0 0 20px rgba(255, 80, 20, 0.05),
+      0 24px 64px rgba(255, 80, 20, 0.45);
   }
   50% {
     box-shadow:
-      0 0 0 14px rgba(255, 125, 59, 0.18),
-      0 0 0 28px rgba(255, 125, 59, 0.07),
-      0 24px 64px rgba(255, 100, 0, 0.55);
+      0 0 0 16px rgba(255, 100, 30, 0.15),
+      0 0 0 30px rgba(255, 80, 20, 0.07),
+      0 24px 64px rgba(255, 80, 20, 0.65);
   }
 }
 
 .buzzBtn:active {
   transform: scale(0.93);
   animation: none;
-  box-shadow: 0 0 0 6px rgba(255, 125, 59, 0.25), 0 8px 20px rgba(255, 100, 0, 0.5);
+  box-shadow: 0 0 0 6px rgba(255, 100, 30, 0.2), 0 8px 20px rgba(255, 80, 0, 0.45);
 }
 
 .buzzBtnPressed {
   background: radial-gradient(circle at 40% 35%, #444, #222);
+  border-color: rgba(255, 255, 255, 0.05);
   animation: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   pointer-events: none;
+  opacity: 0.4;
 }
 
 .buzzedIn {
@@ -806,10 +843,12 @@
 }
 
 .buzzedInLabel {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 900;
   color: #00c8f0;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
 }
 
 .buzzAnswer {
@@ -839,7 +878,7 @@
   font-family: var(--font-phone), 'Nunito', sans-serif;
   font-size: 16px;
   font-weight: 900;
-  color: #000;
+  color: #0f172a;
   cursor: pointer;
   box-shadow: 0 6px 20px rgba(0, 200, 240, 0.3);
   transition: all 0.15s ease;
@@ -1165,3 +1204,120 @@
   color: var(--muted);
   font-family: var(--font-nunito, 'Nunito', sans-serif);
 }
+
+/* ══════════════════════════════════════════
+   AUDIENCE REACTION & RATING PAD (HOT SEAT & STORY)
+══════════════════════════════════════════ */
+.audiencePadBody {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px 16px;
+  flex: 1;
+  width: 100%;
+}
+
+.audienceHeader {
+  text-align: center;
+}
+
+.audienceTitle {
+  font-size: 22px;
+  font-weight: 900;
+  color: #00c8f0;
+  margin-bottom: 4px;
+}
+
+.audienceSub {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.audienceReactionsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  max-width: 340px;
+}
+
+.reactionBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #0e1520;
+  border: 2px solid #1e3048;
+  border-radius: 20px;
+  padding: 20px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.reactionBtn:active {
+  transform: scale(0.92);
+  border-color: #00c8f0;
+  background: rgba(0, 200, 240, 0.15);
+}
+
+.reactionEmoji {
+  font-size: 36px;
+  line-height: 1;
+}
+
+.reactionLabel {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #dce8f5;
+}
+
+.audienceRatingSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 340px;
+  background: #0e1520;
+  border: 1px solid #1e3048;
+  border-radius: 20px;
+  padding: 16px;
+  margin-top: 8px;
+}
+
+.ratingLabel {
+  font-size: 11px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.ratingStarsRow {
+  display: flex;
+  gap: 8px;
+}
+
+.starBtn {
+  font-size: 26px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0.4;
+  transition: all 0.15s ease;
+  padding: 4px;
+}
+
+.starBtnActive {
+  opacity: 1;
+  transform: scale(1.2);
+}
+

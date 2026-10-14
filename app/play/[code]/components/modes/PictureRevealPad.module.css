@@ -1,0 +1,121 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  width: 100%;
+}
+
+.telemetryCard {
+  background: #0d1322;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.telemetryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.telemetryLabel {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.telemetryVal {
+  color: #ff7d3b;
+}
+
+.progressBar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: #ff7d3b;
+  transition: width 0.3s ease;
+}
+
+.dossierBox {
+  background: rgba(255, 125, 59, 0.08);
+  border: 1px solid rgba(255, 125, 59, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.dossierTag {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 9px;
+  font-weight: 800;
+  color: #ff7d3b;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.dossierText {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.guessForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.inputWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.textInput {
+  background: #080c14;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 16px;
+  color: #ffffff;
+  outline: none;
+}
+
+.textInput:focus {
+  border-color: #ff7d3b;
+}
+
+.dispatchBtn {
+  background: #ff7d3b;
+  border: none;
+  border-radius: 8px;
+  padding: 14px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 13px;
+  font-weight: 900;
+  color: #060810;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  user-select: none;
+}
+
+.dispatchBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.guessCounter {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+}

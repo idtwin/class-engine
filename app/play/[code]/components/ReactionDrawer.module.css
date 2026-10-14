@@ -1,0 +1,68 @@
+.container {
+  padding: 8px 12px 14px;
+  background: #090d16;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  position: relative;
+}
+
+.reactionBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+  position: relative;
+}
+
+.reactionBtn:active, .reactionBtnActive {
+  transform: scale(0.9);
+  background: rgba(0, 255, 213, 0.2);
+  border-color: #00ffd5;
+  box-shadow: 0 0 15px rgba(0, 255, 213, 0.4);
+}
+
+.emoji {
+  font-size: 20px;
+}
+
+.label {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 9px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.06em;
+}
+
+@keyframes floatUp {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(0.9);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-90px) scale(1.5);
+  }
+}
+
+.floatingBubble {
+  position: absolute;
+  pointer-events: none;
+  font-size: 26px;
+  animation: floatUp 0.75s ease-out forwards;
+  z-index: 999;
+}

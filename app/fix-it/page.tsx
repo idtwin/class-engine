@@ -4,7 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./fix.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
+import { SlidersHorizontal } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
+import FloatingReactionsOverlay from "../components/FloatingReactionsOverlay";
+import { useLiveRoomHost } from "@/app/lib/useLiveRoomHost";
 
 // ── Types ────────────────────────────────────────────
 type GameMode = "Easy" | "Hard";
@@ -19,6 +22,54 @@ interface Question {
   hint: string;
   options: string[]; // always 4 items
 }
+
+const STARTER_FIXIT_QUESTIONS: Question[] = [
+  {
+    level: "A1-A2",
+    errorType: "Subject-Verb Agreement",
+    sentence: "She don't like broccoli in her soup.",
+    wrongWord: "don't",
+    correctWord: "doesn't",
+    hint: "Third-person singular (he/she/it) requires 'does' or 'doesn't'.",
+    options: ["doesn't", "don't", "isn't", "aren't"]
+  },
+  {
+    level: "A1-A2",
+    errorType: "Past Tense Irregular",
+    sentence: "Yesterday we go to the beach and swam.",
+    wrongWord: "go",
+    correctWord: "went",
+    hint: "The time marker 'Yesterday' requires the past tense of 'go'.",
+    options: ["went", "go", "gone", "goes"]
+  },
+  {
+    level: "B1-B2",
+    errorType: "Preposition of Time",
+    sentence: "The meeting will start on 3:00 PM tomorrow.",
+    wrongWord: "on",
+    correctWord: "at",
+    hint: "Exact clock times take 'at', while days/dates take 'on'.",
+    options: ["at", "on", "in", "by"]
+  },
+  {
+    level: "A1-A2",
+    errorType: "Countable vs Uncountable",
+    sentence: "How many money do you need for the ticket?",
+    wrongWord: "many",
+    correctWord: "much",
+    hint: "'Money' is an uncountable noun, so use 'much' instead of 'many'.",
+    options: ["much", "many", "few", "lot"]
+  },
+  {
+    level: "B1-B2",
+    errorType: "Comparative Adjective",
+    sentence: "This mountain is more higher than the other one.",
+    wrongWord: "more higher",
+    correctWord: "higher",
+    hint: "Short adjectives take '-er' (higher); do not combine with 'more'.",
+    options: ["higher", "more higher", "highest", "most high"]
+  }
+];
 
 const LETTER = ["A", "B", "C", "D"];
 
@@ -44,7 +95,9 @@ export default function FixIt() {
     currentTeams, updateTeamScore,
     getActiveApiKey, getActiveModel, llmProvider,
     activeRoomCode,
+    showTranslations, setShowTranslations
   } = useClassroomStore();
+  const { setQuestion, reactions, roomState } = useLiveRoomHost("fixit");
 
   // Setup state
   const [topic, setTopic]       = useState("");
@@ -53,13 +106,34 @@ export default function FixIt() {
   const [timerDur, setTimerDur] = useState(30); // 0 = off
 
   // Game state
-  const [phase, setPhase]         = useState<Phase>("SETUP");
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [phase, setPhase]         = useState<Phase>("PLAYING");
+  const [questions, setQuestions] = useState<Question[]>(STARTER_FIXIT_QUESTIONS);
   const [qIndex, setQIndex]       = useState(0);
   const [showHint, setShowHint]   = useState(false);
-  const [timeLeft, setTimeLeft]   = useState(0);
-  const [timerActive, setTimerActive] = useState(false);
+  const [timeLeft, setTimeLeft]   = useState(30);
+  const [timerActive, setTimerActive] = useState(true);
   const [pointsAwarded, setPointsAwarded] = useState<Record<string, number>>({});
+
+  // Broadcast question to connected phones
+  useEffect(() => {
+    if (questions && questions[qIndex]) {
+      const q = questions[qIndex];
+      setQuestion({
+        text: `FIX IT: "${q.sentence}"`,
+        sentence: q.sentence,
+        brokenSentence: q.sentence,
+        options: q.options,
+        privateHint: q.hint,
+      });
+    }
+  }, [qIndex, questions, setQuestion]);
+
+  // Sync roster from room state
+  useEffect(() => {
+    if (roomState?.students) {
+      setRoomStudents(roomState.students);
+    }
+  }, [roomState?.students]);
 
   // Room polling
   const [roomStudents, setRoomStudents] = useState<any[]>([]);
@@ -144,6 +218,7 @@ export default function FixIt() {
           mistralModel: getActiveModel(),
           provider: llmProvider,
           topic, level, mode,
+          showTranslations
         })
       });
       const data = await res.json();
@@ -378,18 +453,26 @@ export default function FixIt() {
                 </div>
 
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                  <button
+                   <button
                     className={styles.btnGenerate}
                     onClick={handleGenerate}
                     disabled={!topic.trim()}
                   >
                     Generate Questions
                   </button>
+                  <label className={styles.translationToggle}>
+                    <input 
+                      type="checkbox" 
+                      checked={showTranslations} 
+                      onChange={(e) => setShowTranslations(e.target.checked)}
+                    />
+                    <span>INDONESIA (ID)</span>
+                  </label>
                   <button
                     style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 10, padding: '14px 20px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 12, cursor: 'pointer' }}
-                    onClick={() => router.push('/games')}
+                    onClick={() => setPhase("PLAYING")}
                   >
-                    ← Back to Arcade
+                    Cancel
                   </button>
                 </div>
               </>
@@ -397,6 +480,8 @@ export default function FixIt() {
           </div>
         </div>
       )}
+
+      <FloatingReactionsOverlay reactions={reactions} />
 
       {/* ── New single-column layout ── */}
       <div className={styles.pageNew}>
@@ -431,6 +516,15 @@ export default function FixIt() {
               </div>
             </div>
           )}
+          <div style={{ marginLeft: "auto", display: "flex", gap: "8px", alignItems: "center" }}>
+            <button
+              style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.06)", border: "1px solid var(--border2)", borderRadius: 8, padding: "8px 14px", color: "#fff", fontFamily: "var(--font-mono)", fontSize: 11, cursor: "pointer" }}
+              onClick={() => setPhase("SETUP")}
+            >
+              <SlidersHorizontal size={13} /> Custom AI Topic
+            </button>
+            <MultiplayerHost gameMode="fixit" />
+          </div>
         </div>
 
         {/* Row 2: Progress bar */}

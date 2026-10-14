@@ -1,17 +1,19 @@
 /* =====================================================
-   ARCADE_COMMAND — OFFICIAL DESIGN SYSTEM
-   Theme: Dark Terminal (Teacher) / Energetic Mobile (Student)
+   CLASS ENGINE 3.0 — WARM MODERN STUDIO DESIGN SYSTEM
    ===================================================== */
 
 :root {
-  /* --- Core Surfaces --- */
+  /* --- Canvas & Elevation Tokens (Tactical Dark Slate) --- */
   --bg: #07090f;
+  --bg-rgb: 7, 9, 15;
   --surface: #0e1420;
+  --surface-rgb: 14, 20, 32;
   --surface2: #131b2b;
-  --border: #1c2a40;
-  --border2: #243347;
-
-  /* --- Accent Colors --- */
+  --surface2-rgb: 19, 27, 43;
+  --surface-lifted: #131b2b;
+  --surface-lifted-rgb: 19, 27, 43;
+  
+  /* --- Core Accents --- */
   --green: #00e87a;
   --cyan: #00c8f0;
   --orange: #ff7d3b;
@@ -20,7 +22,35 @@
   --pink: #ff4d8f;
   --red: #ff4444;
 
-  /* --- Team Colors --- */
+  --indigo: #00c8f0;
+  --emerald: #00e87a;
+  --amber: #ffc843;
+  --rose: #ff4d8f;
+  --sky: #00c8f0;
+
+  /* --- Tactical Legacy Aliases --- */
+  --command-orange: #ff7d3b;
+  --command-orange-rgb: 255, 125, 59;
+  --team-green: #00e87a;
+  --team-green-rgb: 0, 232, 122;
+  --alert-red: #ff4444;
+  --ai-purple: #b06eff;
+
+  /* --- Borders & Shadows --- */
+  --border: #1c2a40;
+  --border2: #243347;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-hard: #243347;
+  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+  --shadow-hover: 0 12px 28px -4px rgba(0, 0, 0, 0.5);
+
+  /* --- Typography --- */
+  --text: #dce8f5;
+  --text-dim: #4a637d;
+  --text-bright: #FFFFFF;
+  --muted: #4a637d;
+
+  /* --- Team Colors (Fixed) --- */
   --t1: #00e87a;
   --t2: #00c8f0;
   --t3: #ffc843;
@@ -29,126 +59,140 @@
   --t6: #ff7d3b;
   --t7: #e2e8f0;
 
-  /* --- Layout Heights --- */
-  --nav-h: 60px;
-  --scoreboard-h: 88px;
-
-  /* --- Typography --- */
-  --text: #dce8f5;
-  --muted: #4a637d;
-  --dim: #1e2e42;
-  
-  /* Next.js Font Mappings */
-  --font-main: var(--font-syne);
-  --font-mono: var(--font-jetbrains);
-  --font-phone: var(--font-nunito);
+  /* --- Layout & Fonts --- */
+  --nav-h: 64px;
+  --font-main: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-syne: 'Syne', var(--font-inter), sans-serif;
+  --font-mono: var(--font-jetbrains), monospace;
 }
 
-/* ── Base Reset ── */
+/* ── Warm Modern Studio Light Mode Theme ── */
+[data-theme="light"] {
+  --bg: #F8FAFC;
+  --bg-rgb: 248, 250, 252;
+  --surface: #FFFFFF;
+  --surface-rgb: 255, 255, 255;
+  --surface-lifted: #F1F5F9;
+  --surface-lifted-rgb: 241, 245, 249;
+
+  --indigo: #4F46E5;
+  --indigo-rgb: 79, 70, 229;
+  --emerald: #059669;
+  --emerald-rgb: 5, 150, 105;
+  --amber: #D97706;
+  --rose: #E11D48;
+  --sky: #0284C7;
+
+  --border: #E2E8F0;
+  --border-subtle: #F1F5F9;
+  --border-hard: #CBD5E1;
+  --shadow-card: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+  --shadow-hover: 0 12px 28px -4px rgba(15, 23, 42, 0.1), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
+
+  --text: #334155;
+  --text-dim: #64748B;
+  --text-bright: #1E293B;
+  --muted: #64748B;
+
+  --t1: #4F46E5;
+  --t2: #0284C7;
+  --t3: #D97706;
+  --t4: #E11D48;
+  --t5: #7C3AED;
+  --t6: #059669;
+  --t7: #475569;
+}
+
+/* ── Reset & Core Styles ── */
 * {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
 }
 
-html, body {
+body {
   background-color: var(--bg);
   color: var(--text);
-  font-family: var(--font-main), sans-serif;
-  min-height: 100vh;
-  overflow-x: hidden;
+  font-family: var(--font-main);
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
 
-/* No page-level scroll on projector views */
-body.no-scroll {
-  overflow: hidden;
-  height: 100vh;
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-/* Subtle grid background */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(0,232,122,0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,232,122,0.015) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none;
-  z-index: 0;
+/* ── Modern Floating Studio Cards ── */
+.studio-card, .hud-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ── Typography ── */
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-main), sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+.studio-card:hover, .hud-panel:hover {
+  box-shadow: var(--shadow-hover);
+  border-color: var(--indigo);
+  transform: translateY(-2px);
 }
 
-p, span, div, button {
-  font-family: var(--font-main), sans-serif;
+/* ── Studio Badge & Tags ── */
+.studio-badge, .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: var(--surface-lifted);
+  color: var(--text-bright);
+  border: 1px solid var(--border);
 }
 
-.mono {
-  font-family: var(--font-mono), monospace;
-}
-
-/* ── Common Components ── */
+/* ── Buttons ── */
 .btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-family: var(--font-mono), monospace;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
   border: none;
-  transition: all 0.15s;
-}
-
-.btn-ghost {
-  background: transparent;
-  border: 1px solid var(--border2);
-  color: var(--muted);
-}
-
-.btn-ghost:hover {
-  border-color: var(--text);
-  color: var(--text);
+  outline: none;
 }
 
 .btn-primary {
-  background: var(--green);
-  color: #000;
+  background: var(--indigo);
+  color: #FFFFFF;
 }
 
 .btn-primary:hover {
-  background: #00ff88;
+  opacity: 0.92;
+  transform: translateY(-1px);
 }
 
-/* ── Tags ── */
-.tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 99px;
-  font-family: var(--font-mono), monospace;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
+.btn-ghost {
+  background: var(--surface-lifted);
+  color: var(--text-bright);
+  border: 1px solid var(--border);
 }
 
-/* ── Utility ── */
-.container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 32px;
+.btn-ghost:hover {
+  background: var(--surface);
+  border-color: var(--indigo);
+}
+
+/* ── Layout Wrapper ── */
+.main-content {
+  padding-top: calc(var(--nav-h) + 16px);
+  min-height: 100vh;
 }

@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local tool & scratch directories
+.backups/
+.next_old/
+scratch/
+.claude
+.claude/
+.claude/**
+.claude-mem/
+.superpowers/
+test.html

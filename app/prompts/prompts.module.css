@@ -80,7 +80,7 @@
   align-items: center;
   gap: 0.5rem;
   background: var(--accent-bright);
-  color: #000;
+  color: #0f172a;
   font-weight: 700;
   padding: 0.9rem 1.5rem;
   border-radius: 6px;
@@ -171,4 +171,30 @@
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+.translationToggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 15px;
+  cursor: pointer;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  transition: all 0.2s;
+  user-select: none;
+  height: 44px;
+}
+.translationToggle:hover {
+  border-color: #00e87a;
+  color: var(--text);
+}
+.translationToggle input {
+  cursor: pointer;
+  accent-color: #00e87a;
+  width: 16px;
+  height: 16px;
 }

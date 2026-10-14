@@ -1,0 +1,209 @@
+.sidebar {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    height: calc(100vh - 64px);
+    background: var(--surface);
+    backdrop-filter: blur(40px);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+    box-shadow: 4px 0 20px var(--depth-shadow);
+}
+
+.scrollArea {
+    height: 100%;
+    overflow-y: auto;
+    padding: 30px 12px;
+    scrollbar-width: none;
+}
+
+.scrollArea::-webkit-scrollbar {
+    display: none;
+}
+
+.teamItem {
+    background: var(--surface-lifted);
+    border: 1px solid var(--border-hard);
+    padding: 16px;
+    margin-bottom: 12px;
+    position: relative;
+    transition: all 0.3s;
+    cursor: pointer;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px var(--depth-shadow);
+}
+
+.teamItem:hover {
+    border-color: var(--command-orange);
+    box-shadow: 0 0 15px rgba(var(--command-orange-rgb), 0.15);
+}
+
+.teamHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.teamName {
+    font-family: var(--font-mono), monospace;
+    font-size: 9px;
+    font-weight: 800;
+    color: var(--muted);
+}
+
+.lvlBadge {
+    font-family: var(--font-mono), monospace;
+    font-size: 8px;
+    font-weight: 800;
+}
+
+.scoreContainer {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 4px 0;
+}
+
+.score {
+    font-family: var(--font-main), sans-serif;
+    font-weight: 800;
+    color: var(--text-bright);
+    line-height: 1;
+    flex: 1;
+}
+
+.adjusters {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.teamItem:hover .adjusters {
+    opacity: 1;
+}
+
+.adjBtn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-bright);
+    font-family: var(--font-mono), monospace;
+    font-size: 10px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.adjBtn:hover {
+    background: var(--team-color);
+    color: #0f172a;
+}
+
+.editInput {
+    background: var(--surface-lifted);
+    border: 1px solid var(--team-color);
+    color: var(--text-bright);
+    font-family: var(--font-mono), monospace;
+    font-size: 10px;
+    width: 100%;
+    padding: 4px;
+    outline: none;
+}
+
+.roster {
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.rosterExpanded {
+    max-height: 400px;
+    margin-top: 12px;
+    opacity: 1;
+    border-top: 1px solid var(--border-subtle);
+    padding-top: 10px;
+}
+
+.rosterCollapsed {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+    padding-top: 0;
+}
+
+.studentName {
+    font-family: var(--font-mono), monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    padding: 2px 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.xpTrack {
+    height: 2px;
+    background: var(--border-subtle);
+    margin-top: 12px;
+    overflow: hidden;
+}
+
+.xpFill {
+    height: 100%;
+    transition: width 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.pullTab {
+    position: absolute;
+    top: 50%;
+    right: -32px;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 120px;
+    background: var(--surface);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    border-left: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--command-orange);
+    clip-path: polygon(0 0, 100% 20px, 100% calc(100% - 20px), 0 100%);
+    z-index: 1001;
+    transition: opacity 0.3s ease, background 0.3s ease;
+}
+
+.pullTab:hover {
+    background: var(--surface-lifted);
+    color: var(--text-bright);
+}
+
+.floatPoint {
+    position: absolute;
+    left: 50%;
+    top: 20%;
+    transform: translateX(-50%);
+    font-family: var(--font-main), sans-serif;
+    font-weight: 800;
+    font-size: 24px;
+    pointer-events: none;
+    animation: floatUp 1s forwards;
+    z-index: 2000;
+}
+
+@keyframes floatUp {
+    0% { transform: translate(-50%, 0); opacity: 1; }
+    100% { transform: translate(-50%, -60px); opacity: 0; }
+}

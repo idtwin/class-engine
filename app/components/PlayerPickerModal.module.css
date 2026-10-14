@@ -1,0 +1,133 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 10, 12, 0.88);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal {
+  width: 90%;
+  max-width: 500px;
+  background: #0D0F12;
+  border: 1px solid rgba(0, 255, 213, 0.3);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 0 40px rgba(0, 255, 213, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 20px;
+}
+
+.title {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #00FFD5;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.pickerDisplay {
+  width: 100%;
+  padding: 32px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px dashed rgba(0, 255, 213, 0.3);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-height: 140px;
+  justify-content: center;
+}
+
+.spinningText {
+  font-family: 'Syne', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  color: #FFFFFF;
+  animation: pulse 0.15s infinite alternate;
+}
+
+@keyframes pulse {
+  from { opacity: 0.7; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1.02); }
+}
+
+.selectedName {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: #00FFD5;
+  text-transform: uppercase;
+  text-shadow: 0 0 15px rgba(0, 255, 213, 0.6);
+}
+
+.selectedRole {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #BEEF00;
+  background: rgba(190, 239, 0, 0.15);
+  padding: 4px 10px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.selectedTeam {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.spinBtn {
+  background: #00FFD5;
+  color: #0f172a;
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 12px 32px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+}
+
+.spinBtn:hover {
+  background: #00E0BD;
+  box-shadow: 0 0 20px rgba(0, 255, 213, 0.5);
+  transform: translateY(-2px);
+}
+
+.closeBtn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.closeBtn:hover {
+  border-color: #FFFFFF;
+  color: #FFFFFF;
+}

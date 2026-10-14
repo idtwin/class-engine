@@ -3,7 +3,11 @@ import { generateJSON } from "../../lib/llm";
 
 export async function POST(req: Request) {
   try {
-    const { apiKey, provider, mistralModel, topic, level, mode } = await req.json();
+    const { apiKey, provider, mistralModel, topic, level, mode, showTranslations } = await req.json();
+
+    const translationInstruction = showTranslations 
+      ? `CRITICAL: Provide Indonesian translations for the "sentence", "hint", and all "options" in parenthesis. Example: "We arrived to the airport (Kami sampai ke bandara)" and Hint: "Think about which preposition follows the verb 'arrive' (Pikirkan kata depan mana yang mengikuti kata kerja 'arrive')".` 
+      : `Provide content in English ONLY.`;
 
     let levelPrompt = `Generate EXACTLY 10 sentences matching the ${level} difficulty level.`;
     if (level === "Mixed Level") levelPrompt = `Generate EXACTLY 10 sentences spanning Low, Mid, and High difficulty levels (mix them).`;
@@ -13,6 +17,8 @@ export async function POST(req: Request) {
 Each round, students see a sentence with ONE highlighted wrong word and must identify the correct replacement.
 
 ${levelPrompt}
+
+${translationInstruction}
 
 CRITICAL RULES:
 1. Each sentence must contain EXACTLY ONE wrong word. One word, one fix.

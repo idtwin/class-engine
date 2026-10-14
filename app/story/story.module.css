@@ -212,7 +212,7 @@
 
 .nextBtn {
   background: var(--accent-bright);
-  color: #000;
+  color: #0f172a;
   font-size: 1.5rem;
   font-weight: 800;
   padding: 1rem 3rem;
@@ -313,7 +313,7 @@
 .setupInput:focus { border-color: #00e87a; }
 .setupInput::placeholder { color: var(--muted, #4a637d); }
 .btnGenerate {
-  background: #00e87a; color: #000; border: none; border-radius: 10px; padding: 14px 24px;
+  background: #00e87a; color: #0f172a; border: none; border-radius: 10px; padding: 14px 24px;
   font-family: var(--font-mono, 'JetBrains Mono'), monospace;
   font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
   cursor: pointer; transition: opacity 0.15s;
@@ -454,3 +454,28 @@
   transition: color 0.15s, border-color 0.15s;
 }
 .scBtnNew:hover { color: var(--text, #dce8f5); border-color: var(--text, #dce8f5); }
+
+.translationToggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 18px;
+  cursor: pointer;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  transition: all 0.2s;
+  user-select: none;
+}
+.translationToggle:hover {
+  border-color: #00e87a;
+  color: var(--text);
+}
+.translationToggle input {
+  cursor: pointer;
+  accent-color: #00e87a;
+  width: 16px;
+  height: 16px;
+}

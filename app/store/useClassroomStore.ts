@@ -5,6 +5,8 @@ import { playSFX } from "../lib/audio";
 
 export type Level = "Low" | "Mid" | "High";
 export type Energy = "Passive" | "Normal" | "Active";
+export type Rank = 1 | 2 | 3 | 4; // 1-4 metallic stars
+export type Tier = "Hero" | "Legend" | "Immortal"; // Role-based tiers
 
 export interface Student {
   id: string;
@@ -12,6 +14,11 @@ export interface Student {
   level: Level;
   confidence: Level;
   energy: Energy;
+  gender: "male" | "female";
+  rank: Rank;
+  tier: Tier;
+  xp: number;
+  role?: string;
 }
 
 export interface ClassData {
@@ -26,6 +33,9 @@ export interface Team {
   name: string;
   students: Student[];
   score: number;
+  color?: string;
+  crestUrl?: string;
+  osr?: number;
 }
 
 export interface SessionEntry {
@@ -53,9 +63,24 @@ interface ClassroomState {
   folders: string[];
   classes: ClassData[];
   activeClassId: string | null;
+  presentStudentIds: string[]; // Global tracking for roster presence
   currentTeams: Team[];
+  unassignedStudents: Student[];
   sessionHistory: SessionEntry[];
   
+  // Turn & Active Player Tracking
+  activeTeamIndex: number;
+  setActiveTeamIndex: (index: number) => void;
+  nextTurn: () => void;
+  activeStudentId: string | null;
+  setActiveStudentId: (id: string | null) => void;
+
+  // Modals & Broadcast State
+  broadcastModalOpen: boolean;
+  setBroadcastModalOpen: (open: boolean) => void;
+  playerPickerOpen: boolean;
+  setPlayerPickerOpen: (open: boolean) => void;
+
   // App state
   twistVisible: boolean;
   currentTwist: string;
@@ -80,6 +105,8 @@ interface ClassroomState {
   setMistralModel: (m: string) => void;
   groqModel: string;
   setGroqModel: (m: string) => void;
+  googleSheetsWebhookUrl: string;
+  setGoogleSheetsWebhookUrl: (url: string) => void;
   getActiveApiKey: () => string;
   getActiveModel: () => string;
   
@@ -89,27 +116,38 @@ interface ClassroomState {
   setPlayMode: (mode: 'projector' | 'phone') => void;
 
   // Actions
+  currentStep: number;
+  
   addClass: (name: string, category?: string) => void;
   removeClass: (classId: string) => void;
-  setActiveClass: (classId: string | null) => void;
+  setActiveClass: (id: string | null) => void;
   updateClass: (classId: string, name: string) => void;
   updateClassCategory: (classId: string, category: string) => void;
-  
+
   addFolder: (name: string) => void;
   removeFolder: (name: string) => void;
   renameFolder: (oldName: string, newName: string) => void;
 
-  addStudent: (classId: string, name: string) => void;
+  addStudent: (classId: string, name: string, gender: "male" | "female") => void;
   removeStudent: (classId: string, studentId: string) => void;
   updateStudent: (classId: string, studentId: string, updates: Partial<Student>) => void;
-  bulkAddStudents: (classId: string, names: string[]) => void;
+  bulkAddStudents: (classId: string, students: { name: string, gender: "male" | "female" }[]) => void;
+  togglePresence: (studentId: string) => void;
+  markAllPresent: (classId: string) => void;
+  awardStudentXp: (classId: string, studentId: string, xpAmount: number, eventType?: string, gameType?: string) => void;
+  syncStudentXp: (classId: string, className: string) => Promise<void>;
   
-  generateTeams: (classId: string, numberOfTeams: number, presentStudentIds?: string[]) => void;
+  setStep: (step: number) => void;
+  generateTeams: (classId: string, numberOfTeams: number, presentStudentIds?: string[], balanceMode?: 'balanced' | 'mixed_energy' | 'gender_balanced' | 'random') => void;
   updateTeamScore: (teamId: string, delta: number) => void;
   setTeamScore: (teamId: string, score: number) => void;
   updateTeamName: (teamId: string, name: string) => void;
   moveStudentToTeam: (studentId: string, targetTeamId: string) => void;
+  moveStudentToBench: (studentId: string) => void;
   resetTeamsState: () => void;
+  resetTeamScores: () => void;
+
+  endSessionAndDistributeXp: (gameType: string) => void;
   
   activeAwardAmount: number;
   setActiveAwardAmount: (amt: number) => void;
@@ -120,26 +158,42 @@ interface ClassroomState {
 
   soundEnabled: boolean;
   setSoundEnabled: (enabled: boolean) => void;
+
+  theme: 'dark' | 'light';
+  setTheme: (theme: 'dark' | 'light') => void;
+  toggleTheme: () => void;
+
+  teamStreaks: Record<string, number>;
+  recordTeamAnswer: (teamId: string, isCorrect: boolean) => void;
+  resetTeamStreaks: () => void;
   
   savedBoards: SavedBoard[];
   saveBoard: (board: Omit<SavedBoard, 'id' | 'timestamp'>) => void;
   deleteBoard: (id: string) => void;
   
+  language: "EN" | "ID";
+  setLanguage: (lang: "EN" | "ID") => void;
+
+  showTranslations: boolean;
+  setShowTranslations: (show: boolean) => void;
+
   commandLogs: string[];
   addLog: (message: string) => void;
+  repairClass: (classId: string) => void;
+  assignStudentRole: (studentId: string, role: string) => void;
 }
 
 const DEMO_STUDENTS: Student[] = [
-  { id: uuidv4(), name: "Ahmad Rizqi Arrayan", level: "Low", confidence: "Mid", energy: "Normal" },
-  { id: uuidv4(), name: "Aeni Putri", level: "Mid", confidence: "Low", energy: "Passive" },
-  { id: uuidv4(), name: "Al Vinzha Febriano", level: "Low", confidence: "High", energy: "Active" },
-  { id: uuidv4(), name: "Dimas Pratama Yulianto", level: "High", confidence: "High", energy: "Active" },
-  { id: uuidv4(), name: "Dinar Arya Putra", level: "High", confidence: "High", energy: "Active" },
-  { id: uuidv4(), name: "Fakhri Ramadhan", level: "Mid", confidence: "Mid", energy: "Normal" },
-  { id: uuidv4(), name: "Ibnu Akhdaan", level: "Mid", confidence: "Mid", energy: "Active" },
-  { id: uuidv4(), name: "Keyla Wati Lestari", level: "High", confidence: "High", energy: "Normal" },
-  { id: uuidv4(), name: "Levy Cipta Astinto", level: "Mid", confidence: "Low", energy: "Passive" },
-  { id: uuidv4(), name: "Muhammad Ibnu Kamil", level: "Low", confidence: "Low", energy: "Normal" },
+  { id: "std-001", name: "Ahmad Rizqi Arrayan", level: "Low", confidence: "Mid", energy: "Normal", gender: "male", rank: 1, tier: "Hero", xp: 0 },
+  { id: "std-002", name: "Aeni Putri", level: "Mid", confidence: "Low", energy: "Passive", gender: "female", rank: 1, tier: "Hero", xp: 0 },
+  { id: "std-003", name: "Al Vinzha Febriano", level: "Low", confidence: "High", energy: "Active", gender: "male", rank: 1, tier: "Hero", xp: 0 },
+  { id: "std-004", name: "Dimas Pratama Yulianto", level: "High", confidence: "High", energy: "Active", gender: "male", rank: 1, tier: "Hero", xp: 0 },
+  { id: "std-005", name: "Dinar Arya Putra", level: "High", confidence: "High", energy: "Active", gender: "male", rank: 1, tier: "Hero", xp: 0 },
+  { id: "std-006", name: "Fakhri Ramadhan", level: "Mid", confidence: "Mid", energy: "Normal", gender: "male", rank: 1, tier: "Hero", xp: 0 },
+  { id: "std-007", name: "Ibnu Akhdaan", level: "Mid", confidence: "Mid", energy: "Active", gender: "male", rank: 1, tier: "Hero", xp: 0 },
+  { id: "std-008", name: "Keyla Wati Lestari", level: "High", confidence: "High", energy: "Normal", gender: "female", rank: 1, tier: "Hero", xp: 0 },
+  { id: "std-009", name: "Levy Cipta Astinto", level: "Mid", confidence: "Low", energy: "Passive", gender: "male", rank: 1, tier: "Hero", xp: 0 },
+  { id: "std-010", name: "Muhammad Ibnu Kamil", level: "Low", confidence: "Low", energy: "Normal", gender: "male", rank: 1, tier: "Hero", xp: 0 },
 ];
 
 export const useClassroomStore = create<ClassroomState>()(
@@ -150,6 +204,10 @@ export const useClassroomStore = create<ClassroomState>()(
         const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: "numeric", minute: "numeric", second: "numeric" });
         return { commandLogs: [`[${timestamp}] ${message}`, ...state.commandLogs].slice(0, 50) };
       }),
+      language: "EN",
+      setLanguage: (lang) => set({ language: lang }),
+      showTranslations: false,
+      setShowTranslations: (show) => set({ showTranslations: show }),
       folders: ["General", "Demo"],
       classes: [
         {
@@ -160,8 +218,28 @@ export const useClassroomStore = create<ClassroomState>()(
         }
       ],
       activeClassId: "demo-class-1",
+      presentStudentIds: DEMO_STUDENTS.map(s => s.id),
       currentTeams: [],
+      unassignedStudents: [],
+      currentStep: 0,
       sessionHistory: [],
+
+      // Turn & Active Player State
+      activeTeamIndex: 0,
+      setActiveTeamIndex: (idx) => set({ activeTeamIndex: idx }),
+      nextTurn: () => set((state) => {
+        if (state.currentTeams.length === 0) return state;
+        const nextIdx = (state.activeTeamIndex + 1) % state.currentTeams.length;
+        return { activeTeamIndex: nextIdx };
+      }),
+      activeStudentId: null,
+      setActiveStudentId: (id) => set({ activeStudentId: id }),
+
+      // Modals
+      broadcastModalOpen: false,
+      setBroadcastModalOpen: (open) => set({ broadcastModalOpen: open }),
+      playerPickerOpen: false,
+      setPlayerPickerOpen: (open) => set({ playerPickerOpen: open }),
 
       // --- Session Logic ---
       saveSession: (session) => set((state) => {
@@ -210,29 +288,56 @@ export const useClassroomStore = create<ClassroomState>()(
       }),
 
       // --- Class Actions ---
-      addClass: (name, category = "General") => set((state) => ({
+      addClass: (name: string, category = "General") => set((state) => ({
           folders: state.folders.includes(category) ? state.folders : [...state.folders, category],
           classes: [...state.classes, { id: uuidv4(), name, category, students: [] }]
       })),
       
-      removeClass: (classId) => set((state) => ({
+      removeClass: (classId: string) => set((state) => ({
         classes: state.classes.filter((c) => c.id !== classId),
         activeClassId: state.activeClassId === classId ? null : state.activeClassId,
         sessionHistory: state.sessionHistory.filter(s => s.classId !== classId)
       })),
 
-      setActiveClass: (classId) => set({ activeClassId: classId }),
+      resetTeamsState: () => set({ currentTeams: [], unassignedStudents: [], currentStep: 0 }),
+      setStep: (step: number) => set((state) => {
+        // If moving to step 1 or 2, and teams exist, sweep for unassigned present students
+        let newUnassigned = [...state.unassignedStudents];
+        if (step > 0 && state.currentTeams.length > 0) {
+          const activeC = state.classes.find(c => c.id === state.activeClassId);
+          if (activeC) {
+            activeC.students.forEach(s => {
+              const isPresent = state.presentStudentIds.includes(s.id);
+              const inTeam = state.currentTeams.some(t => t.students.some(st => st.id === s.id));
+              const inBench = newUnassigned.some(st => st.id === s.id);
+              if (isPresent && !inTeam && !inBench) {
+                newUnassigned.push(s);
+              }
+            });
+          }
+        }
+        return { currentStep: step, unassignedStudents: newUnassigned };
+      }),
+      setActiveClass: (id: string | null) => set((state) => {
+        const activeC = state.classes.find(c => c.id === id);
+        return { 
+          activeClassId: id,
+          presentStudentIds: (state.presentStudentIds.length === 0 && activeC) 
+            ? activeC.students.map(s => s.id) 
+            : state.presentStudentIds
+        };
+      }),
 
-      updateClass: (classId, name) => set((state) => ({
+      updateClass: (classId: string, name: string) => set((state) => ({
         classes: state.classes.map(c => c.id === classId ? { ...c, name } : c)
       })),
 
-      updateClassCategory: (classId, category) => set((state) => ({
+      updateClassCategory: (classId: string, category: string) => set((state) => ({
         folders: state.folders.includes(category) ? state.folders : [...state.folders, category],
         classes: state.classes.map(c => c.id === classId ? { ...c, category } : c)
       })),
 
-      addFolder: (name) => set(state => ({
+      addFolder: (name: string) => set(state => ({
         folders: state.folders.includes(name) ? state.folders : [...state.folders, name]
       })),
 
@@ -246,11 +351,59 @@ export const useClassroomStore = create<ClassroomState>()(
         classes: state.classes.map(c => c.category === oldName ? { ...c, category: newName } : c)
       })),
 
+      togglePresence: (studentId) => set((state) => {
+        const isNowPresent = !state.presentStudentIds.includes(studentId);
+        const newPresentIds = isNowPresent
+          ? [...state.presentStudentIds, studentId]
+          : state.presentStudentIds.filter(id => id !== studentId);
+
+        // If teams exist and student becomes present, add to bench if not already in team
+        let newUnassigned = [...state.unassignedStudents];
+        if (state.currentTeams.length > 0 && isNowPresent) {
+          const student = state.classes.flatMap(c => c.students).find(s => s.id === studentId);
+          const inTeam = state.currentTeams.some(t => t.students.some(st => st.id === studentId));
+          if (student && !inTeam && !newUnassigned.find(s => s.id === studentId)) {
+            newUnassigned.push(student);
+          }
+        } else if (!isNowPresent) {
+          // If marked absent, remove from bench and teams
+          newUnassigned = newUnassigned.filter(s => s.id !== studentId);
+        }
+
+        return {
+          presentStudentIds: newPresentIds,
+          unassignedStudents: newUnassigned,
+          // Also remove from any teams if marked absent
+          currentTeams: !isNowPresent 
+            ? state.currentTeams.map(t => ({ ...t, students: t.students.filter(s => s.id !== studentId) }))
+            : state.currentTeams
+        };
+      }),
+
+      markAllPresent: (classId) => set((state) => {
+        const cls = state.classes.find(c => c.id === classId);
+        if (!cls) return state;
+        const studentIds = cls.students.map(s => s.id);
+        return { 
+          presentStudentIds: Array.from(new Set([...state.presentStudentIds, ...studentIds]))
+        };
+      }),
+
       // --- Student Actions ---
-      addStudent: (classId, name) => set((state) => ({
+      addStudent: (classId, name, gender) => set((state) => ({
         classes: state.classes.map((c) => 
           c.id === classId 
-            ? { ...c, students: [...c.students, { id: uuidv4(), name, level: "Mid", confidence: "Mid", energy: "Normal" }] } 
+            ? { ...c, students: [...c.students, { 
+                id: uuidv4(), 
+                name, 
+                gender,
+                level: "Mid" as Level, 
+                energy: "Normal" as Energy, 
+                confidence: "Mid" as Level,
+                rank: 1 as Rank, 
+                tier: "Hero" as Tier,
+                xp: 0
+              }] } 
             : c
         )
       })),
@@ -271,16 +424,97 @@ export const useClassroomStore = create<ClassroomState>()(
         )
       })),
 
-      bulkAddStudents: (classId, names) => set((state) => ({
+      awardStudentXp: (classId, studentId, xpAmount, eventType = 'manual_award', gameType) => {
+        // Optimistically update XP + rank in Zustand
+        set((state) => {
+          const cls = state.classes.find(c => c.id === classId);
+          if (!cls) return state;
+          const student = cls.students.find(s => s.id === studentId);
+          if (!student) return state;
+
+          const newXp = (student.xp ?? 0) + xpAmount;
+
+          // Lazy import to avoid circular deps at module load time
+          const { getRankForXp } = require('@/utils/ranks');
+          const newRankInfo = getRankForXp(newXp);
+
+          const updatedStudents = cls.students.map(s =>
+            s.id === studentId
+              ? { ...s, xp: newXp, rank: newRankInfo.stars as Rank, tier: newRankInfo.tier as Tier }
+              : s
+          );
+
+          const rankChanged = newRankInfo.stars !== student.rank || newRankInfo.tier !== student.tier;
+          const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: 'numeric', minute: 'numeric', second: 'numeric' });
+          const logMsg = rankChanged
+            ? `[${timestamp}] RANK_UP: ${student.name} → ${newRankInfo.label} (${newXp} XP)`
+            : `[${timestamp}] XP_AWARD: ${student.name} +${xpAmount} XP (${newXp} total)`;
+
+          return {
+            classes: state.classes.map(c => c.id === classId ? { ...c, students: updatedStudents } : c),
+            commandLogs: [logMsg, ...state.commandLogs].slice(0, 50),
+          };
+        });
+
+        // Persist to Supabase in the background (fire-and-forget)
+        const { activeClassId, classes } = get();
+        const cls = classes.find(c => c.id === classId);
+        const className = cls?.name ?? '';
+        if (className) {
+          fetch('/api/xp/award', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ student_id: studentId, class_name: className, event_type: eventType, xp_amount: xpAmount, game_type: gameType }),
+          }).catch(() => { /* silent — Zustand is source of truth during session */ });
+        }
+      },
+
+      syncStudentXp: async (classId, className) => {
+        try {
+          const res = await fetch(`/api/xp/totals?class_name=${encodeURIComponent(className)}`);
+          if (!res.ok) return;
+          const { totals } = await res.json() as { totals: Record<string, number> };
+
+          const { getRankForXp } = await import('@/utils/ranks');
+
+          set((state) => {
+            const cls = state.classes.find(c => c.id === classId);
+            if (!cls) return state;
+
+            const updatedStudents = cls.students.map(s => {
+              const remoteXp = totals[s.id];
+              if (remoteXp === undefined) return s;
+              const rankInfo = getRankForXp(remoteXp);
+              return { ...s, xp: remoteXp, rank: rankInfo.stars as Rank, tier: rankInfo.tier as Tier };
+            });
+
+            return { classes: state.classes.map(c => c.id === classId ? { ...c, students: updatedStudents } : c) };
+          });
+        } catch {
+          // Network failure during sync — local state remains valid
+        }
+      },
+
+      bulkAddStudents: (classId, students) => set((state) => ({
         classes: state.classes.map((c) => {
           if (c.id !== classId) return c;
-          const newStudents = names.map(n => ({ id: uuidv4(), name: n, level: "Mid" as Level, confidence: "Mid" as Level, energy: "Normal" as Energy }));
+          const newStudents = students.map(s => ({ 
+            id: uuidv4(), 
+            name: s.name, 
+            level: "Mid" as Level, 
+            confidence: "Mid" as Level, 
+            energy: "Normal" as Energy, 
+            gender: s.gender, 
+            rank: 1 as Rank, 
+            tier: "Hero" as Tier,
+            xp: 0
+          }));
           return { ...c, students: [...c.students, ...newStudents] };
         })
       })),
 
       // --- Team Actions ---
-      generateTeams: (classId, numberOfTeams, presentStudentIds) => set((state) => {
+      generateTeams: (classId, numberOfTeams, presentStudentIds, balanceMode = 'balanced') => set((state) => {
         const cls = state.classes.find(c => c.id === classId);
         if (!cls) return state;
         
@@ -289,14 +523,47 @@ export const useClassroomStore = create<ClassroomState>()(
           pool = pool.filter(s => presentStudentIds.includes(s.id));
         }
 
-        const levelMap: Record<Level, number> = { High: 3, Mid: 2, Low: 1 };
-        pool.sort((a, b) => levelMap[b.level] - levelMap[a.level]);
+        // Apply balance mode sorting/shuffling
+        if (balanceMode === 'balanced') {
+          const levelMap: Record<Level, number> = { High: 3, Mid: 2, Low: 1 };
+          pool.sort((a, b) => levelMap[b.level] - levelMap[a.level]);
+        } else if (balanceMode === 'mixed_energy') {
+          const energyMap: Record<Energy, number> = { Active: 3, Normal: 2, Passive: 1 };
+          pool.sort((a, b) => energyMap[b.energy] - energyMap[a.energy]);
+        } else if (balanceMode === 'random') {
+          pool.sort(() => Math.random() - 0.5);
+        } else if (balanceMode === 'gender_balanced') {
+          const males = pool.filter(s => s.gender === 'male');
+          const females = pool.filter(s => s.gender === 'female');
+          const interleaved: Student[] = [];
+          const maxLen = Math.max(males.length, females.length);
+          for (let i = 0; i < maxLen; i++) {
+            if (i < males.length) interleaved.push(males[i]);
+            if (i < females.length) interleaved.push(females[i]);
+          }
+          pool = interleaved;
+        }
+
+        const teamHex = ['#00e87a', '#00c8f0', '#ffc843', '#ff4d8f', '#b06eff', '#ff7d3b', '#e2e8f0'];
+        const teamNames = ['SQUAD ALPHA', 'SQUAD BRAVO', 'SQUAD CHARLIE', 'SQUAD DELTA', 'SQUAD ECHO', 'SQUAD FOXTROT', 'SQUAD GOLF'];
+        const teamCrests = [
+          '/squad_alpha_crest_1776949168354.png',
+          '/squad_bravo_crest_1776949187121.png',
+          '/squad_charlie_crest_1776949207103.png',
+          '/squad_delta_crest_1776949227183.png',
+          '/arena_trophy_gold_1776948914488.png',
+          '/rank_up_badge_1776948271477.png',
+          '/rank_up_badge_1776948271477.png'
+        ];
 
         const teams: Team[] = Array.from({ length: numberOfTeams }, (_, i) => ({
           id: uuidv4(),
-          name: `Team ${i + 1}`,
+          name: teamNames[i % teamNames.length],
           students: [],
-          score: 0
+          score: 0,
+          color: teamHex[i % teamHex.length],
+          crestUrl: teamCrests[i % teamCrests.length],
+          osr: 0
         }));
 
         let reverse = false;
@@ -313,8 +580,51 @@ export const useClassroomStore = create<ClassroomState>()(
           }
         });
 
-        return { currentTeams: teams };
+        // Calculate OSR for each team & assign roles
+        const rolesList = ['Captain', 'Tactician', 'Scout', 'Runner', 'Analyst', 'Specialist'];
+        teams.forEach(t => {
+          const weights: Record<string, number> = { High: 3, Mid: 2, Low: 1, Active: 3, Normal: 2, Passive: 1 };
+          const sum = t.students.reduce((acc, s) => acc + (weights[s.level] || 0) + (weights[s.energy] || 0) + (weights[s.confidence] || 0), 0);
+          t.osr = Math.round((sum / (t.students.length * 9)) * 100);
+          
+          t.students.forEach((s, idx) => {
+            s.role = rolesList[idx % rolesList.length];
+          });
+        });
+
+        return { currentTeams: teams, unassignedStudents: [], currentStep: 1, activeTeamIndex: 0 };
       }),
+
+      endSessionAndDistributeXp: (gameType) => {
+        const { currentTeams, activeClassId, classes, awardStudentXp, saveSession, setBroadcastModalOpen } = get();
+        if (!activeClassId || currentTeams.length === 0) return;
+        const cls = classes.find(c => c.id === activeClassId);
+        if (!cls) return;
+
+        const totalPoints = currentTeams.reduce((sum, t) => sum + t.score, 0);
+        const scoresRecord: Record<string, number> = {};
+
+        currentTeams.forEach(team => {
+          scoresRecord[team.name] = team.score;
+          // Award XP to every student in the team proportional to team score
+          const xpPerStudent = Math.max(10, Math.round(team.score * 0.5));
+          team.students.forEach(student => {
+            awardStudentXp(activeClassId, student.id, xpPerStudent, 'game_completion', gameType);
+          });
+        });
+
+        saveSession({
+          classId: activeClassId,
+          className: cls.name,
+          gameType: gameType,
+          scores: scoresRecord,
+          totalScore: totalPoints,
+          accuracy: 85,
+          energy: 90
+        });
+
+        setBroadcastModalOpen(true);
+      },
 
       updateTeamScore: (teamId, delta) => set((state) => {
         if (delta > 0) playSFX("correct");
@@ -332,19 +642,50 @@ export const useClassroomStore = create<ClassroomState>()(
 
       moveStudentToTeam: (studentId, targetTeamId) => set((state) => {
         let studentToMove: Student | undefined;
+        
+        // 1. Try to find in existing teams
         const newTeams = state.currentTeams.map(t => {
           const student = t.students.find(s => s.id === studentId);
           if (student) studentToMove = student;
           return { ...t, students: t.students.filter(s => s.id !== studentId) };
         });
+
+        // 2. Try to find in bench if not in teams
+        let newUnassigned = [...state.unassignedStudents];
+        if (!studentToMove) {
+          const studentInBench = newUnassigned.find(s => s.id === studentId);
+          if (studentInBench) {
+            studentToMove = studentInBench;
+            newUnassigned = newUnassigned.filter(s => s.id !== studentId);
+          }
+        }
+
         if (studentToMove) {
           const target = newTeams.find(t => t.id === targetTeamId);
           if (target) target.students.push(studentToMove);
         }
+        
+        return { currentTeams: newTeams, unassignedStudents: newUnassigned };
+      }),
+
+      moveStudentToBench: (studentId) => set((state) => {
+        let studentToMove: Student | undefined;
+        const newTeams = state.currentTeams.map(t => {
+          const student = t.students.find(s => s.id === studentId);
+          if (student) studentToMove = student;
+          return { ...t, students: t.students.filter(s => s.id !== studentId) };
+        });
+
+        if (studentToMove && !state.unassignedStudents.find(s => s.id === studentId)) {
+          return { 
+            currentTeams: newTeams, 
+            unassignedStudents: [...state.unassignedStudents, studentToMove] 
+          };
+        }
         return { currentTeams: newTeams };
       }),
 
-      resetTeamsState: () => set((state) => ({
+      resetTeamScores: () => set((state) => ({
         currentTeams: state.currentTeams.map((t, i) => ({ ...t, name: `Team ${i + 1}`, score: 0 }))
       })),
 
@@ -373,6 +714,34 @@ export const useClassroomStore = create<ClassroomState>()(
 
       soundEnabled: true,
       setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
+
+      theme: 'dark',
+      setTheme: (theme) => {
+        if (typeof document !== 'undefined') {
+          document.documentElement.setAttribute('data-theme', theme);
+        }
+        set({ theme });
+      },
+      toggleTheme: () => set((state) => {
+        const nextTheme = state.theme === 'dark' ? 'light' : 'dark';
+        if (typeof document !== 'undefined') {
+          document.documentElement.setAttribute('data-theme', nextTheme);
+        }
+        return { theme: nextTheme };
+      }),
+
+      teamStreaks: {},
+      recordTeamAnswer: (teamId, isCorrect) => set((state) => {
+        const currentStreak = state.teamStreaks[teamId] || 0;
+        const nextStreak = isCorrect ? currentStreak + 1 : 0;
+        return {
+          teamStreaks: {
+            ...state.teamStreaks,
+            [teamId]: nextStreak
+          }
+        };
+      }),
+      resetTeamStreaks: () => set({ teamStreaks: {} }),
 
       activeRoomCode: null,
       setActiveRoomCode: (code) => set({ activeRoomCode: code }),
@@ -403,6 +772,8 @@ export const useClassroomStore = create<ClassroomState>()(
       setMistralModel: (m) => set({ mistralModel: m }),
       groqModel: "llama-3.3-70b-versatile",
       setGroqModel: (m) => set({ groqModel: m }),
+      googleSheetsWebhookUrl: "https://script.google.com/macros/s/AKfycbxOGODvVOZSg9Y6OVj-jf3k37DJsBUD1yyFl11gU5MEDPpnxQkwJrt2n6YipWmP18Zqfg/exec",
+      setGoogleSheetsWebhookUrl: (url) => set({ googleSheetsWebhookUrl: url }),
       getActiveApiKey: () => {
         const { llmProvider, geminiKey, mistralKey, groqKey } = get();
         if (llmProvider === "gemini")  return geminiKey;
@@ -414,7 +785,43 @@ export const useClassroomStore = create<ClassroomState>()(
         if (llmProvider === "gemini")  return geminiModel;
         if (llmProvider === "groq")    return groqModel;
         return mistralModel; // mistral + lmstudio
-      }
+      },
+      repairClass: (classId) => set((state) => {
+        const targetClass = state.classes.find(c => c.id === classId);
+        if (!targetClass) return state;
+
+        const repairedStudents = targetClass.students.map((s, idx) => {
+          // If name is "OPERATOR X" or "Operator X", try to get original from DEMO_STUDENTS
+          let originalName = s.name;
+          if (s.name.toUpperCase().startsWith("OPERATOR") && DEMO_STUDENTS[idx]) {
+            originalName = DEMO_STUDENTS[idx].name;
+          }
+          
+          return {
+            ...s,
+            name: originalName,
+            tier: "Hero" as Tier,
+            rank: 1 as Rank,
+            xp: 0
+          };
+        });
+
+        return {
+          classes: state.classes.map(c => c.id === classId ? { ...c, students: repairedStudents } : c),
+          commandLogs: [`[SYSTEM] Repair Complete: ${targetClass.name} restored to Bronze Hero.`, ...state.commandLogs].slice(0, 50)
+        };
+      }),
+
+      assignStudentRole: (studentId, role) => set((state) => ({
+        classes: state.classes.map(c => ({
+          ...c,
+          students: c.students.map(s => s.id === studentId ? { ...s, role } : s)
+        })),
+        currentTeams: state.currentTeams.map(t => ({
+          ...t,
+          students: t.students.map(s => s.id === studentId ? { ...s, role } : s)
+        }))
+      }))
     }),
     {
       name: "classroom-engine-storage",

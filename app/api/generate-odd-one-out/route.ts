@@ -3,7 +3,11 @@ import { generateJSON } from "../../lib/llm";
 
 export async function POST(req: Request) {
   try {
-    const { apiKey, provider, mistralModel, topic, level } = await req.json();
+    const { apiKey, provider, mistralModel, topic, level, showTranslations } = await req.json();
+
+    const translationInstruction = showTranslations 
+      ? `CRITICAL: Provide Indonesian translations for each item in the "words" array and the "hint" string in parenthesis. Example: ["Apple (Apel)", "Orange (Jeruk)", "Onion (Bawang)", "Banana (Pisang)"] and Hint: "They are all fruits (Semuanya adalah buah)".` 
+      : `Provide content in English ONLY.`;
 
     let levelPrompt = `Generate EXACTLY 12 sets matching the ${level} difficulty level.`;
     if (level === "Mixed Level") levelPrompt = `Generate EXACTLY 12 sets: 4 Low difficulty, 4 Mid difficulty, 4 High difficulty.`;
@@ -12,6 +16,8 @@ export async function POST(req: Request) {
 
 Based on the topic, ${levelPrompt}
 Each set contains exactly 4 words where 3 belong to a pattern and 1 is the odd one out.
+
+${translationInstruction}
 
 Return valid JSON — an array of exactly 12 objects with this schema:
 [

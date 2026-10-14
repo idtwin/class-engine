@@ -1,0 +1,131 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.headerTag {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #00c8f0;
+}
+
+.tileCard {
+  background: #0b1523;
+  border: 1.5px solid rgba(0, 200, 240, 0.4);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: center;
+  align-items: center;
+}
+
+.categoryTag {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  font-weight: 800;
+  color: #00c8f0;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pointsBadge {
+  background: rgba(0, 200, 240, 0.15);
+  border: 1px solid #00c8f0;
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 16px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.05em;
+}
+
+.questionText {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #e2e8f0;
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
+.waitingPrompt {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  color: #4a637d;
+  letter-spacing: 0.08em;
+  padding: 12px 0;
+}
+
+/* Massive Tactical Buzzer */
+.buzzerWrap {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.buzzerBtn {
+  width: 100%;
+  aspect-ratio: 1.6;
+  max-height: 180px;
+  background: radial-gradient(circle, #00c8f0 0%, #0077b6 100%);
+  border: 2px solid #90e0ef;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  touch-action: manipulation;
+  box-shadow: 0 8px 24px rgba(0, 200, 240, 0.35);
+  transition: transform 0.1s ease, filter 0.15s ease;
+}
+
+.buzzerBtn:active:not(:disabled) {
+  transform: scale(0.95);
+  filter: brightness(1.2);
+}
+
+.buzzerBtn:disabled {
+  opacity: 0.45;
+  filter: grayscale(0.8);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.buzzerIcon {
+  font-size: 32px;
+}
+
+.buzzerText {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.12em;
+}
+
+.lockoutWarning {
+  margin-top: 8px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  font-weight: 700;
+  color: #ff4d8f;
+  letter-spacing: 0.06em;
+  text-align: center;
+}

@@ -303,7 +303,7 @@
   border-radius: 10px;
   border: none;
   background: var(--yellow);
-  color: #000;
+  color: #0f172a;
   font-family: var(--font-mono), monospace;
   font-size: 12px;
   font-weight: 800;
@@ -642,7 +642,7 @@
   border-radius: 12px;
   border: none;
   background: var(--yellow);
-  color: #000;
+  color: #0f172a;
   font-family: var(--font-mono), monospace;
   font-size: 13px;
   font-weight: 800;
@@ -733,7 +733,7 @@
   height: 20px;
   border-radius: 50%;
   background: var(--cyan);
-  color: #000;
+  color: #0f172a;
   font-size: 10px;
   font-weight: 800;
   margin-left: 8px;
@@ -796,7 +796,7 @@
   border-radius: 12px;
   border: none;
   background: var(--green);
-  color: #000;
+  color: #0f172a;
   font-family: var(--font-mono), monospace;
   font-size: 13px;
   font-weight: 800;
@@ -864,7 +864,7 @@
   border-radius: 12px;
   border: none;
   background: var(--yellow);
-  color: #000;
+  color: #0f172a;
   font-family: var(--font-mono), monospace;
   font-size: 12px;
   font-weight: 800;
@@ -1295,7 +1295,7 @@
 
 .fixBtnReveal {
   background: var(--yellow);
-  color: #000;
+  color: #0f172a;
   border: none;
   border-radius: 8px;
   padding: 13px 40px;
@@ -1354,3 +1354,28 @@
 }
 
 .fixBtnNewGame:hover { border-color: var(--border2); }
+
+.translationToggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 18px;
+  cursor: pointer;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  transition: all 0.2s;
+  user-select: none;
+}
+.translationToggle:hover {
+  border-color: var(--yellow);
+  color: var(--text);
+}
+.translationToggle input {
+  cursor: pointer;
+  accent-color: var(--yellow);
+  width: 16px;
+  height: 16px;
+}

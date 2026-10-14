@@ -1,6 +1,6 @@
 import { useClassroomStore } from "../store/useClassroomStore";
 
-export type SFXName = "correct" | "wrong" | "tick" | "times-up" | "twist";
+export type SFXName = "correct" | "wrong" | "tick" | "times-up" | "twist" | "victory" | "wheel";
 
 // Registry to track active sound instances
 const activeSounds: Partial<Record<SFXName, HTMLAudioElement>> = {};

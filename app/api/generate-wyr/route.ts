@@ -3,11 +3,17 @@ import { generateJSON } from "../../lib/llm";
 
 export async function POST(req: Request) {
   try {
-    const { apiKey, provider, mistralModel, topic, level } = await req.json();
+    const { apiKey, provider, mistralModel, topic, level, showTranslations } = await req.json();
+
+    const translationInstruction = showTranslations 
+      ? `CRITICAL: Provide Indonesian translations for the "optionA" and "optionB" fields in parenthesis. Example: "Eat only pizza (Hanya makan pizza)" and "Eat only burgers (Hanya makan burger)".` 
+      : `Provide content in English ONLY.`;
 
     const systemPrompt = `You are a creative ESL teacher. Generate a list of 10 "Would You Rather" style debate prompts.
 Topic: ${topic}
 Level: ${level}
+
+${translationInstruction}
 
 Return ONLY raw JSON in this exact structure:
 {
@@ -22,8 +28,10 @@ Return ONLY raw JSON in this exact structure:
 Rules:
 1. Provide exactly 10 debate scenarios.
 2. The choices should be bizarre, funny, or difficult decisions matched to the topic.
-3. Keep text for options extremely concise (1-2 sentences max).
-4. Return ONLY pure raw JSON. No markdown.`;
+3. CRITICAL: "optionA" and "optionB" MUST be separate strings. Never put "or" between them.
+4. Keep text for options extremely concise (under 10 words each).
+5. Return ONLY pure raw JSON. No markdown backticks. No extra text.
+6. If the topic is inappropriate, generate high-quality ESL debate prompts about "Learning English" instead.`;
 
     const userPrompt = `Topic: ${topic}\nLevel: ${level}\nGenerate JSON now!`;
 

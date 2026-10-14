@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useClassroomStore, SavedBoard } from "../store/useClassroomStore";
-import { Sparkles } from "lucide-react";
+import { Sparkles, SlidersHorizontal } from "lucide-react";
+import FloatingReactionsOverlay from "../components/FloatingReactionsOverlay";
+import { useLiveRoomHost } from "@/app/lib/useLiveRoomHost";
 import styles from "./rapid-fire.module.css";
 import MultiplayerHost from "../components/MultiplayerHost";
 import BoardLibrary from "../components/BoardLibrary";
@@ -20,25 +22,69 @@ interface RapidFireQuestion {
 type GameState = "SETUP" | "LOADING" | "READY" | "PLAYING" | "REVEALED" | "FINISHED";
 type RFMode = "buzzer" | "mc";
 
+const STARTER_RAPIDFIRE_QUESTIONS: RapidFireQuestion[] = [
+  {
+    text: "What is the capital city of Australia?",
+    answer: "Canberra",
+    level: "Mid",
+    type: "Geography",
+    options: { A: "Sydney", B: "Melbourne", C: "Canberra", D: "Brisbane" },
+    correctLetter: "C"
+  },
+  {
+    text: "Which planet is known as the Red Planet?",
+    answer: "Mars",
+    level: "Low",
+    type: "Science",
+    options: { A: "Venus", B: "Mars", C: "Jupiter", D: "Saturn" },
+    correctLetter: "B"
+  },
+  {
+    text: "What is the past tense of 'freeze'?",
+    answer: "Froze",
+    level: "Mid",
+    type: "Grammar",
+    options: { A: "Froze", B: "Freezed", C: "Frozen", D: "Frozzen" },
+    correctLetter: "A"
+  },
+  {
+    text: "How many centimeters are in one meter?",
+    answer: "100",
+    level: "Low",
+    type: "Math",
+    options: { A: "10", B: "50", C: "100", D: "1000" },
+    correctLetter: "C"
+  },
+  {
+    text: "Which gas do plants absorb during photosynthesis?",
+    answer: "Carbon Dioxide",
+    level: "Mid",
+    type: "Biology",
+    options: { A: "Oxygen", B: "Nitrogen", C: "Carbon Dioxide", D: "Hydrogen" },
+    correctLetter: "C"
+  }
+];
+
 export default function RapidFire() {
   const router = useRouter();
-  const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider, triggerTwist, activeRoomCode, saveBoard } = useClassroomStore();
+  const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider, triggerTwist, activeRoomCode, saveBoard, showTranslations, setShowTranslations } = useClassroomStore();
+  const { setQuestion, reactions, roomState } = useLiveRoomHost("rapidfire");
   const [mounted, setMounted] = useState(false);
   const [roomBuzzes, setRoomBuzzes] = useState<any[]>([]);
   const [roomStudents, setRoomStudents] = useState<any[]>([]);
   const [roomData, setRoomData] = useState<any>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const [gameState, setGameState] = useState<GameState>("SETUP");
+  const [gameState, setGameState] = useState<GameState>("PLAYING");
   const [rfMode, setRfMode] = useState<RFMode>("buzzer");
   const [topic, setTopic] = useState("");
   const [targetLevel, setTargetLevel] = useState("Mid");
-  const [questions, setQuestions] = useState<RapidFireQuestion[]>([]);
+  const [questions, setQuestions] = useState<RapidFireQuestion[]>(STARTER_RAPIDFIRE_QUESTIONS);
   const [cursor, setCursor] = useState(0);
   const [wrongSelections, setWrongSelections] = useState<Set<string>>(new Set());
 
   const [timeLeft, setTimeLeft] = useState(15);
-  const [timerActive, setTimerActive] = useState(false);
+  const [timerActive, setTimerActive] = useState(true);
   const [timerDuration, setTimerDuration] = useState(15);
 
   const [penalizeWrong, setPenalizeWrong] = useState(false);
@@ -61,7 +107,7 @@ export default function RapidFire() {
       const res = await fetch("/api/generate-rapid-fire", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey, provider: llmProvider, mistralModel, topic, level: targetLevel, mode: rfMode, replaceOne: true, existingQuestions: existing }),
+        body: JSON.stringify({ apiKey, provider: llmProvider, mistralModel, topic, level: targetLevel, mode: rfMode, replaceOne: true, existingQuestions: existing, showTranslations }),
       });
       const data = await res.json();
       if (data.question) {
@@ -98,6 +144,24 @@ export default function RapidFire() {
       }
     }
   }, [roomStudents, gameState]);
+
+  // Broadcast current question to connected mobile controllers
+  useEffect(() => {
+    if (questions && questions[cursor]) {
+      const q = questions[cursor];
+      setQuestion({
+        text: q.text,
+        options: q.options ? [q.options.A, q.options.B, q.options.C, q.options.D] : [],
+        answer: q.answer,
+      });
+    }
+  }, [cursor, questions, setQuestion]);
+
+  // Sync students & buzzes from roomState
+  useEffect(() => {
+    if (roomState?.students) setRoomStudents(roomState.students);
+    if (roomState?.buzzes) setRoomBuzzes(roomState.buzzes);
+  }, [roomState?.students, roomState?.buzzes]);
 
   // Poll for buzzes and student answers
   useEffect(() => {
@@ -155,7 +219,8 @@ export default function RapidFire() {
           provider: llmProvider,
           topic,
           level: targetLevel,
-          mode: rfMode
+          mode: rfMode,
+          showTranslations
         })
       });
       const data = await response.json();
@@ -354,6 +419,7 @@ export default function RapidFire() {
 
   return (
     <>
+      <FloatingReactionsOverlay reactions={reactions} />
       {/* Setup / Loading overlay */}
       {(gameState === "SETUP" || gameState === "LOADING" || gameState === "READY") && (
         <div className={styles.setupOverlay}>
@@ -469,12 +535,20 @@ export default function RapidFire() {
                   <button className={styles.btnGenerate} onClick={generateGame} disabled={!topic.trim()}>
                     <Sparkles size={16} /> Generate Questions
                   </button>
+                  <label className={styles.translationToggle}>
+                    <input 
+                      type="checkbox" 
+                      checked={showTranslations} 
+                      onChange={(e) => setShowTranslations(e.target.checked)}
+                    />
+                    <span>INDONESIA (ID)</span>
+                  </label>
                   <BoardLibrary currentGameType="rapidfire" onLoadBoard={handleLoadBoard} />
                   <button
                     style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 10, padding: '14px 20px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 12, cursor: 'pointer' }}
                     onClick={() => router.push('/games')}
                   >
-                    ← Back to Arcade
+                    ← Back to Missions
                   </button>
                 </div>
               </>
@@ -529,6 +603,7 @@ export default function RapidFire() {
               <div className={styles.rfQCounter}>
                 Q <span className={styles.rfQCounterNum}>{cursor + 1}</span> / {questions.length}
               </div>
+              <MultiplayerHost gameMode="rapidfire" />
               <button
                 style={{ background: 'transparent', border: '1px solid var(--border2)', borderRadius: 6, padding: '5px 12px', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 10, cursor: 'pointer', letterSpacing: '0.08em' }}
                 onClick={() => setGameState("SETUP")}

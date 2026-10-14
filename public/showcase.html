@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nav FX Showcase — Command Bridge</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #07090f;
+            --surface: #0c0e16;
+            --border: rgba(255, 255, 255, 0.1);
+            --mint: #00ffd5;
+            --orange: #ffaa00;
+            --red: #ff4444;
+            --blue: #4444ff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg);
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 100px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            letter-spacing: 0.3em;
+            color: var(--orange);
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 12px;
+        }
+
+        .section {
+            margin-bottom: 120px;
+            border-top: 1px solid var(--border);
+            padding-top: 60px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            color: var(--orange);
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title span {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        .demo-bar {
+            height: 64px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            border-radius: 4px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 40px;
+        }
+
+        .nav-link {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            cursor: pointer;
+            position: relative;
+            padding: 10px 20px;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover {
+            color: #fff;
+        }
+
+        /* 1. Targeting Reticle */
+        .reticle .nav-link::before,
+        .reticle .nav-link::after,
+        .reticle .nav-link .inner::before,
+        .reticle .nav-link .inner::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-color: var(--mint);
+            border-style: solid;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .reticle .nav-link::before { top: 0; left: 0; border-width: 1px 0 0 1px; transform: translate(-10px, -10px); }
+        .reticle .nav-link::after { top: 0; right: 0; border-width: 1px 1px 0 0; transform: translate(10px, -10px); }
+        .reticle .nav-link .inner::before { bottom: 0; left: 0; border-width: 0 0 1px 1px; transform: translate(-10px, 10px); }
+        .reticle .nav-link .inner::after { bottom: 0; right: 0; border-width: 0 1px 1px 0; transform: translate(10px, 10px); }
+
+        .reticle .nav-link:hover::before,
+        .reticle .nav-link:hover::after,
+        .reticle .nav-link:hover .inner::before,
+        .reticle .nav-link:hover .inner::after {
+            opacity: 1;
+            transform: translate(0, 0);
+        }
+
+        /* 2. Radar Ping */
+        .radar .ping-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--mint), transparent);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .radar:hover .ping-line {
+            animation: pingMove 3s infinite linear;
+        }
+
+        @keyframes pingMove {
+            0% { top: -10%; opacity: 0; }
+            10% { opacity: 0.3; }
+            90% { opacity: 0.3; }
+            100% { top: 110%; opacity: 0; }
+        }
+
+        /* 3. Data Packet Stream */
+        .packet-stream::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 1px solid rgba(0, 255, 213, 0.1);
+            pointer-events: none;
+        }
+
+        .packet {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--mint);
+            box-shadow: 0 0 5px var(--mint);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        /* 4. Decrypt Sequence */
+        .decrypt .nav-link { min-width: 140px; text-align: center; }
+
+        /* 5. Terminal Caret */
+        .caret .nav-link:hover::after {
+            content: '_';
+            animation: blink 1s infinite;
+            color: var(--mint);
+            margin-left: 4px;
+        }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* 6. Binary Ghosting */
+        .binary-ghost {
+            background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(0, 255, 213, 0.05) 0%, transparent 200px);
+        }
+
+        .binary-bg {
+            position: absolute;
+            inset: 0;
+            font-size: 10px;
+            color: rgba(0, 255, 213, 0.03);
+            white-space: nowrap;
+            overflow: hidden;
+            pointer-events: none;
+            line-height: 12px;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .binary-ghost:hover .binary-bg { opacity: 1; }
+
+        /* 7. Slice Tearing */
+        .glitch-tear:hover {
+            animation: tear 0.2s infinite;
+        }
+
+        @keyframes tear {
+            0% { transform: translate(0); clip-path: inset(0 0 0 0); }
+            20% { transform: translate(-2px, 1px); clip-path: inset(10% 0 80% 0); }
+            40% { transform: translate(2px, -1px); clip-path: inset(40% 0 40% 0); }
+            60% { transform: translate(-1px, 2px); clip-path: inset(70% 0 10% 0); }
+            80% { transform: translate(1px, -2px); clip-path: inset(20% 0 60% 0); }
+            100% { transform: translate(0); clip-path: inset(0 0 0 0); }
+        }
+
+        /* 8. Chromatic Pop */
+        .chromatic-pop:active {
+            animation: chromPop 0.1s forwards;
+        }
+
+        @keyframes chromPop {
+            0% { text-shadow: 0 0 0 transparent; }
+            50% { text-shadow: -3px 0 var(--red), 3px 0 var(--blue); transform: scale(1.02); }
+            100% { text-shadow: 0 0 0 transparent; }
+        }
+
+        /* 9. Static Noise */
+        .static-noise::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3BaseFilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.02;
+            pointer-events: none;
+            mix-blend-mode: overlay;
+        }
+
+        .static-noise:hover::after {
+            animation: noiseMove 0.2s infinite steps(2);
+        }
+
+        @keyframes noiseMove {
+            0% { transform: translate(0,0); }
+            100% { transform: translate(10px,10px); }
+        }
+
+        .label {
+            margin-top: 15px;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.3);
+            text-align: center;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 40px;
+            height: 40px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--orange);
+            font-size: 10px;
+            z-index: 100;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>COMMAND_BRIDGE_FX</h1>
+            <p>TACTICAL HUD ANIMATION RESEARCH // SECTOR_01</p>
+        </div>
+
+        <!-- 1. Targeting Reticle -->
+        <div class="section">
+            <h2 class="section-title">01_TARGETING_RETICLE <span>[TACTICAL]</span></h2>
+            <div class="demo-bar reticle">
+                <div class="nav-links">
+                    <div class="nav-link"><div class="inner">MISSIONS</div></div>
+                    <div class="nav-link"><div class="inner">OPERATIONS</div></div>
+                    <div class="nav-link"><div class="inner">INTELLIGENCE</div></div>
+                </div>
+            </div>
+            <p class="label">Hover to engage target locking mechanism.</p>
+        </div>
+
+        <!-- 2. Radar Ping -->
+        <div class="section">
+            <h2 class="section-title">02_RADAR_PING <span>[MILITARY]</span></h2>
+            <div class="demo-bar radar">
+                <div class="ping-line"></div>
+                <div class="nav-links">
+                    <div class="nav-link">MISSIONS</div>
+                    <div class="nav-link">OPERATIONS</div>
+                    <div class="nav-link">INTELLIGENCE</div>
+                </div>
+            </div>
+            <p class="label">Hover the bar to initiate periodic sector scan.</p>
+        </div>
+
+        <!-- 3. Data Packet Stream -->
+        <div class="section">
+            <h2 class="section-title">03_PACKET_STREAM <span>[UPLINK]</span></h2>
+            <div class="demo-bar packet-stream" id="packet-demo">
+                <div class="nav-links">
+                    <div class="nav-link">MISSIONS</div>
+                    <div class="nav-link">OPERATIONS</div>
+                    <div class="nav-link">INTELLIGENCE</div>
+                </div>
+            </div>
+            <p class="label">Live data packets traveling along the UI perimeter.</p>
+        </div>
+
+        <!-- 4. Decrypt Sequence -->
+        <div class="section">
+            <h2 class="section-title">04_DECRYPT_SEQUENCE <span>[HACKER]</span></h2>
+            <div class="demo-bar decrypt">
+                <div class="nav-links">
+                    <div class="nav-link" data-text="MISSIONS">MISSIONS</div>
+                    <div class="nav-link" data-text="OPERATIONS">OPERATIONS</div>
+                    <div class="nav-link" data-text="INTELLIGENCE">INTELLIGENCE</div>
+                </div>
+            </div>
+            <p class="label">Hover to trigger sector identification decryption.</p>
+        </div>
+
+        <!-- 5. Terminal Caret -->
+        <div class="section">
+            <h2 class="section-title">05_TERMINAL_CARET <span>[COMMAND]</span></h2>
+            <div class="demo-bar caret">
+                <div class="nav-links">
+                    <div class="nav-link">MISSIONS</div>
+                    <div class="nav-link">OPERATIONS</div>
+                    <div class="nav-link">INTELLIGENCE</div>
+                </div>
+            </div>
+            <p class="label">Interactive command-line cursor on engagement.</p>
+        </div>
+
+        <!-- 6. Binary Ghosting -->
+        <div class="section">
+            <h2 class="section-title">06_BINARY_GHOSTING <span>[OVERRIDE]</span></h2>
+            <div class="demo-bar binary-ghost" id="binary-demo">
+                <div class="binary-bg" id="binary-text"></div>
+                <div class="nav-links">
+                    <div class="nav-link">MISSIONS</div>
+                    <div class="nav-link">OPERATIONS</div>
+                    <div class="nav-link">INTELLIGENCE</div>
+                </div>
+            </div>
+            <p class="label">Raw machine code revealed by optical mouse scanning.</p>
+        </div>
+
+        <!-- 7. Slice Tearing -->
+        <div class="section">
+            <h2 class="section-title">07_SLICE_TEARING <span>[GLITCH]</span></h2>
+            <div class="demo-bar glitch-tear">
+                <div class="nav-links">
+                    <div class="nav-link">MISSIONS</div>
+                    <div class="nav-link">OPERATIONS</div>
+                    <div class="nav-link">INTELLIGENCE</div>
+                </div>
+            </div>
+            <p class="label">Unstable signal simulation on active hover.</p>
+        </div>
+
+        <!-- 8. Chromatic Pop -->
+        <div class="section">
+            <h2 class="section-title">08_CHROMATIC_POP <span>[IMPACT]</span></h2>
+            <div class="demo-bar">
+                <div class="nav-links">
+                    <div class="nav-link chromatic-pop">MISSIONS</div>
+                    <div class="nav-link chromatic-pop">OPERATIONS</div>
+                    <div class="nav-link chromatic-pop">INTELLIGENCE</div>
+                </div>
+            </div>
+            <p class="label">Click sectors to trigger RGB channel misalignment.</p>
+        </div>
+
+        <!-- 9. Static Noise -->
+        <div class="section">
+            <h2 class="section-title">09_STATIC_NOISE <span>[SIGNAL]</span></h2>
+            <div class="demo-bar static-noise">
+                <div class="nav-links">
+                    <div class="nav-link">MISSIONS</div>
+                    <div class="nav-link">OPERATIONS</div>
+                    <div class="nav-link">INTELLIGENCE</div>
+                </div>
+            </div>
+            <p class="label">Micro-flicker noise overlay on sensor engagement.</p>
+        </div>
+
+    </div>
+
+    <div class="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">TOP</div>
+
+    <script>
+        // 3. Data Packets
+        const packetContainer = document.getElementById('packet-demo');
+        function createPacket() {
+            const packet = document.createElement('div');
+            packet.className = 'packet';
+            packetContainer.appendChild(packet);
+            
+            const side = Math.floor(Math.random() * 4);
+            const duration = 2 + Math.random() * 3;
+            
+            let startX, startY, endX, endY;
+            const w = packetContainer.offsetWidth;
+            const h = packetContainer.offsetHeight;
+
+            if(side === 0) { startX = 0; startY = 0; endX = w; endY = 0; }
+            else if(side === 1) { startX = w; startY = 0; endX = w; endY = h; }
+            else if(side === 2) { startX = w; startY = h; endX = 0; endY = h; }
+            else { startX = 0; startY = h; endX = 0; endY = 0; }
+
+            packet.style.left = startX + 'px';
+            packet.style.top = startY + 'px';
+
+            const anim = packet.animate([
+                { left: startX + 'px', top: startY + 'px' },
+                { left: endX + 'px', top: endY + 'px' }
+            ], { duration: duration * 1000, easing: 'linear' });
+
+            anim.onfinish = () => {
+                packet.remove();
+                createPacket();
+            };
+        }
+        for(let i=0; i<10; i++) setTimeout(createPacket, i * 500);
+
+        // 4. Decrypt
+        const decryptLinks = document.querySelectorAll('.decrypt .nav-link');
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*';
+        decryptLinks.forEach(link => {
+            const originalText = link.getAttribute('data-text');
+            let interval = null;
+            link.addEventListener('mouseenter', () => {
+                let iteration = 0;
+                clearInterval(interval);
+                interval = setInterval(() => {
+                    link.innerText = originalText.split("")
+                        .map((char, index) => {
+                            if(index < iteration) return originalText[index];
+                            return chars[Math.floor(Math.random() * chars.length)]
+                        })
+                        .join("");
+                    if(iteration >= originalText.length) clearInterval(interval);
+                    iteration += 1 / 3;
+                }, 30);
+            });
+            link.addEventListener('mouseleave', () => {
+                clearInterval(interval);
+                link.innerText = originalText;
+            });
+        });
+
+        // 6. Binary Ghosting
+        const binaryDemo = document.getElementById('binary-demo');
+        const binaryText = document.getElementById('binary-text');
+        let binContent = '';
+        for(let i=0; i<2000; i++) binContent += Math.round(Math.random());
+        binaryText.innerText = binContent;
+
+        binaryDemo.addEventListener('mousemove', (e) => {
+            const rect = binaryDemo.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            binaryDemo.style.setProperty('--x', x + 'px');
+            binaryDemo.style.setProperty('--y', y + 'px');
+        });
+    </script>
+</body>
+</html>

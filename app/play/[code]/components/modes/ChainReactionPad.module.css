@@ -1,0 +1,127 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  width: 100%;
+}
+
+.turnBanner {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.turnActive {
+  color: #00ffd5;
+}
+
+.turnWaiting {
+  opacity: 0.8;
+}
+
+.slotRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 8px 0;
+}
+
+.tile {
+  width: 36px;
+  height: 42px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 18px;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  color: transparent;
+}
+
+.tileLocked {
+  background: rgba(0, 200, 240, 0.18);
+  border-color: #00c8f0;
+  color: #00c8f0;
+}
+
+.tileTyped {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.tileCursor {
+  border-color: #00ffd5;
+  box-shadow: 0 0 8px rgba(0, 255, 213, 0.4);
+}
+
+.keyboardSection {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.actionsBar {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.actionBtn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 6px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.submitBtn {
+  background: #00ffd5;
+  color: #060810;
+  border: none;
+}
+
+.submitBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.keysGrid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+}
+
+.keyBtn {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: #0f1728;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.keyBtn:active {
+  transform: scale(0.92);
+  background: #00ffd5;
+  color: #060810;
+}

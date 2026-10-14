@@ -1,52 +1,548 @@
-.page {
-  min-height: 100vh;
+.hubContainer {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 20px 32px 120px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 6rem 2rem 2rem;
-  text-align: center;
+  gap: 24px;
+  font-family: var(--font-main), sans-serif;
+  color: var(--text);
 }
 
-.main {
+/* ──────────────────────────────────────────────────────────────────────────
+   WEEKLY PLANNER MATRIX & CONTROL TOP BAR
+   ────────────────────────────────────────────────────────────────────────── */
+.topMatrixBar {
   display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
   align-items: center;
-  max-width: 800px;
-}
-
-.title {
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  line-height: 1;
-}
-
-.subtitle {
-  color: var(--text-muted);
-  font-size: 1.5rem;
-  font-weight: 400;
-}
-
-.ctas {
-  display: flex;
-  gap: 1.5rem;
-  margin-top: 2rem;
+  justify-content: space-between;
+  background: #111827;
+  border: 1px solid #1f2d42;
+  border-radius: 14px;
+  padding: 12px 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   flex-wrap: wrap;
+  gap: 12px;
+}
+
+.weekNavGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.matrixLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.weekPill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: #192336;
+  border: 1px solid #24344d;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.weekPill:hover {
+  border-color: #00c8f0;
+  color: #00c8f0;
+}
+
+.weekPillActive {
+  background: rgba(0, 200, 240, 0.15);
+  border-color: #00c8f0;
+  color: #00c8f0;
+  box-shadow: 0 0 10px rgba(0, 200, 240, 0.2);
+}
+
+.dayTabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #192336;
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid #24344d;
+}
+
+.dayTab {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dayTab:hover {
+  color: #f8fafc;
+}
+
+.dayTabActive {
+  background: #00e87a;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.presentationToggleBtn {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  border: 1px solid #24344d;
+  background: #192336;
+  color: #f8fafc;
+}
+
+.presentationActive {
+  background: linear-gradient(135deg, #00e87a 0%, #00c8f0 100%);
+  color: #0f172a;
+  border: none;
+  box-shadow: 0 0 16px rgba(0, 232, 122, 0.4);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   PROJECTED HERO HEADER & SPOTLIGHT DECK
+   ────────────────────────────────────────────────────────────────────────── */
+.projectedHeader {
+  background: #111827;
+  border: 1px solid #1f2d42;
+  border-radius: 16px;
+  padding: 24px 28px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.headerTopRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.headerTitleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.headerBadges {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gradeBadge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(0, 232, 122, 0.12);
+  border: 1px solid rgba(0, 232, 122, 0.3);
+  color: #00e87a;
+  text-transform: uppercase;
+}
+
+.cefrBadge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(0, 200, 240, 0.12);
+  border: 1px solid rgba(0, 200, 240, 0.3);
+  color: #00c8f0;
+}
+
+.unitTitle {
+  font-family: 'Syne', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.unitFocusText {
+  font-size: 13px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+/* Inline Edit Controls */
+.inlineInput {
+  background: transparent;
+  border: 1px dashed transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  outline: none;
+  width: 100%;
+  border-radius: 4px;
+  padding: 2px 4px;
+  transition: all 0.15s ease;
+}
+
+.editorActive .inlineInput:hover {
+  border-color: #00c8f0;
+  background: rgba(0, 200, 240, 0.05);
+}
+
+.editorActive .inlineInput:focus {
+  border-style: solid;
+  border-color: #00FFD5;
+  background: #192336;
+  box-shadow: 0 0 10px rgba(0, 255, 213, 0.2);
+}
+
+.presentationMode .inlineInput {
+  border: none !important;
+  background: transparent !important;
+}
+
+.unitControls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.unitSelect {
+  padding: 8px 14px;
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  background: #192336;
+  border: 1px solid #24344d;
+  color: #FFFFFF;
+  border-radius: 10px;
+  cursor: pointer;
+  outline: none;
+}
+
+.actionBtn {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btnPrimary {
+  background: linear-gradient(135deg, #00e87a 0%, #00c8f0 100%);
+  color: #0f172a;
+  box-shadow: 0 0 16px rgba(0, 232, 122, 0.3);
+}
+
+.btnGhost {
+  background: #192336;
+  border: 1px solid #24344d;
+  color: #f1f5f9;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   SPOTLIGHT GRID
+   ────────────────────────────────────────────────────────────────────────── */
+.spotlightGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.spotlightCard {
+  background: #111827;
+  border: 1px solid #1f2d42;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+}
+
+.spotlightHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.spotlightBadge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.wordBadge {
+  background: rgba(0, 255, 213, 0.12);
+  border: 1px solid rgba(0, 255, 213, 0.3);
+  color: #00FFD5;
+}
+
+.phraseBadge {
+  background: rgba(255, 200, 67, 0.12);
+  border: 1px solid rgba(255, 200, 67, 0.3);
+  color: #ffc843;
+}
+
+.agendaBadge {
+  background: rgba(176, 110, 255, 0.12);
+  border: 1px solid rgba(176, 110, 255, 0.3);
+  color: #b06eff;
+}
+
+.spotlightMainWord {
+  font-family: 'Syne', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  color: #FFFFFF;
+  line-height: 1.2;
+}
+
+.posText {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #64748b;
+  font-style: italic;
+}
+
+.spotlightDesc {
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+.spotlightExample {
+  font-size: 12px;
+  color: #00FFD5;
+  background: rgba(0, 255, 213, 0.05);
+  border-left: 3px solid #00FFD5;
+  padding: 8px 12px;
+  border-radius: 0 6px 6px 0;
+  font-style: italic;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   PER-CLASS TEACHER NOTATIONS JOURNAL CARD
+   ────────────────────────────────────────────────────────────────────────── */
+.notationsCard {
+  background: #131c2e;
+  border: 1px solid rgba(176, 110, 255, 0.3);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notationsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.notationsTitle {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  color: #b06eff;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notationTextarea {
+  width: 100%;
+  height: 90px;
+  background: #192336;
+  border: 1px solid #24344d;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #f8fafc;
+  outline: none;
+  resize: vertical;
+}
+
+.notationTextarea:focus {
+  border-color: #b06eff;
+  box-shadow: 0 0 10px rgba(176, 110, 255, 0.2);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   LESSON STEP TIMELINE & GAME LAUNCHERS
+   ────────────────────────────────────────────────────────────────────────── */
+.stepGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.stepCard {
+  background: #111827;
+  border: 1px solid #1f2d42;
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.stepCard:hover {
+  transform: translateY(-3px);
+  border-color: #00c8f0;
+}
+
+.stepCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.phaseTag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  background: #192336;
+  border: 1px solid #24344d;
+  color: #00c8f0;
+}
+
+.stepIcon {
+  font-size: 24px;
+}
+
+.stepTitle {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.targetSkillTag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #64748b;
+}
+
+.stepDesc {
+  font-size: 13px;
+  color: #94a3b8;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.launchBtn {
+  width: 100%;
+  padding: 12px 16px;
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #00e87a 0%, #00c8f0 100%);
+  color: #0f172a;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
   justify-content: center;
+  gap: 8px;
+  box-shadow: 0 0 16px rgba(0, 232, 122, 0.3);
+  transition: all 0.15s ease;
 }
 
-.btnSecondary {
-  background: var(--surface-3);
-  color: var(--foreground);
-  box-shadow: none;
-  border: 1px solid var(--border);
+.launchBtn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 24px rgba(0, 232, 122, 0.5);
 }
 
-.btnSecondary:hover {
-  background: var(--surface-hover);
-  border-color: var(--accent);
-  box-shadow: -4px 0 0 var(--accent);
+/* Modal Overlay */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(7, 9, 15, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modalCard {
+  background: #111827;
+  border: 1px solid #1f2d42;
+  border-radius: 16px;
+  padding: 28px;
+  width: 560px;
+  max-width: 95vw;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.importTextarea {
+  width: 100%;
+  height: 160px;
+  background: #192336;
+  border: 1px solid #24344d;
+  border-radius: 10px;
+  padding: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #f8fafc;
+  outline: none;
+  resize: vertical;
 }

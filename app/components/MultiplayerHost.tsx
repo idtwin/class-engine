@@ -1,37 +1,80 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import styles from "./MultiplayerHost.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
 import { X, Users, Link2, MonitorPlay } from "lucide-react";
 
-export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
-  const { currentTeams, classes, activeClassId, activeRoomCode, setActiveRoomCode, playMode } = useClassroomStore();
+const TEAM_COLORS = ['#00e87a', '#00c8f0', '#ffc843', '#ff4d8f', '#b06eff', '#ff7d3b', '#e2e8f0'];
+
+export default function MultiplayerHost({ gameMode, forceShow = false }: { gameMode: string; forceShow?: boolean }) {
+  const { currentTeams, classes, activeClassId, activeRoomCode, setActiveRoomCode } = useClassroomStore();
+  const searchParams = useSearchParams();
+  const urlCode = (searchParams.get("code") || "").trim().toUpperCase();
+
   const [loading, setLoading] = useState(false);
   const [roster, setRoster] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [localIp, setLocalIp] = useState<string>("");
 
-  // In projector mode, hide the entire multiplayer UI
-  if (playMode === 'projector') return null;
+  // Sync room code if present in URL without forcing blocking modal
+  useEffect(() => {
+    if (urlCode && urlCode.length === 4 && urlCode !== activeRoomCode) {
+      setActiveRoomCode(urlCode);
+    }
+  }, [urlCode, activeRoomCode, setActiveRoomCode]);
+
+  useEffect(() => {
+    fetch("/api/network-ip")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.ip) setLocalIp(data.ip);
+      })
+      .catch(() => {});
+  }, []);
 
   const startSession = async () => {
     setLoading(true);
     setIsOpen(true);
     try {
-      const activeClass = classes.find(c => c.id === activeClassId);
-      const studentMap = activeClass ? activeClass.students.map(s => ({ id: s.id, name: s.name, type: "student" })) : [];
-      const colors = ["#ef4444", "#3b82f6", "#22c55e", "#eab308", "#a855f7", "#f97316", "#ec4899", "#06b6d4"];
-      const teamsPayload = currentTeams.map((t, i) => ({
-         id: t.id,
-         name: t.name,
-         color: colors[i % colors.length],
-         students: t.students.map(s => ({ id: s.id, name: s.name }))
-      }));
-      
-      const teamMap = currentTeams.map(t => ({ id: t.id, name: t.name, type: "team" }));
+      const activeClass = classes.find(c => c.id === activeClassId) || classes[0];
+      const studentMap = activeClass ? activeClass.students.map(s => ({
+        id: s.id,
+        name: s.name,
+        class_name: activeClass.name,
+        type: "student"
+      })) : [];
 
-      const payloadRoster = [...studentMap, ...teamMap]; // kept for backwards compat backwards selection
+      let teamsPayload: any[] = [];
+      if (currentTeams && currentTeams.length > 0) {
+        teamsPayload = currentTeams.map((t, i) => ({
+          id: t.id,
+          name: t.name,
+          color: t.color || TEAM_COLORS[i % TEAM_COLORS.length],
+          students: (t.students || []).map(s => ({
+            id: s.id,
+            name: typeof s === 'string' ? s : s.name
+          }))
+        }));
+      } else if (activeClass && activeClass.students.length > 0) {
+        // Fallback: create 4 default squads from students if no teams rolled yet
+        const count = 4;
+        const generated = Array.from({ length: count }, (_, idx) => ({
+          id: `squad_${idx + 1}`,
+          name: `SQUAD ${["ALPHA", "BRAVO", "CHARLIE", "DELTA"][idx] || idx + 1}`,
+          color: TEAM_COLORS[idx % TEAM_COLORS.length],
+          students: [] as { id: string; name: string }[],
+        }));
+        activeClass.students.forEach((s, idx) => {
+          generated[idx % count].students.push({ id: s.id, name: s.name });
+        });
+        teamsPayload = generated;
+      }
+
+      const teamMap = teamsPayload.map(t => ({ id: t.id, name: t.name, type: "team" }));
+      const payloadRoster = [...studentMap, ...teamMap];
 
       const res = await fetch("/api/room/create", {
         method: "POST",
@@ -39,11 +82,17 @@ export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
         body: JSON.stringify({ gameMode, activeRoster: payloadRoster, teams: teamsPayload })
       });
       const data = await res.json();
-      if (res.ok) {
+      
+      if (data?.code) {
         setActiveRoomCode(data.code);
+      } else {
+        console.warn("[ROOM_CREATE_WARN]", data);
+        if (data?.error) {
+          alert(`Notice: ${data.error}`);
+        }
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.warn("[SESSION_EXCEPTION]", e);
     }
     setLoading(false);
   };
@@ -66,19 +115,16 @@ export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
   const launchMatch = async () => {
     if (!activeRoomCode) return;
     try {
-      // Update gameMode first so phones switch to the correct controller
       await fetch("/api/room/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: activeRoomCode, action: "set_game_mode", payload: { gameMode } })
       });
-      // Then set status to playing
       await fetch("/api/room/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: activeRoomCode, action: "update_status", payload: { status: "playing" } })
       });
-      // Clear any stale answers/buzzes from previous game
       await fetch("/api/room/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -88,25 +134,75 @@ export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
     setIsOpen(false);
   };
 
-  // Poll room state every 1.5s instead of SSE — reliable on Vercel
+  // ── Bulletproof Realtime & Polling Presence ──
   useEffect(() => {
     if (!activeRoomCode) return;
 
-    const poll = async () => {
+    let channel: any = null;
+    let pollTimer: any = null;
+
+    // 1. Supabase Realtime Channel (Safely guarded)
+    try {
+      const { createClient } = require('@/utils/supabase/client');
+      const supabase = createClient();
+      const topic = `room_presence_${activeRoomCode}_${Math.random().toString(36).substring(2, 7)}`;
+      
+      channel = supabase.channel(topic);
+      channel
+        .on('presence', { event: 'sync' }, () => {
+          try {
+            const presenceState = channel.presenceState();
+            const activeStudents = Object.values(presenceState).flat().map((p: any) => ({
+              id: p.user_id || p.id,
+              name: p.name,
+              online_at: p.online_at
+            }));
+            if (activeStudents.length > 0) {
+              setRoster(prev => {
+                const map = new Map<string, any>();
+                prev.forEach(item => map.set(item.id || item.name, item));
+                activeStudents.forEach(item => map.set(item.id || item.name, item));
+                return Array.from(map.values());
+              });
+            }
+          } catch (syncErr) {}
+        })
+        .subscribe();
+    } catch (err) {
+      console.warn("[MultiplayerHost] Presence setup warning:", err);
+    }
+
+    // 2. Periodic Roster Fetch Fallback
+    const fetchRoster = async () => {
       try {
         const res = await fetch(`/api/room/get?code=${activeRoomCode}`);
         if (res.ok) {
-          const data = await res.json();
-          if (data && data.students) {
-            setRoster(data.students);
+          const json = await res.json();
+          const state = json.state || json;
+          if (state && Array.isArray(state.students)) {
+            setRoster(prev => {
+              const map = new Map<string, any>();
+              prev.forEach(item => map.set(item.id || item.name, item));
+              state.students.forEach((item: any) => map.set(item.id || item.name, item));
+              return Array.from(map.values());
+            });
           }
         }
-      } catch (err) {}
+      } catch (e) {}
     };
 
-    poll(); // immediate
-    const intervalId = setInterval(poll, 1500);
-    return () => clearInterval(intervalId);
+    fetchRoster();
+    pollTimer = setInterval(fetchRoster, 2000);
+
+    return () => {
+      if (pollTimer) clearInterval(pollTimer);
+      if (channel) {
+        try {
+          const { createClient } = require('@/utils/supabase/client');
+          createClient().removeChannel(channel);
+        } catch (e) {}
+      }
+    };
   }, [activeRoomCode]);
 
   if (!isOpen) {
@@ -115,13 +211,16 @@ export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
          className={styles.triggerBtn} 
          onClick={() => activeRoomCode ? setIsOpen(true) : startSession()}
       >
-        <MonitorPlay size={20} /> {activeRoomCode ? `Live Roster: ${roster.length}` : "Host Live Multiplayer"}
+        <MonitorPlay size={20} /> {activeRoomCode ? `Room ${activeRoomCode} (${roster.length})` : "Host Live Multiplayer"}
       </button>
     );
   }
 
-  const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost';
-  const siteUrl = isLocal ? 'https://class-engine.vercel.app' : (typeof window !== 'undefined' ? window.location.origin : '');
+  const siteUrl = typeof window !== 'undefined' 
+    ? (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? `http://${localIp || 'localhost'}:3000`
+        : window.location.origin)
+    : 'https://class-engine.vercel.app';
   const joinUrl = `${siteUrl}/join?code=${activeRoomCode}`;
 
   return (
@@ -140,7 +239,7 @@ export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
                      <QRCodeSVG value={joinUrl} size={200} />
                    </div>
                    <div className={styles.codeBox}>{activeRoomCode}</div>
-                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: 0.7 }}>
+                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: 0.8, fontSize: '12px', fontFamily: "var(--font-mono)" }}>
                      <Link2 size={16} /> <span>{joinUrl.replace('http://', '').replace('https://', '')}</span>
                    </div>
                 </div>
@@ -182,5 +281,5 @@ export default function MultiplayerHost({ gameMode }: { gameMode: string }) {
           </div>
        </div>
     </div>
-  )
+  );
 }

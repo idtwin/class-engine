@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useClassroomStore } from "../store/useClassroomStore";
-import { Sparkles } from "lucide-react";
+import { Sparkles, SlidersHorizontal } from "lucide-react";
+import FloatingReactionsOverlay from "../components/FloatingReactionsOverlay";
+import { useLiveRoomHost } from "@/app/lib/useLiveRoomHost";
 import styles from "./chain.module.css";
 import MultiplayerHost from "../components/MultiplayerHost";
 import ScoreboardOverlay from "../components/ScoreboardOverlay";
@@ -27,10 +29,41 @@ interface WordState {
 
 type GamePhase = "setup" | "loading" | "playing";
 
+const STARTER_CHAINS: ChainData[] = [
+  {
+    words: ["ICE", "CREAM", "CONE", "HEAD", "PHONE"],
+    connections: [
+      "Ice Cream is a frozen dessert",
+      "Cream can be served in a Cone",
+      "Cone can refer to Conehead",
+      "Headphone is an audio device"
+    ]
+  },
+  {
+    words: ["HOT", "DOG", "HOUSE", "BOAT", "RACE"],
+    connections: [
+      "Hot Dog is a classic snack",
+      "Dog House is a kennel",
+      "House Boat is a floating home",
+      "Boat Race is an aquatic competition"
+    ]
+  },
+  {
+    words: ["SOLAR", "POWER", "PLANT", "LIFE", "SAVER"],
+    connections: [
+      "Solar Power harnesses sunlight",
+      "Power Plant generates energy",
+      "Plant Life refers to vegetation",
+      "Life Saver rescues individuals"
+    ]
+  }
+];
+
 export default function ChainReaction() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, getActiveApiKey, getActiveModel, llmProvider } = useClassroomStore();
+  const { currentTeams, updateTeamScore, getActiveApiKey, getActiveModel, llmProvider, activeRoomCode, showTranslations, setShowTranslations } = useClassroomStore();
+  const { reactions, roomState } = useLiveRoomHost("chainreaction");
 
   // Setup options
   const [topic, setTopic]               = useState("");
@@ -38,13 +71,22 @@ export default function ChainReaction() {
   const [easyMode, setEasyMode]         = useState(true);
   const [rounds, setRounds]             = useState(5);
   const [timerDuration, setTimerDuration] = useState(0);
-  const [phase, setPhase]               = useState<GamePhase>("setup");
+  const [phase, setPhase]               = useState<GamePhase>("playing");
 
   // Chain / game state
-  const [chains, setChains]                 = useState<ChainData[]>([]);
+  const [chains, setChains]                 = useState<ChainData[]>(STARTER_CHAINS);
   const [currentChainIdx, setCurrentChainIdx] = useState(0);
   const [chainComplete, setChainComplete]   = useState(false);
-  const [words, setWords]                   = useState<WordState[]>([]);
+  const [words, setWords]                   = useState<WordState[]>(() => {
+    return STARTER_CHAINS[0].words.map((word, i) => {
+      const upper = word.toUpperCase();
+      const isFirst = i === 0;
+      const isLast = i === STARTER_CHAINS[0].words.length - 1;
+      const isGiven = isFirst || isLast;
+      const revealed = upper.split("").map((_, li) => isGiven || li === 0);
+      return { word: upper, revealed, solved: isGiven, isGiven };
+    });
+  });
   const [currentWordIdx, setCurrentWordIdx] = useState(1);
   const [currentTeamIdx, setCurrentTeamIdx] = useState(0);
   const [currentInput, setCurrentInput]     = useState("");
@@ -57,6 +99,11 @@ export default function ChainReaction() {
   const [timeLeft, setTimeLeft]       = useState(0);
   const [timerActive, setTimerActive] = useState(false);
 
+  // Sync / Reliability
+  const [syncing, setSyncing]         = useState(false);
+  const [syncError, setSyncError]     = useState(false);
+  const syncRetryRef = useRef<NodeJS.Timeout | null>(null);
+
   // Refs to avoid stale closures in event listeners
   const wordsRef         = useRef<WordState[]>([]);
   const currentWordIdxRef = useRef(1);
@@ -67,8 +114,9 @@ export default function ChainReaction() {
   currentInputRef.current  = currentInput;
   chainCompleteRef.current = chainComplete;
 
-  const handleSubmitRef  = useRef<() => void>(() => {});
-  const handleTimeoutRef = useRef<() => void>(() => {});
+  const handleSubmitRef      = useRef<(ans?: string) => void>(() => {});
+  const handleTimeoutRef     = useRef<() => void>(() => {});
+  const lastChainSubmitTsRef = useRef<number>(0);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -86,6 +134,79 @@ export default function ChainReaction() {
       handleTimeoutRef.current();
     }
   }, [timeLeft, timerActive, timerDuration]);
+
+  // ── Room sync helpers ─────────────────────────────────────────────────────────
+
+  const syncChainState = useCallback(async (
+    w: WordState[], wIdx: number, cIdx: number, totalC: number,
+    complete: boolean, teamId: string | null,
+    lastGuess?: { teamName: string; answer: string; correct: boolean } | null
+  ) => {
+    if (!activeRoomCode) return false;
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/room/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: activeRoomCode,
+          action: "set_chain_state",
+          payload: {
+            words: w, currentWordIdx: wIdx, currentChainIdx: cIdx,
+            totalChains: totalC, chainComplete: complete, currentTeamId: teamId,
+            lastGuess: lastGuess ?? null,
+          },
+        }),
+      });
+      if (res.ok) {
+        setSyncError(false);
+        setSyncing(false);
+        return true;
+      }
+      throw new Error("Sync failed");
+    } catch (err) {
+      console.error("Chain Reaction Sync Error:", err);
+      setSyncError(true);
+      setSyncing(false);
+      return false;
+    }
+  }, [activeRoomCode]);
+
+  // Periodic heartbeat sync to force convergence
+  useEffect(() => {
+    if (phase !== "playing" || !activeRoomCode || chainComplete) return;
+    const interval = setInterval(() => {
+      const currentTeamId = currentTeams[currentTeamIdx]?.id ?? null;
+      syncChainState(words, currentWordIdx, currentChainIdx, chains.length, chainComplete, currentTeamId);
+    }, 6000); // Pulse every 6s
+    return () => clearInterval(interval);
+  }, [phase, activeRoomCode, chainComplete, words, currentWordIdx, currentChainIdx, chains.length, currentTeams, currentTeamIdx, syncChainState]);
+
+  // Poll for phone submits while game is active
+  useEffect(() => {
+    if (!activeRoomCode || phase !== "playing") return;
+    const poll = async () => {
+      if (chainCompleteRef.current) return;
+      const res = await fetch(`/api/room/get?code=${activeRoomCode}`).catch(() => null);
+      if (!res?.ok) return;
+      const data = await res.json();
+      const sub = data?.chainSubmit;
+      if (sub && sub.ts > lastChainSubmitTsRef.current) {
+        lastChainSubmitTsRef.current = sub.ts;
+        // Override current input and submit
+        (handleSubmitRef.current as (ans: string) => void)(sub.answer);
+        // Clear the submit flag
+        fetch("/api/room/action", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: activeRoomCode, action: "clear_chain_submit", payload: {} }),
+        }).catch(() => {});
+      }
+    };
+    poll();
+    const id = setInterval(poll, 1000);
+    return () => clearInterval(id);
+  }, [activeRoomCode, phase]);
 
   // Global keyboard handler — set up once per phase entry
   useEffect(() => {
@@ -170,10 +291,10 @@ export default function ChainReaction() {
 
   // ── Submit (auto-check typed word) ───────────────────────────────────────────
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback((overrideAnswer?: string) => {
     const w = words[currentWordIdx];
     if (!w || w.isGiven || w.solved || chainComplete) return;
-    const typed = currentInput.toUpperCase();
+    const typed = (overrideAnswer ?? currentInput).toUpperCase();
     if (typed.length === 0) return;
 
     if (typed === w.word) {
@@ -186,30 +307,41 @@ export default function ChainReaction() {
       const newWords = [...words];
       newWords[currentWordIdx] = { ...w, revealed: newRevealed, solved: true };
 
-      if (teamId) addTally(teamId, pts);
+      const teamName = currentTeams[currentTeamIdx]?.name ?? "";
+      if (teamId) {
+        addTally(teamId, pts);
+        updateTeamScore(teamId, pts);
+      }
       showFeedback("correct", pts === PTS_CLEAN ? `★ PERFECT! +${pts}` : `✓ +${pts} pts`);
       setCurrentInput("");
 
       const nextIdx = newWords.findIndex((ww, i) => i > currentWordIdx && !ww.solved && !ww.isGiven);
+      const guess = { teamName, answer: typed, correct: true };
       if (nextIdx === -1) {
         setWords(newWords);
         setChainComplete(true);
         setTimerActive(false);
+        syncChainState(newWords, currentWordIdx, currentChainIdx, chains.length, true, teamId ?? null, guess);
       } else {
         setWords(newWords);
         setCurrentWordIdx(nextIdx);
         resetTimer();
+        const nextTeamId = currentTeams[currentTeamIdx]?.id ?? null;
+        syncChainState(newWords, nextIdx, currentChainIdx, chains.length, false, nextTeamId, guess);
       }
-      // Same team continues on correct guess
     } else {
+      const teamName = currentTeams[currentTeamIdx]?.name ?? "";
       const newWords = revealNextLetter([...words], currentWordIdx);
       showFeedback("wrong", "✗ Wrong — next letter revealed");
       setWords(newWords);
       setCurrentInput("");
-      setCurrentTeamIdx(i => (i + 1) % Math.max(currentTeams.length, 1));
+      const nextTeamIdx = (currentTeamIdx + 1) % Math.max(currentTeams.length, 1);
+      setCurrentTeamIdx(nextTeamIdx);
       resetTimer();
+      const guess = { teamName, answer: typed, correct: false };
+      syncChainState(newWords, currentWordIdx, currentChainIdx, chains.length, false, currentTeams[nextTeamIdx]?.id ?? null, guess);
     }
-  }, [words, currentWordIdx, currentInput, currentTeams, currentTeamIdx, chainComplete, resetTimer]);
+  }, [words, currentWordIdx, currentInput, currentTeams, currentTeamIdx, chainComplete, resetTimer, syncChainState, currentChainIdx, chains.length]);
 
   handleSubmitRef.current = handleSubmit;
 
@@ -220,9 +352,11 @@ export default function ChainReaction() {
     showFeedback("wrong", "⏱ Time's up!");
     setWords(newWords);
     setCurrentInput("");
-    setCurrentTeamIdx(i => (i + 1) % Math.max(currentTeams.length, 1));
+    const nextTeamIdx = (currentTeamIdx + 1) % Math.max(currentTeams.length, 1);
+    setCurrentTeamIdx(nextTeamIdx);
     resetTimer();
-  }, [words, currentWordIdx, currentTeams, chainComplete, resetTimer]);
+    syncChainState(newWords, currentWordIdx, currentChainIdx, chains.length, false, currentTeams[nextTeamIdx]?.id ?? null);
+  }, [words, currentWordIdx, currentTeams, currentTeamIdx, chainComplete, resetTimer, syncChainState, currentChainIdx, chains.length]);
 
   handleTimeoutRef.current = handleTimeout;
 
@@ -243,6 +377,7 @@ export default function ChainReaction() {
           level,
           count:        rounds,
           circleCount:  "random",
+          showTranslations
         }),
       });
       const data = await res.json();
@@ -267,6 +402,9 @@ export default function ChainReaction() {
       setTimeLeft(timerDuration);
       setTimerActive(timerDuration > 0);
       setPhase("playing");
+      // Sync initial state to phones
+      const firstTeamId = currentTeams[0]?.id ?? null;
+      syncChainState(firstWords, firstActiveIdx === -1 ? 0 : firstActiveIdx, 0, chainList.length, firstActiveIdx === -1, firstTeamId);
     } catch (err: any) {
       alert("Failed: " + err.message);
       setPhase("setup");
@@ -288,6 +426,8 @@ export default function ChainReaction() {
     setTimeLeft(timerDuration);
     setTimerActive(timerDuration > 0);
     // Team rotation + tally persist across chains
+    const nextTeamId = currentTeams[currentTeamIdx]?.id ?? null;
+    syncChainState(nextWords, firstActiveIdx === -1 ? 0 : firstActiveIdx, nextIdx, chains.length, firstActiveIdx === -1, nextTeamId);
   };
 
   const handlePush = () => {
@@ -353,6 +493,7 @@ export default function ChainReaction() {
 
   return (
     <>
+      <FloatingReactionsOverlay reactions={reactions} />
       {/* Setup / Loading overlay */}
       {(phase === "setup" || phase === "loading") && (
         <div className={styles.setupOverlay}>
@@ -457,8 +598,17 @@ export default function ChainReaction() {
                   Generate Chains
                 </button>
 
-                <button className={styles.btnBack} onClick={() => router.push("/games")}>
-                  ← Back to Arcade
+                <label className={styles.translationToggle}>
+                  <input 
+                    type="checkbox" 
+                    checked={showTranslations} 
+                    onChange={(e) => setShowTranslations(e.target.checked)}
+                  />
+                  <span>INDONESIA (ID)</span>
+                </label>
+
+                <button className={styles.btnBack} onClick={() => router.push("/activities")}>
+                  ← Back to Missions
                 </button>
               </>
             )}
@@ -482,7 +632,23 @@ export default function ChainReaction() {
             <div className={styles.headerDivider} />
             <div className={styles.modePill}>{easyMode ? "EASY" : "HARD"}</div>
             <div className={styles.headerSpacer} />
+            <MultiplayerHost gameMode="chainreaction" />
             <button className={styles.btnNewGame} onClick={reset}>← New Game</button>
+            
+            <div style={{ marginLeft: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ 
+                width: 8, height: 8, borderRadius: '50%', 
+                background: syncError ? '#ff4d8f' : syncing ? '#ffc843' : '#00e87a',
+                boxShadow: syncError ? '0 0 10px #ff4d8f' : 'none',
+                transition: 'all 0.3s'
+              }} />
+              <span style={{ 
+                fontSize: 10, color: syncError ? '#ff4d8f' : 'var(--muted)',
+                fontFamily: 'var(--font-mono)', fontWeight: 700
+              }}>
+                {syncError ? "SYNC ERROR" : syncing ? "SYNCING..." : "SYNCED"}
+              </span>
+            </div>
           </div>
 
           {/* Body */}
@@ -678,7 +844,6 @@ export default function ChainReaction() {
         </div>
       )}
 
-      <ScoreboardOverlay />
     </>
   );
 }

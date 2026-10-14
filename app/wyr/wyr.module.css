@@ -157,7 +157,7 @@
   left: 50%;
   transform: translateX(-50%);
   background: var(--accent-bright);
-  color: #000;
+  color: #0f172a;
   font-size: 1.5rem;
   font-weight: 800;
   padding: 1rem 3rem;
@@ -278,7 +278,7 @@
 }
 .setupRow { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .btnGenerate {
-  background: #ff4d8f; color: #000; border: none;
+  background: #ff4d8f; color: #0f172a; border: none;
   border-radius: 10px; padding: 14px 24px;
   font-family: var(--font-mono, 'JetBrains Mono'), monospace;
   font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
@@ -354,8 +354,8 @@
   font-size: 10px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
   padding: 4px 14px; border-radius: 4px; flex-shrink: 0;
 }
-.wyrPodiumA .wyrPodiumTag { background: #ff4d8f; color: #000; }
-.wyrPodiumB .wyrPodiumTag { background: #00c8f0; color: #000; }
+.wyrPodiumA .wyrPodiumTag { background: #ff4d8f; color: #0f172a; }
+.wyrPodiumB .wyrPodiumTag { background: #00c8f0; color: #0f172a; }
 
 .wyrPodiumText {
   font-family: 'Syne', sans-serif;
@@ -434,3 +434,28 @@
   transition: color 0.15s, border-color 0.15s;
 }
 .wyrBtnNew:hover { color: var(--text, #dce8f5); border-color: var(--text, #dce8f5); }
+
+.translationToggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 18px;
+  cursor: pointer;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  transition: all 0.2s;
+  user-select: none;
+}
+.translationToggle:hover {
+  border-color: var(--command-orange);
+  color: var(--text);
+}
+.translationToggle input {
+  cursor: pointer;
+  accent-color: var(--command-orange);
+  width: 16px;
+  height: 16px;
+}

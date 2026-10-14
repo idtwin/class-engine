@@ -1,4 +1,4 @@
-/* ── GameTimer: Circle Variant (Jeopardy modal) ── */
+/* ── ESL ARENA GameTimer: Tactical HUD Variant ── */
 
 .timerContainer {
   position: relative;
@@ -19,26 +19,28 @@
 
 .ring .track {
   fill: none;
-  stroke: var(--surface-3);
+  stroke: rgba(255, 255, 255, 0.1);
   stroke-width: 4;
 }
 
 .ring .progress {
   fill: none;
-  stroke: var(--accent-bright);
+  stroke: var(--command-orange);
   stroke-width: 4;
   stroke-linecap: round;
   transition: stroke-dashoffset 0.5s ease;
+  filter: drop-shadow(0 0 6px var(--command-orange));
 }
 
 .timerNumber {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-mono), monospace;
   font-size: 2.5rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   z-index: 1;
-  color: var(--foreground);
-  letter-spacing: -0.03em;
+  color: var(--command-orange);
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 20px rgba(255, 93, 0, 0.4);
 }
 
 .pulse {
@@ -54,7 +56,9 @@
   width: 100%;
   z-index: 900;
   background: var(--surface);
-  border-bottom: 1px solid var(--accent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
 }
 
 .timerBarInner {
@@ -67,12 +71,12 @@
 }
 
 .timerBarLabel {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-mono), monospace;
   font-size: 0.6rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--text-label);
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.4);
   position: absolute;
   left: 1.5rem;
   top: 50%;
@@ -80,40 +84,48 @@
 }
 
 .timerBarNumber {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-mono), monospace;
   font-size: clamp(2.5rem, 5vw, 4rem);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.04em;
+  letter-spacing: 0.02em;
   line-height: 1;
-  color: var(--accent);
+  color: var(--command-orange);
+  text-shadow: 0 0 30px rgba(255, 93, 0, 0.5);
   transition: color 0.3s ease;
 }
 
 .timerBarTrack {
   width: 100%;
   height: 3px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
 }
 
 .timerBarFill {
   height: 100%;
-  background: var(--accent-bright);
+  background: linear-gradient(90deg, var(--command-orange), rgba(255, 93, 0, 0.4));
   transition: width 1s linear, background-color 0.3s ease;
+  box-shadow: 0 0 10px var(--command-orange);
 }
 
 /* Pulse on bar when critical */
 .barPulse .timerBarNumber {
   animation: timerPulse 0.5s ease-in-out infinite;
+  color: var(--alert-red);
+  text-shadow: 0 0 30px rgba(255, 51, 51, 0.6);
 }
 
 /* ── TIME'S UP Overlay ── */
 .timesUpOverlay {
   position: fixed;
-  top: 0; left: 0;
-  width: 100vw; height: 100vh;
-  background: rgba(0, 0, 0, 0.88);
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(10, 10, 20, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -125,7 +137,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 1.5rem;
   animation: timesUpBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -135,35 +147,36 @@
 }
 
 .timesUpText {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-mono), monospace;
   font-size: clamp(3.5rem, 10vw, 7rem);
   font-weight: 900;
-  color: var(--danger);
-  text-shadow: 0 0 40px rgba(255, 45, 120, 0.7), 0 0 80px rgba(255, 45, 120, 0.3);
-  letter-spacing: 0.05em;
+  color: var(--alert-red);
+  text-shadow: 0 0 60px rgba(255, 51, 51, 0.8), 0 0 120px rgba(255, 51, 51, 0.4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 /* ── Animations ── */
 @keyframes timerPulse {
   0%, 100% { transform: scale(1); }
-  50%       { transform: scale(1.1); }
+  50% { transform: scale(1.1); }
 }
 
 @keyframes flashIn {
-  0%  { opacity: 0; }
+  0% { opacity: 0; }
   30% { opacity: 1; }
-  50% { background: rgba(255, 45, 120, 0.15); }
-  100%{ background: rgba(0, 0, 0, 0.88); }
+  50% { background: rgba(255, 51, 51, 0.1); }
+  100% { background: rgba(10, 10, 20, 0.95); }
 }
 
 @keyframes timesUpBounce {
-  0%   { transform: scale(0.3); opacity: 0; }
-  60%  { transform: scale(1.1); }
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.1); }
   100% { transform: scale(1); opacity: 1; }
 }
 
 @keyframes timesUpShake {
   0%, 100% { transform: rotate(0deg); }
-  25%      { transform: rotate(-12deg); }
-  75%      { transform: rotate(12deg); }
+  25% { transform: rotate(-12deg); }
+  75% { transform: rotate(12deg); }
 }

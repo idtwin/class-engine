@@ -118,7 +118,7 @@
   padding: 1.2rem 4rem;
   border-radius: 6px;
   background-color: var(--accent-bright);
-  color: #000;
+  color: #0f172a;
   border: none;
   cursor: pointer;
   font-weight: 900;
@@ -219,7 +219,7 @@
 
 .actionBtnPrimary {
   background: var(--accent-bright);
-  color: #000;
+  color: #0f172a;
   border-color: var(--accent-bright);
 }
 

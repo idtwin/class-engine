@@ -11,9 +11,10 @@ interface BoardLibraryProps {
   triggerOpen?: boolean;
   onClose?: () => void;
   hideTriggerButton?: boolean;
+  isPersistent?: boolean;
 }
 
-export default function BoardLibrary({ onLoadBoard, currentGameType, triggerOpen, onClose, hideTriggerButton }: BoardLibraryProps) {
+export default function BoardLibrary({ onLoadBoard, currentGameType, triggerOpen, onClose, hideTriggerButton, isPersistent }: BoardLibraryProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const { savedBoards, deleteBoard } = useClassroomStore();
@@ -82,8 +83,8 @@ export default function BoardLibrary({ onLoadBoard, currentGameType, triggerOpen
       {/* Drawer */}
       <div
         ref={drawerRef}
-        className={styles.drawer}
-        style={{ transform: open ? 'translateX(0)' : 'translateX(100%)' }}
+        className={isPersistent ? styles.persistent : styles.drawer}
+        style={isPersistent ? {} : { transform: open ? 'translateX(0)' : 'translateX(100%)' }}
       >
         {/* Header */}
         <div className={styles.header}>
@@ -96,12 +97,14 @@ export default function BoardLibrary({ onLoadBoard, currentGameType, triggerOpen
               {currentGameType ? `ACTIVE_FILTER: ${currentGameType}` : "BROWSING_COMMAND_HISTORY"}
             </p>
           </div>
-          <button 
-            className={styles.closeBtn}
-            onClick={() => { setOpen(false); if (onClose) onClose(); }}
-          >
-            <X size={18} />
-          </button>
+          {!isPersistent && (
+            <button 
+              className={styles.closeBtn}
+              onClick={() => { setOpen(false); if (onClose) onClose(); }}
+            >
+              <X size={18} />
+            </button>
+          )}
         </div>
 
         {/* Search */}

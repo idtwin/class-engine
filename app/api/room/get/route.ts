@@ -1,35 +1,38 @@
-import { Redis } from "@upstash/redis";
 import { NextResponse } from "next/server";
-
-export const dynamic = 'force-dynamic';
-
+import { createAdminClient } from "@/utils/supabase/admin";
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const code = searchParams.get('code');
-
-  if (!code) return NextResponse.json({ error: "No code provided" }, { status: 400 });
-
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-    return NextResponse.json({ error: "Missing Upstash Redis Credentials" }, { status: 500 });
-  }
-
   try {
-    const redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    });
+    const { searchParams } = new URL(req.url);
+    const code = searchParams.get("code");
 
-    const room: any = await redis.get(`room:${code}`);
+    if (!code) return NextResponse.json({ error: "NO_CODE_PROVIDED" }, { status: 400 });
 
-    if (!room) {
-      return NextResponse.json({ error: "Room not found or expired" }, { status: 404 });
+    const supabaseAdmin = createAdminClient();
+
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("live_rooms")
+        .select("state")
+        .eq("code", code)
+        .single();
+
+      if (!error && data?.state) {
+        return NextResponse.json({ state: data.state });
+      }
+    } catch (e) {}
+
+    // Fallback to in-memory local room store
+    const { getLocalRoom } = await import("@/app/lib/localRoomStore");
+    const local = getLocalRoom(code);
+    if (local) {
+      return NextResponse.json({ state: local });
     }
 
-    // Return full room state for polling clients
-    return NextResponse.json(room);
-  } catch (error: any) {
-    console.error("Room Get Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "ROOM_NOT_FOUND" }, { status: 404 });
+  } catch (err: any) {
+    console.error("[ROOM_GET] Exception:", err);
+    return NextResponse.json({ error: "INTERNAL_EXCEPTION", details: err.message }, { status: 500 });
   }
 }
+

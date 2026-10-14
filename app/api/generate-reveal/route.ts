@@ -3,27 +3,38 @@ import { generateJSON } from "../../lib/llm";
 
 export async function POST(req: Request) {
   try {
-    const { apiKey, provider, mistralModel, topic, level } = await req.json();
+    const { apiKey, provider, mistralModel, topic, level, usedAnswers, showTranslations } = await req.json();
+
+    const translationInstruction = showTranslations 
+      ? `CRITICAL: Provide Indonesian translations for the "imageAnswer", and all "q", "a", and "wrongOptions" items in parenthesis. Example: "imageAnswer": "Eiffel Tower (Menara Eiffel)", "q": "What is the capital of France? (Apa ibu kota Prancis?)", "a": "Paris (Paris)".` 
+      : `Provide content in English ONLY.`;
+
+    const excludeClause = usedAnswers?.length
+      ? `\nDo NOT use any of these answers (already used): ${usedAnswers.join(", ")}.`
+      : "";
 
     const systemPrompt = `You are a creative ESL teacher. Generate a 16-question set and a hidden image prompt for a Picture Reveal game.
 Topic: ${topic}
-Class Level: ${level}
+Class Level: ${level}${excludeClause}
+
+${translationInstruction}
 
 Return ONLY raw JSON in this exact structure:
 {
   "imageAnswer": "The precise short answer that players must guess (e.g., 'Eiffel Tower')",
-  "imagePrompt": "A highly detailed description that MUST explicitly contain the imageAnswer subject name (e.g. 'The Eiffel Tower at sunset with golden light')",
+  "imagePrompt": "A highly detailed description that MUST explicitly contain the imageAnswer subject name in English ONLY (e.g. 'The Eiffel Tower at sunset with golden light'). Do NOT translate the imagePrompt.",
   "questions": [
-    { "q": "Short question text here", "a": "Short answer here" }
+    { "q": "Short question text here", "a": "Correct short answer (1-4 words)", "wrongOptions": ["Plausible wrong answer 1", "Plausible wrong answer 2", "Plausible wrong answer 3"] }
   ]
 }
 
 Rules:
 1. Provide exactly 16 questions.
-2. Questions must be very short, rapid-fire (grammar, vocabulary, or trivia) based on the topic.
-3. The imagePrompt MUST explicitly include the actual name of the subject (the imageAnswer).
-4. Select a completely random and unexpected specific subject related to the topic. Do NOT just pick the most obvious example.
-5. Return ONLY pure raw JSON. No markdown.`;
+2. Questions must be very short, rapid-fire vocabulary or topic-knowledge questions (NOT grammar). Ask about meaning, category, synonyms, facts — things students can guess without grammar knowledge.
+3. Each question must have exactly 3 plausible but incorrect wrongOptions (1-4 words each).
+4. The imagePrompt MUST explicitly include the actual name of the subject (the imageAnswer) in English.
+5. Select a completely random and unexpected specific subject related to the topic. Do NOT just pick the most obvious example.${excludeClause ? "\n6. Choose a DIFFERENT answer from the excluded list." : ""}
+6. Return ONLY pure raw JSON. No markdown.`;
 
     const userPrompt = `Topic: ${topic}\nLevel: ${level}\nRandom entropy: ${Math.random()}\nGenerate JSON now!`;
 

@@ -8,7 +8,7 @@ import { ArrowLeft, Sparkles, RefreshCw } from "lucide-react";
 
 export default function PromptGenerator() {
   const [mounted, setMounted] = useState(false);
-  const { getActiveApiKey, getActiveModel, llmProvider } = useClassroomStore();
+  const { getActiveApiKey, getActiveModel, llmProvider, showTranslations, setShowTranslations } = useClassroomStore();
   const [generatedPrompts, setGeneratedPrompts] = useState<string[]>([]);
   const [topic, setTopic] = useState("");
   const [promptCount, setPromptCount] = useState(6);
@@ -34,6 +34,7 @@ export default function PromptGenerator() {
           provider: llmProvider,
           topic: topic.trim(),
           count: promptCount,
+          showTranslations
         }),
       });
       const data = await res.json();
@@ -85,6 +86,15 @@ export default function PromptGenerator() {
           {generatedPrompts.length > 0 ? <RefreshCw size={20} /> : <Sparkles size={20} />}
           {isGenerating ? "Generating..." : generatedPrompts.length > 0 ? "Regenerate" : "Generate"}
         </button>
+
+        <label className={styles.translationToggle}>
+          <input 
+            type="checkbox" 
+            checked={showTranslations} 
+            onChange={(e) => setShowTranslations(e.target.checked)}
+          />
+          <span>INDONESIA (ID)</span>
+        </label>
       </div>
 
       <div className={styles.content}>

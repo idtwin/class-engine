@@ -3,14 +3,49 @@
 import { useState, useEffect, useCallback } from "react";
 import styles from "./odd.module.css";
 import { useClassroomStore } from "../store/useClassroomStore";
-import { Sparkles, Lightbulb, ChevronRight } from "lucide-react";
+import { Sparkles, Lightbulb, ChevronRight, SlidersHorizontal } from "lucide-react";
 import MultiplayerHost from "../components/MultiplayerHost";
 import GameTimer from "../components/GameTimer";
 import BoardLibrary from "../components/BoardLibrary";
+import FloatingReactionsOverlay from "../components/FloatingReactionsOverlay";
+import { useLiveRoomHost } from "@/app/lib/useLiveRoomHost";
 import { SavedBoard } from "../store/useClassroomStore";
 
 type Phase = "SETUP" | "GENERATING" | "READY" | "PLAYING";
 type Question = { level: string, words: string[], answer: string, hint: string };
+
+const STARTER_ODD_QUESTIONS: Question[] = [
+  {
+    level: "A1-A2",
+    words: ["Apple", "Banana", "Carrot", "Grape"],
+    answer: "Carrot",
+    hint: "Three are fruits that grow on trees/vines; one is an underground root vegetable."
+  },
+  {
+    level: "A1-A2",
+    words: ["Dog", "Cat", "Lion", "Eagle"],
+    answer: "Eagle",
+    hint: "Three are mammals with four legs; one is an avian creature that flies."
+  },
+  {
+    level: "B1-B2",
+    words: ["Tokyo", "Paris", "Berlin", "London"],
+    answer: "Tokyo",
+    hint: "Three are capital cities located in Europe; one is in East Asia."
+  },
+  {
+    level: "A1-A2",
+    words: ["Guitar", "Piano", "Violin", "Flute"],
+    answer: "Flute",
+    hint: "Three are chordophones (string instruments); one is a woodwind instrument."
+  },
+  {
+    level: "B1-B2",
+    words: ["Doctor", "Nurse", "Surgeon", "Pilot"],
+    answer: "Pilot",
+    hint: "Three work in clinical healthcare; one commands commercial aircraft."
+  }
+];
 
 // Fisher-Yates shuffle
 function shuffleArray<T>(arr: T[]): T[] {
@@ -24,20 +59,22 @@ function shuffleArray<T>(arr: T[]): T[] {
 
 export default function OddOneOut() {
   const [mounted, setMounted] = useState(false);
-  const { currentTeams, updateTeamScore, getActiveApiKey, getActiveModel, llmProvider, activeRoomCode, saveBoard } = useClassroomStore();
+  const { currentTeams, updateTeamScore, getActiveApiKey, getActiveModel, llmProvider, activeRoomCode, saveBoard, showTranslations, setShowTranslations } = useClassroomStore();
+  const { setQuestion, reactions, roomState } = useLiveRoomHost("oddoneout");
   
   const handleLoadBoard = (saved: SavedBoard) => {
     setQuestions(saved.content);
     setTopic(saved.topic);
     setCurrentIndex(0);
     setTimerActive(true);
+    setPhase("PLAYING");
   };
   
   const [topic, setTopic] = useState("");
   const [levelFilter, setLevelFilter] = useState("Mixed Level");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [questions, setQuestions] = useState<Question[] | null>(null);
-  const [phase, setPhase] = useState<Phase>("SETUP");
+  const [questions, setQuestions] = useState<Question[] | null>(STARTER_ODD_QUESTIONS);
+  const [phase, setPhase] = useState<Phase>("PLAYING");
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
@@ -174,6 +211,25 @@ export default function OddOneOut() {
     return () => clearInterval(interval);
   }, [timerActive, timeLeft]);
 
+  // Broadcast active question to connected mobile controllers
+  useEffect(() => {
+    if (questions && questions[currentIndex]) {
+      const q = questions[currentIndex];
+      setQuestion({
+        text: "PICK THE WORD THAT DOESN'T BELONG",
+        words: q.words,
+        privateHint: q.hint,
+      });
+    }
+  }, [currentIndex, questions, setQuestion]);
+
+  // Sync roster from room state
+  useEffect(() => {
+    if (roomState?.students) {
+      setRoomStudents(roomState.students);
+    }
+  }, [roomState?.students]);
+
   useEffect(() => setMounted(true), []);
 
   if (!mounted) return null;
@@ -208,7 +264,8 @@ export default function OddOneOut() {
           mistralModel: getActiveModel(),
           provider: llmProvider,
           topic,
-          level: levelFilter
+          level: levelFilter,
+          showTranslations
         })
       });
       const data = await res.json();
@@ -310,6 +367,7 @@ export default function OddOneOut() {
 
   return (
     <>
+      <FloatingReactionsOverlay reactions={reactions} />
       {/* Setup overlay — shown when no questions yet */}
       {(phase === "SETUP" || phase === "GENERATING" || phase === "READY") && (
         <div className={styles.setupOverlay}>
@@ -409,10 +467,18 @@ export default function OddOneOut() {
                     </select>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                   <button className={styles.btnGenerate} onClick={handleGenerate} disabled={!topic.trim()}>
                     <Sparkles size={16} /> Generate Sets
                   </button>
+                  <label className={styles.translationToggle}>
+                    <input 
+                      type="checkbox" 
+                      checked={showTranslations} 
+                      onChange={(e) => setShowTranslations(e.target.checked)}
+                    />
+                    <span>INDONESIA (ID)</span>
+                  </label>
                   <BoardLibrary currentGameType="oddoneout" onLoadBoard={handleLoadBoard} />
                 </div>
               </>
@@ -453,6 +519,15 @@ export default function OddOneOut() {
                 </div>
               </div>
             )}
+            <div style={{ marginLeft: "auto", display: "flex", gap: "8px", alignItems: "center" }}>
+              <button
+                style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.06)", border: "1px solid var(--border2)", borderRadius: 8, padding: "8px 14px", color: "#fff", fontFamily: "var(--font-mono)", fontSize: 11, cursor: "pointer" }}
+                onClick={() => setPhase("SETUP")}
+              >
+                <SlidersHorizontal size={13} /> Custom AI Topic
+              </button>
+              <MultiplayerHost gameMode="oddoneout" />
+            </div>
           </div>
 
           {/* Progress bar */}

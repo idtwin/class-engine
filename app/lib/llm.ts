@@ -92,7 +92,9 @@ async function callMistral(apiKey: string, opts: LLMOptions): Promise<string> {
 
 // ── Gemini ────────────────────────────────────────────────────────────────────
 async function callGemini(apiKey: string, opts: LLMOptions): Promise<string> {
-  const model = opts.mistralModel ?? "gemini-2.5-flash";
+  const model = (opts.mistralModel && !opts.mistralModel.toLowerCase().includes("mistral"))
+    ? opts.mistralModel
+    : "gemini-2.5-flash";
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {

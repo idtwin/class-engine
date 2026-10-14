@@ -41,8 +41,8 @@ export default function CommandShell({ children, showScoreboardMargin = true }: 
           </button>
 
           <button 
-            className={`${styles.iconBtn} ${pathname === "/games" ? styles.active : ""}`} 
-            onClick={() => router.push("/games")}
+            className={`${styles.iconBtn} ${pathname === "/activities" ? styles.active : ""}`} 
+            onClick={() => router.push("/activities")}
             title="Launchpad"
           >
             <Rocket size={24} />
@@ -53,13 +53,6 @@ export default function CommandShell({ children, showScoreboardMargin = true }: 
             title="Roster"
           >
             <Users size={24} />
-          </button>
-          <button 
-            className={`${styles.iconBtn} ${pathname === "/dashboard" ? styles.active : ""}`} 
-            onClick={() => window.open("/dashboard", "_blank")}
-            title="Host Dashboard"
-          >
-            <LayoutDashboard size={24} />
           </button>
         </div>
 

@@ -1,0 +1,259 @@
+.arena {
+  min-height: 100vh;
+  background: #07090f;
+  color: #fff;
+  font-family: var(--font-mono), monospace;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.gridOverlay {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+}
+
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30px 60px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  z-index: 10;
+}
+
+.missionInfo {
+  display: flex;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.label { color: rgba(255,255,255,0.4); }
+.value { color: #ff6600; font-weight: 800; }
+
+.gameTitle {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  color: #fff;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 12px;
+  color: #00f2ff;
+}
+
+.syncBtn {
+  background: rgba(0, 242, 255, 0.1);
+  border: 1px solid #00f2ff;
+  color: #00f2ff;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.syncBtn:hover {
+  background: #00f2ff;
+  color: #0f172a;
+}
+
+
+.pulse {
+  width: 8px;
+  height: 8px;
+  background: #00f2ff;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.5; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.mainDisplay {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 60px;
+  z-index: 5;
+}
+
+.radarContainer {
+  position: relative;
+  width: 400px;
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radarCircle {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(255, 102, 0, 0.1);
+  border-radius: 50%;
+}
+
+.radarSweep {
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(from 0deg, transparent, rgba(255, 102, 0, 0.2));
+  border-radius: 50%;
+  animation: rotate 4s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.xpRing {
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  padding: 5px;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  transition: background 0.5s linear;
+}
+
+.xpValue {
+  text-align: center;
+  z-index: 10;
+}
+
+.xpNumber {
+  font-size: 80px;
+  font-weight: 900;
+  color: #ff6600;
+  text-shadow: 0 0 30px rgba(255, 102, 0, 0.3);
+}
+
+.xpLabel {
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.2em;
+  margin-top: -10px;
+}
+
+.targetCard {
+  background: rgba(20, 20, 25, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.05);
+  border-left: 5px solid #ff6600;
+  padding: 40px 80px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+.targetLabel {
+  font-size: 14px;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 15px;
+  letter-spacing: 0.15em;
+}
+
+.targetName {
+  font-size: 56px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.targetSubtext {
+  font-size: 10px;
+  color: #ff6600;
+  margin-top: 15px;
+  opacity: 0.6;
+}
+
+.squadTrackers {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  padding: 60px;
+  background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
+}
+
+.squadCard {
+  width: 300px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  padding: 20px;
+  border-bottom: 3px solid var(--accent);
+}
+
+.squadHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.squadName {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.squadScore {
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.loading {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #07090f;
+  color: #ff6600;
+  font-family: var(--font-mono), monospace;
+  letter-spacing: 0.5em;
+}
+
+.qrContainer {
+  position: fixed;
+  top: 30px;
+  right: 30px;
+  background: rgba(20, 20, 25, 0.95);
+  border: 1.5px solid #ff6600;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 30px rgba(0,0,0,0.5);
+  z-index: 1000;
+  border-radius: 8px;
+}
+
+.qrLabel {
+  font-size: 10px;
+  color: #ff6600;
+  letter-spacing: 0.2em;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.qrWrapper {
+  padding: 5px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}

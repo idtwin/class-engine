@@ -1,48 +1,88 @@
 "use client";
 
 import { useClassroomStore, Student } from "../store/useClassroomStore";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowLeft, Dices, RotateCcw } from "lucide-react";
 import styles from "./wheel.module.css";
 import ScoreboardOverlay from "../components/ScoreboardOverlay";
 import GameTimer from "../components/GameTimer";
+import MultiplayerHost from "../components/MultiplayerHost";
+import FloatingReactionsOverlay from "../components/FloatingReactionsOverlay";
+import { useLiveRoomHost } from "@/app/lib/useLiveRoomHost";
+import { playSFX } from "../lib/audio";
+
+export interface WheelSlice {
+  id: string;
+  name: string;
+  level?: string;
+  confidence?: string;
+  energy?: string;
+  gender?: "male" | "female";
+  rank?: number;
+  tier?: string;
+  xp?: number;
+  role?: string;
+}
+
+const DEFAULT_WHEEL_SLICES: WheelSlice[] = [
+  { id: "s1", name: "SQUAD ALPHA" },
+  { id: "s2", name: "SQUAD BRAVO" },
+  { id: "s3", name: "SQUAD CHARLIE" },
+  { id: "s4", name: "SQUAD DELTA" },
+  { id: "s5", name: "JACKPOT +500" },
+  { id: "s6", name: "MYSTERY BOUNTY" },
+  { id: "s7", name: "DOUBLE TROUBLE" },
+  { id: "s8", name: "SHUFFLE REVERSE" },
+];
 
 export default function WheelPage() {
   const [mounted, setMounted] = useState(false);
-  const { classes, activeClassId } = useClassroomStore();
+  const { classes, activeClassId, currentTeams } = useClassroomStore();
+  const { roomState, reactions } = useLiveRoomHost("wheel");
   const activeClass = classes.find((c) => c.id === activeClassId);
 
-  const [availableStudents, setAvailableStudents] = useState<Student[]>([]);
+  const [availableStudents, setAvailableStudents] = useState<WheelSlice[]>([]);
   const [isSpinning, setIsSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<WheelSlice | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [latestSolveGuess, setLatestSolveGuess] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
-    if (activeClass) {
+    if (activeClass && activeClass.students.length > 0) {
       setAvailableStudents([...activeClass.students]);
+    } else if (currentTeams && currentTeams.length > 0) {
+      setAvailableStudents(currentTeams.map(t => ({ id: t.id, name: t.name })));
+    } else {
+      setAvailableStudents(DEFAULT_WHEEL_SLICES);
     }
-  }, [activeClass]);
+  }, [activeClass, currentTeams]);
+
+  // Listen for real-time mobile spin triggers
+  const lastSpinTs = useRef<number>(0);
+  useEffect(() => {
+    const spinEvt = roomState?.latestWheelSpin;
+    if (spinEvt && spinEvt.ts > lastSpinTs.current) {
+      lastSpinTs.current = spinEvt.ts;
+      spinWheelFixed();
+    }
+  }, [roomState?.latestWheelSpin]);
+
+  // Listen for mobile solve submissions
+  const lastSolveTs = useRef<number>(0);
+  useEffect(() => {
+    const solveEvt = roomState?.latestWheelSolve;
+    if (solveEvt && solveEvt.ts > lastSolveTs.current) {
+      lastSolveTs.current = solveEvt.ts;
+      setLatestSolveGuess(solveEvt);
+      playSFX("correct");
+      setTimeout(() => setLatestSolveGuess(null), 4000);
+    }
+  }, [roomState?.latestWheelSolve]);
 
   if (!mounted) return null;
-
-  if (!activeClass || activeClass.students.length === 0) {
-    return (
-      <div className={styles.container}>
-        <header className={styles.header}>
-          <Link href="/dashboard" className={styles.homeBtn}>
-            <ArrowLeft size={20} /> Back to Dashboard
-          </Link>
-        </header>
-        <div className={styles.main}>
-          <h1>No Class Selected or Empty Class</h1>
-          <p>Please select a class with students from the Dashboard.</p>
-        </div>
-      </div>
-    );
-  }
 
   const numStudents = availableStudents.length;
 
@@ -87,7 +127,13 @@ export default function WheelPage() {
   };
 
   const resetWheel = () => {
-    setAvailableStudents([...activeClass.students]);
+    if (activeClass && activeClass.students.length > 0) {
+      setAvailableStudents([...activeClass.students]);
+    } else if (currentTeams && currentTeams.length > 0) {
+      setAvailableStudents(currentTeams.map(t => ({ id: t.id, name: t.name })));
+    } else {
+      setAvailableStudents(DEFAULT_WHEEL_SLICES);
+    }
     setRotation(0);
   };
 
@@ -138,12 +184,38 @@ export default function WheelPage() {
 
   return (
     <div className={styles.container}>
+      <FloatingReactionsOverlay reactions={reactions} />
+
+      {latestSolveGuess && (
+        <div style={{
+          position: "fixed",
+          top: "80px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          background: "rgba(0, 255, 213, 0.2)",
+          border: "2px solid #00ffd5",
+          borderRadius: "12px",
+          padding: "12px 24px",
+          color: "#fff",
+          fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
+          zIndex: 100,
+          boxShadow: "0 0 30px rgba(0, 255, 213, 0.4)",
+          textAlign: "center"
+        }}>
+          <div style={{ fontSize: "11px", color: "#00ffd5", letterSpacing: "2px" }}>// INCOMING SOLVE GUESS FROM MOBILE</div>
+          <div style={{ fontSize: "22px", fontWeight: "bold", marginTop: "4px", color: "#fff" }}>"{latestSolveGuess.guess}"</div>
+          <div style={{ fontSize: "11px", color: "var(--muted)", marginTop: "2px" }}>OPERATIVE: {latestSolveGuess.studentName || "SQUAD MEMBER"}</div>
+        </div>
+      )}
+
       <header className={styles.header}>
-        <Link href="/dashboard" className={styles.homeBtn}>
-          <ArrowLeft size={18} /> BACK TO SYSTEM
+        <Link href="/games" className={styles.homeBtn}>
+          <ArrowLeft size={18} /> BACK TO MISSIONS
         </Link>
-        <h2 className="glow-text">PROBABILITY WHEEL ({availableStudents.length}/{activeClass.students.length})</h2>
-        <div style={{ width: 100 }}></div>
+        <h2 className="glow-text">PROBABILITY WHEEL ({availableStudents.length}/{activeClass?.students?.length || availableStudents.length})</h2>
+        <div style={{ marginLeft: "auto", display: "flex", gap: "10px", alignItems: "center" }}>
+          <MultiplayerHost gameMode="wheel" />
+        </div>
       </header>
 
       <div className={styles.main} style={{ paddingTop: '100px', paddingBottom: '120px' }}>
@@ -194,8 +266,6 @@ export default function WheelPage() {
           </div>
         </div>
       )}
-
-      <ScoreboardOverlay />
     </div>
   );
 }

@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { Syne, JetBrains_Mono, Nunito } from "next/font/google";
+import { Inter, JetBrains_Mono, Nunito } from "next/font/google";
 import "./globals.css";
 import TwistOverlay from "./components/TwistOverlay";
-import ScoreboardOverlay from "./components/ScoreboardOverlay";
 import TopNav from "./components/TopNav";
+import RankUpToast from "./components/RankUpToast";
+import ScoreboardOverlay from "./components/ScoreboardOverlay";
 
-const syne = Syne({
-  variable: "--font-syne",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
 });
@@ -24,8 +25,8 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "Ayo!",
-  description: "The Classroom Engine",
+  title: "Class Engine 3.0 | Teacher Studio",
+  description: "Pedagogy-First Gamified Classroom Learning Engine",
 };
 
 export default function RootLayout({
@@ -34,12 +35,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${syne.variable} ${jetbrainsMono.variable} ${nunito.variable}`}>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} ${nunito.variable}`}>
       <body>
         <TopNav />
-        {children}
-        <TwistOverlay />
         <ScoreboardOverlay />
+        <main className="main-content">
+          {children}
+        </main>
+        <TwistOverlay />
+        <RankUpToast />
       </body>
     </html>
   );

@@ -1,0 +1,140 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.headerTag {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #00e87a;
+}
+
+.storyCard {
+  background: #0d1a16;
+  border: 1px solid rgba(0, 232, 122, 0.3);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.storyLabel {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(0, 232, 122, 0.8);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.starterText {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  color: #e2e8f0;
+  line-height: 1.4;
+  font-style: italic;
+}
+
+.wordsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wordsTitle {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+}
+
+.wordsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wordChip {
+  background: rgba(0, 232, 122, 0.1);
+  border: 1px solid #00e87a;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 12px;
+  font-weight: 700;
+  color: #00e87a;
+}
+
+.inputGroup {
+  display: flex;
+  gap: 8px;
+}
+
+.inputField {
+  flex: 1;
+  background: #090d16;
+  border: 1px solid #243347;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 13px;
+  color: #ffffff;
+  outline: none;
+}
+
+.inputField:focus {
+  border-color: #00e87a;
+}
+
+.btnAdd {
+  background: #00e87a;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 18px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 12px;
+  font-weight: 800;
+  color: #07090e;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.btnAdd:active {
+  transform: scale(0.96);
+}
+
+.btnWordUsed {
+  background: #00e87a;
+  border: none;
+  border-radius: 10px;
+  padding: 16px;
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  color: #07090e;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  touch-action: manipulation;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(0, 232, 122, 0.3);
+}
+
+.btnWordUsed:active {
+  transform: scale(0.97);
+}
