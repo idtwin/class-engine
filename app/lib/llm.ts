@@ -122,29 +122,43 @@ async function callGemini(apiKey: string, opts: LLMOptions): Promise<string> {
 
 // ── Groq ─────────────────────────────────────────────────────────────────────
 async function callGroq(apiKey: string, opts: LLMOptions): Promise<string> {
-  // Ignore mistral model names passed from game pages — use groq default instead
-  const model = (opts.mistralModel && !opts.mistralModel.toLowerCase().includes("mistral"))
+  const targetModel = (opts.mistralModel && !opts.mistralModel.toLowerCase().includes("mistral"))
     ? opts.mistralModel
-    : "llama-3.3-70b-versatile";
+    : "llama-3.1-8b-instant";
 
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: opts.systemPrompt },
-        { role: "user",   content: opts.userPrompt }
-      ],
-      temperature: opts.temperature ?? 0.9,
-      max_tokens: 4096,
-      response_format: { type: "json_object" },
-    }),
-    signal: AbortSignal.timeout(60_000),
-  });
+  const executeCall = async (modelName: string) => {
+    return await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: modelName,
+        messages: [
+          { role: "system", content: opts.systemPrompt },
+          { role: "user",   content: opts.userPrompt }
+        ],
+        temperature: opts.temperature ?? 0.8,
+        max_tokens: 4096,
+        response_format: { type: "json_object" },
+      }),
+      signal: AbortSignal.timeout(60_000),
+    });
+  };
+
+  let res = await executeCall(targetModel);
+
+  // If the chosen model was not found / not accessible on this account (e.g. 70B on standard free tiers), auto-fallback to llama-3.1-8b-instant
+  if (!res.ok && targetModel !== "llama-3.1-8b-instant") {
+    const errText = await res.text();
+    if (res.status === 404 || errText.includes("model_not_found")) {
+      console.warn(`[Groq] Model "${targetModel}" not accessible (404). Automatically falling back to "llama-3.1-8b-instant"...`);
+      res = await executeCall("llama-3.1-8b-instant");
+    } else {
+      throw new Error(`Groq API error ${res.status}: ${errText}`);
+    }
+  }
 
   if (!res.ok) {
     const err = await res.text();

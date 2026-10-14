@@ -770,7 +770,7 @@ export const useClassroomStore = create<ClassroomState>()(
       setGeminiModel: (m) => set({ geminiModel: m }),
       mistralModel: "mistral-small-latest",
       setMistralModel: (m) => set({ mistralModel: m }),
-      groqModel: "llama-3.3-70b-versatile",
+      groqModel: "llama-3.1-8b-instant",
       setGroqModel: (m) => set({ groqModel: m }),
       googleSheetsWebhookUrl: "https://script.google.com/macros/s/AKfycbxOGODvVOZSg9Y6OVj-jf3k37DJsBUD1yyFl11gU5MEDPpnxQkwJrt2n6YipWmP18Zqfg/exec",
       setGoogleSheetsWebhookUrl: (url) => set({ googleSheetsWebhookUrl: url }),
