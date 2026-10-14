@@ -25,12 +25,14 @@ export const WordSurgePad: React.FC<WordSurgePadProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedFeedback, setSubmittedFeedback] = useState<string | null>(null);
 
-  // Sync available words whenever the question changes
+  const wordsKey = (scrambledWords || []).join("::");
+
+  // Sync available words only when the actual scrambled words change
   useEffect(() => {
-    setAvailableWords([...scrambledWords]);
+    setAvailableWords([...(scrambledWords || [])]);
     setAssembledWords([]);
     setSubmittedFeedback(null);
-  }, [scrambledWords]);
+  }, [wordsKey]);
 
   const handleSelectWord = (word: string, index: number) => {
     triggerHaptic("tap");

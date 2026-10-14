@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "./WyrPad.module.css";
 import { triggerHaptic } from "../../hooks/useHapticFeedback";
 
@@ -22,6 +22,11 @@ export const WyrPad: React.FC<WyrPadProps> = ({
   onVote,
 }) => {
   const [selected, setSelected] = useState<"A" | "B" | null>(votedOption);
+
+  // Reset selected state when a new question with different options arrives
+  useEffect(() => {
+    setSelected(votedOption || null);
+  }, [optionA, optionB, votedOption]);
 
   const handleChoice = async (choice: "A" | "B") => {
     if (selected) return;

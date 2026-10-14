@@ -109,8 +109,15 @@ export async function POST(req: Request) {
     }
 
     if (action === "submit_chain_answer") {
-      if (room.chainState?.currentTeamId === payload.teamId) {
-        room.chainSubmit = { answer: payload.answer, teamId: payload.teamId, ts: Date.now() };
+      const activeTeamId = room.chainState?.currentTeamId;
+      const isAllowed = !activeTeamId || !payload.teamId || activeTeamId === payload.teamId;
+      if (isAllowed) {
+        room.chainSubmit = {
+          answer: (payload.answer || "").toUpperCase().trim(),
+          teamId: payload.teamId || activeTeamId,
+          studentName: payload.studentName || "Player",
+          ts: Date.now(),
+        };
       }
     }
 
@@ -292,6 +299,11 @@ export async function POST(req: Request) {
         }
       ];
       room.latestCategoryWord = { word: payload.word, teamId: payload.teamId, studentName: payload.studentName, ts: Date.now() };
+    }
+
+    if (action === "clear_category_words") {
+      room.categorySprintWords = [];
+      room.latestCategoryWord = null;
     }
 
     // Story Chain logic from phone

@@ -25,7 +25,7 @@ const STARTER_STORY_ROUNDS = [
 export default function StoryChainMode() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const { setQuestion, reactions } = useLiveRoomHost("story");
+  const { setQuestion, reactions, roomState } = useLiveRoomHost("story");
   const { currentTeams, updateTeamScore, getActiveApiKey, mistralModel, llmProvider, showTranslations, setShowTranslations } = useClassroomStore();
 
   const [topic, setTopic]             = useState("");
@@ -45,6 +45,7 @@ export default function StoryChainMode() {
 
   const storyEndRef = useRef<HTMLDivElement>(null);
   const inputRef    = useRef<HTMLInputElement>(null);
+  const lastLineTsRef = useRef<number>(0);
 
   useEffect(() => setMounted(true), []);
 
@@ -58,6 +59,28 @@ export default function StoryChainMode() {
       });
     }
   }, [currentRound, rounds, starter, setQuestion]);
+
+  // Real-time listener for mobile submitted story lines
+  useEffect(() => {
+    if (roomState?.latestStoryLine && roomState.latestStoryLine.ts > lastLineTsRef.current) {
+      lastLineTsRef.current = roomState.latestStoryLine.ts;
+      const line = roomState.latestStoryLine.line?.trim();
+      if (line) {
+        setStory(prev => [...prev, line]);
+        if (roomState.latestStoryLine.teamId) {
+          updateTeamScore(roomState.latestStoryLine.teamId, PTS_PER_TURN);
+        }
+        if (currentRound < rounds.length - 1) {
+          setCurrentRound(r => r + 1);
+          setTimeLeft(timerDuration);
+          setTimerActive(timerDuration > 0);
+        } else {
+          setFinished(true);
+          setTimerActive(false);
+        }
+      }
+    }
+  }, [roomState?.latestStoryLine, currentRound, rounds.length, timerDuration, updateTeamScore]);
 
   // Timer countdown (skipped when timerDuration === 0)
   useEffect(() => {

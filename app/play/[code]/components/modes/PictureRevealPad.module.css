@@ -119,3 +119,110 @@
   font-weight: 700;
   color: rgba(255, 255, 255, 0.4);
 }
+
+.guessHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  font-weight: 800;
+  color: #ff7d3b;
+  letter-spacing: 0.08em;
+}
+
+.activeTileCard {
+  background: rgba(255, 125, 59, 0.08);
+  border: 1.5px solid #ff7d3b;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 0 16px rgba(255, 125, 59, 0.15);
+}
+
+.activeTileHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  font-weight: 800;
+  color: #ff7d3b;
+  letter-spacing: 0.08em;
+}
+
+.tileBuzzBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 125, 59, 0.2);
+  border: 1px solid #ff7d3b;
+  color: #ff7d3b;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tileQuestionText {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.35;
+}
+
+.optionsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.tileOptionBtn {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.08s, border-color 0.15s;
+}
+
+.tileOptionBtn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.tileOptionSelected {
+  border-color: #ff7d3b;
+  background: rgba(255, 125, 59, 0.25);
+}
+
+.optionKey {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: #ff7d3b;
+  color: #060810;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.optionLabel {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+}

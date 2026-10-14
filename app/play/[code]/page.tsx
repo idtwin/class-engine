@@ -273,13 +273,14 @@ export default function PlayPage() {
               { word: "READY", revealed: [true, false, false, false, false] }
             ]}
             currentWordIdx={room?.chainState?.currentWordIdx || 1}
-            isMyTurn={room?.chainState ? room.chainState.currentTeamId === myTeamInfo?.id : true}
+            isMyTurn={!room?.chainState?.currentTeamId || !myTeamInfo?.id || room.chainState.currentTeamId === myTeamInfo?.id}
             currentTeamName={
               room?.teams?.find((t: any) => t.id === room?.chainState?.currentTeamId)?.name || myTeamInfo?.name || "TACTICAL SQUAD"
             }
             currentTeamColor={
               room?.teams?.find((t: any) => t.id === room?.chainState?.currentTeamId)?.color || myTeamInfo?.color || "#00c8f0"
             }
+            lastGuess={room?.chainState?.lastGuess}
             onSubmitAnswer={async (ans) => {
               await sendAction("submit_chain_answer", {
                 answer: ans,
@@ -296,6 +297,15 @@ export default function PlayPage() {
             openClue={room?.currentQuestion?.secretHint || room?.revealImageAnswer ? "Examine the board for patterns!" : "Examine projector screen for visual patterns."}
             guessesUsed={guessesUsed}
             maxGuesses={3}
+            activeTile={
+              room?.currentQuestion?.text
+                ? {
+                    text: room.currentQuestion.text,
+                    tileIndex: room.currentQuestion.tileIndex,
+                    options: room.currentQuestion.options,
+                  }
+                : null
+            }
             onDispatchGuess={async (guess) => {
               setGuessesUsed((prev) => prev + 1);
               await sendAction("submit_open_guess", {
@@ -303,6 +313,13 @@ export default function PlayPage() {
                 teamId: myTeamInfo?.id,
                 teamName: myTeamInfo?.name,
               });
+            }}
+            onAnswerTile={async (choice) => {
+              await sendAction("student_vote", { vote: choice, studentId });
+              await sendAction("student_answer", { answer: choice, studentId, teamId: myTeamInfo?.id });
+            }}
+            onBuzzTile={async () => {
+              await sendAction("student_buzz", { teamId: myTeamInfo?.id, studentName });
             }}
           />
         )}
@@ -347,6 +364,9 @@ export default function PlayPage() {
             teamColor={myTeamInfo?.color}
             onBuzz={async () => {
               await sendAction("student_buzz", { teamId: myTeamInfo?.id, studentName });
+            }}
+            onAnswer={async (ans) => {
+              await sendAction("student_answer", { answer: ans, studentId, teamId: myTeamInfo?.id });
             }}
           />
         )}

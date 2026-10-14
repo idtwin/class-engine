@@ -190,7 +190,7 @@ export default function ChainReaction() {
       const res = await fetch(`/api/room/get?code=${activeRoomCode}`).catch(() => null);
       if (!res?.ok) return;
       const data = await res.json();
-      const sub = data?.chainSubmit;
+      const sub = data?.state?.chainSubmit || data?.chainSubmit;
       if (sub && sub.ts > lastChainSubmitTsRef.current) {
         lastChainSubmitTsRef.current = sub.ts;
         // Override current input and submit
@@ -207,6 +207,22 @@ export default function ChainReaction() {
     const id = setInterval(poll, 1000);
     return () => clearInterval(id);
   }, [activeRoomCode, phase]);
+
+  // Real-time listener for instantaneous mobile submit
+  useEffect(() => {
+    const sub = roomState?.chainSubmit;
+    if (sub && sub.ts > lastChainSubmitTsRef.current && phase === "playing" && !chainCompleteRef.current) {
+      lastChainSubmitTsRef.current = sub.ts;
+      (handleSubmitRef.current as (ans: string) => void)(sub.answer);
+      if (activeRoomCode) {
+        fetch("/api/room/action", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: activeRoomCode, action: "clear_chain_submit", payload: {} }),
+        }).catch(() => {});
+      }
+    }
+  }, [roomState?.chainSubmit, phase, activeRoomCode]);
 
   // Global keyboard handler — set up once per phase entry
   useEffect(() => {

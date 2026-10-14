@@ -129,3 +129,72 @@
   letter-spacing: 0.06em;
   text-align: center;
 }
+
+.answerBox {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(0, 200, 240, 0.05);
+  border: 1px solid rgba(0, 200, 240, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.answerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  font-weight: 800;
+  color: #00c8f0;
+  letter-spacing: 0.08em;
+}
+
+.sentBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #00e87a;
+  font-size: 10px;
+}
+
+.inputGroup {
+  display: flex;
+  gap: 8px;
+}
+
+.inputField {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 14px;
+  color: #ffffff;
+  outline: none;
+}
+
+.inputField:focus {
+  border-color: #00c8f0;
+}
+
+.sendBtn {
+  background: #00c8f0;
+  color: #060810;
+  border: none;
+  border-radius: 8px;
+  padding: 0 16px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sendBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "./QuickChoicePad.module.css";
 import { triggerHaptic } from "../../hooks/useHapticFeedback";
 
@@ -28,6 +28,11 @@ export const QuickChoicePad: React.FC<QuickChoicePadProps> = ({
   selectedKey = null,
 }) => {
   const [activeKey, setActiveKey] = useState<string | null>(selectedKey);
+
+  // Reset active choice whenever prompt text or selectedKey prop changes between rounds
+  useEffect(() => {
+    setActiveKey(selectedKey || null);
+  }, [promptText, selectedKey]);
 
   const handleSelect = async (optKey: string) => {
     if (disabled || activeKey) return;

@@ -1,6 +1,5 @@
 "use client";
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "./CategorySprintPad.module.css";
 import { triggerHaptic } from "../../hooks/useHapticFeedback";
 import { Send, Bell, Zap } from "lucide-react";
@@ -23,6 +22,12 @@ export const CategorySprintPad: React.FC<CategorySprintPadProps> = ({
   const [inputVal, setInputVal] = useState("");
   const [recentEntries, setRecentEntries] = useState<string[]>([]);
   const [buzzed, setBuzzed] = useState(false);
+
+  // Clear previous category entries when target category changes
+  useEffect(() => {
+    setRecentEntries([]);
+    setInputVal("");
+  }, [category]);
 
   const handleAdd = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();

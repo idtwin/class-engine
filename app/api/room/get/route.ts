@@ -18,7 +18,7 @@ export async function GET(req: Request) {
         .single();
 
       if (!error && data?.state) {
-        return NextResponse.json({ state: data.state });
+        return NextResponse.json({ ...data.state, state: data.state });
       }
     } catch (e) {}
 
@@ -26,7 +26,7 @@ export async function GET(req: Request) {
     const { getLocalRoom } = await import("@/app/lib/localRoomStore");
     const local = getLocalRoom(code);
     if (local) {
-      return NextResponse.json({ state: local });
+      return NextResponse.json({ ...local, state: local });
     }
 
     return NextResponse.json({ error: "ROOM_NOT_FOUND" }, { status: 404 });

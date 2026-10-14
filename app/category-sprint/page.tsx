@@ -40,7 +40,7 @@ const DEFAULT_CATEGORIES: CategoryItem[] = [
 ];
 
 export default function CategorySprintPage() {
-  const { setQuestion, reactions, roomState } = useLiveRoomHost("categorysprint");
+  const { setQuestion, reactions, roomState, sendRoomAction } = useLiveRoomHost("categorysprint");
   const router = useRouter();
   const { soundEnabled, getActiveApiKey, llmProvider, mistralModel } = useClassroomStore();
 
@@ -117,10 +117,13 @@ export default function CategorySprintPage() {
 
   const handleNext = useCallback(() => {
     soundEngine.playClick(soundEnabled);
+    if (sendRoomAction) {
+      sendRoomAction("clear_category_words", {});
+    }
     if (filteredDeck.length > 0) {
       setCurrentIndex((prev) => (prev + 1) % filteredDeck.length);
     }
-  }, [filteredDeck.length, soundEnabled]);
+  }, [filteredDeck.length, soundEnabled, sendRoomAction]);
 
   // Spacebar shortcut to advance category
   useEffect(() => {
@@ -381,6 +384,59 @@ export default function CategorySprintPage() {
               </div>
             )}
           </div>
+
+          {/* LIVE INCOMING SPRINT WORDS FROM PHONES */}
+          {roomState?.categorySprintWords && roomState.categorySprintWords.length > 0 && (
+            <div style={{ marginTop: "20px", width: "100%", maxWidth: "700px" }}>
+              <div style={{
+                fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
+                fontSize: "12px",
+                fontWeight: 800,
+                color: "var(--cyan)",
+                letterSpacing: "0.08em",
+                marginBottom: "10px",
+                textAlign: "center",
+                textTransform: "uppercase"
+              }}>
+                ⚡ LIVE SQUAD TRANSMISSIONS ({roomState.categorySprintWords.length})
+              </div>
+              <div style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "8px",
+                justifyContent: "center",
+                padding: "16px",
+                background: "rgba(0, 200, 240, 0.06)",
+                border: "1px solid rgba(0, 200, 240, 0.25)",
+                borderRadius: "16px",
+                maxHeight: "180px",
+                overflowY: "auto"
+              }}>
+                {roomState.categorySprintWords.slice(-16).reverse().map((entry: any, i: number) => (
+                  <div key={i} style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    background: "rgba(0, 255, 213, 0.15)",
+                    border: "1px solid rgba(0, 255, 213, 0.4)",
+                    color: "#ffffff",
+                    padding: "6px 14px",
+                    borderRadius: "8px",
+                    fontSize: "15px",
+                    fontWeight: 800,
+                    boxShadow: "0 0 10px rgba(0, 255, 213, 0.2)"
+                  }}>
+                    <span>{entry.word}</span>
+                    {entry.studentName && (
+                      <span style={{ fontSize: "11px", color: "var(--cyan)", fontWeight: 600 }}>
+                        · {entry.studentName}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* BOTTOM ACTION BUTTONS */}

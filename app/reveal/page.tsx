@@ -271,7 +271,11 @@ export default function PictureRevealMode() {
       const q = gameData.questions[index];
       setActiveQuestion({ q: q.q, a: q.a, index, options: q.options, correctLetter: q.correctLetter });
       // Signal phones: new question active, reset buzz state
-      sendRoomAction("set_question", { text: gameData.questions[index].q, tileIndex: index });
+      sendRoomAction("set_question", {
+        text: gameData.questions[index].q,
+        tileIndex: index,
+        options: gameData.questions[index].options
+      });
       sendRoomAction("clear_buzzes", {});
     }, 120);
   };
