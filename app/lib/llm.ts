@@ -19,6 +19,8 @@ export interface LLMOptions {
 
 function stripMarkdown(text: string): string {
   let out = text.trim();
+  // Strip reasoning models <think>...</think>
+  out = out.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
   if (out.startsWith("```json")) out = out.substring(7);
   else if (out.startsWith("```")) out = out.substring(3);
   if (out.endsWith("```")) out = out.substring(0, out.length - 3);
@@ -160,14 +162,14 @@ async function callPollinations(opts: LLMOptions): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "openai",
+      model: "openai-fast",
       messages: [
-        { role: "system", content: opts.systemPrompt },
+        { role: "system", content: opts.systemPrompt + "\nOutput raw JSON only. Do not wrap in markdown or add conversational pleasantries." },
         { role: "user",   content: opts.userPrompt }
       ],
       temperature: opts.temperature ?? 0.8,
     }),
-    signal: AbortSignal.timeout(35_000),
+    signal: AbortSignal.timeout(30_000),
   });
 
   if (!res.ok) {
@@ -219,7 +221,8 @@ export async function generateText(
     console.warn(`[LLM] Primary provider (${provider}) encountered error: ${primaryErr?.message || primaryErr}. Attempting resilient fallback...`);
     try {
       return await callPollinations(opts);
-    } catch (fallbackErr) {
+    } catch (fallbackErr: any) {
+      console.warn(`[LLM] Resilient fallback encountered error: ${fallbackErr?.message || fallbackErr}`);
       if (primaryErr.message === "fetch failed" || primaryErr.cause?.code === "ECONNREFUSED") {
         if (provider === "lmstudio") {
           throw new Error("LM Studio is not running. Start LM Studio on port 1234, or switch to a cloud provider in Dashboard → Settings.");
@@ -245,10 +248,30 @@ export async function generateJSON<T = unknown>(
   try {
     parsed = JSON.parse(text);
   } catch {
-    const secondPass = text.replace(/^[^[{]*/, "").replace(/[^}\]]*$/, "");
-    try {
-      parsed = JSON.parse(secondPass);
-    } catch {
+    const clean = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+    const firstBrace = clean.indexOf("{");
+    const firstBracket = clean.indexOf("[");
+    let startIdx = -1;
+    let endIdx = -1;
+
+    if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+      startIdx = firstBrace;
+      endIdx = clean.lastIndexOf("}");
+    } else if (firstBracket !== -1) {
+      startIdx = firstBracket;
+      endIdx = clean.lastIndexOf("]");
+    }
+
+    if (startIdx !== -1 && endIdx > startIdx) {
+      const candidate = clean.slice(startIdx, endIdx + 1);
+      try {
+        parsed = JSON.parse(candidate);
+      } catch {
+        throw new Error(
+          "LLM returned non-parseable JSON. Raw (first 500): " + text.substring(0, 500)
+        );
+      }
+    } else {
       throw new Error(
         "LLM returned non-parseable JSON. Raw (first 500): " + text.substring(0, 500)
       );

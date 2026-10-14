@@ -74,16 +74,74 @@ const FALLBACK_THEME_DECKS: Record<string, { word: string; forbidden: string[] }
     { word: "Drone", forbidden: ["Fly", "Remote", "Camera", "Propeller"] },
     { word: "Tablet", forbidden: ["iPad", "Screen", "Touch", "App"] },
   ],
+  movies: [
+    { word: "Popcorn", forbidden: ["Cinema", "Butter", "Corn", "Snack"] },
+    { word: "Director", forbidden: ["Action", "Cut", "Film", "Megaphone"] },
+    { word: "Actor", forbidden: ["Movie", "Star", "Role", "Perform"] },
+    { word: "Oscar", forbidden: ["Award", "Trophy", "Gold", "Statue"] },
+    { word: "Ticket", forbidden: ["Cinema", "Entry", "Paper", "Seat"] },
+    { word: "Superhero", forbidden: ["Marvel", "Power", "Cape", "Hero"] },
+    { word: "Cinema", forbidden: ["Theater", "Big Screen", "Popcorn", "Seats"] },
+    { word: "Animation", forbidden: ["Cartoon", "Disney", "Pixar", "Draw"] },
+    { word: "Horror", forbidden: ["Scary", "Ghost", "Fear", "Monster"] },
+    { word: "Script", forbidden: ["Lines", "Writer", "Words", "Read"] },
+  ],
+  school: [
+    { word: "Homework", forbidden: ["Study", "Home", "Teacher", "Assignment"] },
+    { word: "Backpack", forbidden: ["Bag", "Books", "Carry", "School"] },
+    { word: "Library", forbidden: ["Books", "Quiet", "Read", "Borrow"] },
+    { word: "Calculator", forbidden: ["Math", "Numbers", "Buttons", "Solve"] },
+    { word: "Blackboard", forbidden: ["Chalk", "Write", "Teacher", "Wall"] },
+    { word: "Exam", forbidden: ["Test", "Grade", "Score", "Pass"] },
+    { word: "Pencil", forbidden: ["Write", "Lead", "Eraser", "Sharpener"] },
+    { word: "Classroom", forbidden: ["Desk", "Students", "Teacher", "Room"] },
+    { word: "Recess", forbidden: ["Play", "Break", "Outside", "Bell"] },
+    { word: "Ruler", forbidden: ["Measure", "Straight", "Length", "Centimeter"] },
+  ],
+  space: [
+    { word: "Rocket", forbidden: ["Launch", "Space", "Fuel", "Moon"] },
+    { word: "Astronaut", forbidden: ["Suit", "Space", "NASA", "Moon"] },
+    { word: "Telescope", forbidden: ["Look", "Stars", "Sky", "Lens"] },
+    { word: "Moon", forbidden: ["Night", "Orbit", "Crater", "Sky"] },
+    { word: "Mars", forbidden: ["Red", "Planet", "Rover", "Alien"] },
+    { word: "Alien", forbidden: ["UFO", "Extraterrestrial", "Space", "Green"] },
+    { word: "Black Hole", forbidden: ["Gravity", "Light", "Dark", "Space"] },
+    { word: "Satellite", forbidden: ["Orbit", "Signal", "Space", "Earth"] },
+    { word: "Solar System", forbidden: ["Sun", "Planets", "Eight", "Orbit"] },
+    { word: "Comet", forbidden: ["Tail", "Ice", "Space", "Fly"] },
+  ],
+  music: [
+    { word: "Guitar", forbidden: ["Strings", "Instrument", "Rock", "Strum"] },
+    { word: "Drums", forbidden: ["Beat", "Sticks", "Loud", "Rhythm"] },
+    { word: "Microphone", forbidden: ["Sing", "Voice", "Loud", "Stage"] },
+    { word: "Concert", forbidden: ["Show", "Crowd", "Live", "Band"] },
+    { word: "Piano", forbidden: ["Keys", "Black", "White", "Classical"] },
+    { word: "Headphones", forbidden: ["Ears", "Listen", "Audio", "Music"] },
+    { word: "Song", forbidden: ["Sing", "Lyrics", "Melody", "Track"] },
+    { word: "Singer", forbidden: ["Voice", "Performer", "Pop", "Famous"] },
+    { word: "Album", forbidden: ["Songs", "Record", "Tracks", "Artist"] },
+    { word: "DJ", forbidden: ["Party", "Mix", "Turntable", "Beats"] },
+  ],
 };
 
 function getFallbackDeck(topic: string) {
   const t = topic.toLowerCase();
+  if (/movie|film|cinema|hollywood|actor|director/.test(t)) return FALLBACK_THEME_DECKS.movies;
+  if (/school|class|study|student|education|teacher|exam/.test(t)) return FALLBACK_THEME_DECKS.school;
+  if (/space|astro|planet|star|universe|galaxy|moon|rocket/.test(t)) return FALLBACK_THEME_DECKS.space;
+  if (/tech|comput|phone|digital|internet|smart|device/.test(t)) return FALLBACK_THEME_DECKS.tech;
+  if (/sport|game|play|athlete|ball|soccer|tennis|basket/.test(t)) return FALLBACK_THEME_DECKS.sports;
+  if (/job|work|career|profession|office|doctor/.test(t)) return FALLBACK_THEME_DECKS.jobs;
+  if (/travel|trip|vacation|holiday|flight|beach|hotel/.test(t)) return FALLBACK_THEME_DECKS.travel;
+  if (/food|cook|eat|kitchen|dinner|restaurant|pizza/.test(t)) return FALLBACK_THEME_DECKS.food;
+  if (/animal|pet|zoo|nature|wild|creature/.test(t)) return FALLBACK_THEME_DECKS.animals;
+  if (/music|song|instrument|band|sing|dance/.test(t)) return FALLBACK_THEME_DECKS.music;
+
   for (const [key, deck] of Object.entries(FALLBACK_THEME_DECKS)) {
     if (t.includes(key) || key.includes(t)) {
       return deck;
     }
   }
-  // If no exact match, blend or pick general
   return FALLBACK_THEME_DECKS.food;
 }
 
