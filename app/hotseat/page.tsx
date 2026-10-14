@@ -222,6 +222,33 @@ export default function HotSeatMode() {
                     onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
                     autoFocus
                   />
+                  {/* Quick Preset Chips */}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                    {["🦁 Animals", "🍕 Food", "✈️ Travel", "💼 Jobs", "⚽ Sports", "📱 Tech", "🎬 Movies", "🏫 School"].map((preset) => {
+                      const cleanName = preset.split(" ")[1];
+                      const isSelected = topic.toLowerCase() === cleanName.toLowerCase();
+                      return (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setTopic(cleanName)}
+                          style={{
+                            background: isSelected ? "rgba(255, 125, 59, 0.25)" : "rgba(255, 255, 255, 0.06)",
+                            border: `1px solid ${isSelected ? "#ff7d3b" : "rgba(255, 255, 255, 0.15)"}`,
+                            color: isSelected ? "#ff7d3b" : "#e2e8f0",
+                            borderRadius: 6,
+                            padding: "4px 10px",
+                            fontSize: 11,
+                            fontFamily: "var(--font-mono, monospace)",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                        >
+                          {preset}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div className={styles.setupField}>

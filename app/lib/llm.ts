@@ -94,7 +94,7 @@ async function callMistral(apiKey: string, opts: LLMOptions): Promise<string> {
 async function callGemini(apiKey: string, opts: LLMOptions): Promise<string> {
   const model = (opts.mistralModel && !opts.mistralModel.toLowerCase().includes("mistral"))
     ? opts.mistralModel
-    : "gemini-2.5-flash";
+    : "gemini-2.0-flash";
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {
@@ -154,6 +154,32 @@ async function callGroq(apiKey: string, opts: LLMOptions): Promise<string> {
   return stripMarkdown(raw);
 }
 
+// ── Resilient Cloud Fallback (Zero-Config OpenAI Compatible) ───────────────────
+async function callPollinations(opts: LLMOptions): Promise<string> {
+  const res = await fetch("https://text.pollinations.ai/openai/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "openai",
+      messages: [
+        { role: "system", content: opts.systemPrompt },
+        { role: "user",   content: opts.userPrompt }
+      ],
+      temperature: opts.temperature ?? 0.8,
+    }),
+    signal: AbortSignal.timeout(35_000),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Pollinations error ${res.status}: ${err}`);
+  }
+
+  const data = await res.json();
+  const raw: string = data?.choices?.[0]?.message?.content ?? "";
+  return stripMarkdown(raw);
+}
+
 // ── Public entry point ────────────────────────────────────────────────────────
 export async function generateText(
   apiKey: string | undefined | null,
@@ -161,15 +187,16 @@ export async function generateText(
 ): Promise<string> {
   const provider = opts.provider ?? "gemini";
 
-  try {
+  const tryPrimary = async (): Promise<string> => {
     if (provider === "lmstudio") {
       return await callLMStudio(opts);
     }
     if (provider === "mistral") {
-      if (!apiKey || apiKey.trim().length < 10) {
+      const key = apiKey?.trim() || process.env.MISTRAL_API_KEY;
+      if (!key || key.length < 10) {
         throw new Error("Mistral API key is required. Go to Dashboard → Settings and add your key.");
       }
-      return await callMistral(apiKey.trim(), opts);
+      return await callMistral(key, opts);
     }
     if (provider === "groq") {
       const groqKey = apiKey?.trim() || process.env.GROQ_API_KEY;
@@ -179,18 +206,28 @@ export async function generateText(
       return await callGroq(groqKey, opts);
     }
     // Gemini
-    if (!apiKey || apiKey.trim().length < 10) {
+    const geminiKey = apiKey?.trim() || process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!geminiKey || geminiKey.length < 10) {
       throw new Error("Gemini API key is required. Go to Dashboard → Settings and add your key, or switch to LM Studio / Mistral.");
     }
-    return await callGemini(apiKey.trim(), opts);
-  } catch (e: any) {
-    if (e.message === "fetch failed" || e.cause?.code === "ECONNREFUSED") {
-      if (provider === "lmstudio") {
-        throw new Error("LM Studio is not running. Start LM Studio on port 1234, or switch to a cloud provider in Dashboard → Settings.");
+    return await callGemini(geminiKey, opts);
+  };
+
+  try {
+    return await tryPrimary();
+  } catch (primaryErr: any) {
+    console.warn(`[LLM] Primary provider (${provider}) encountered error: ${primaryErr?.message || primaryErr}. Attempting resilient fallback...`);
+    try {
+      return await callPollinations(opts);
+    } catch (fallbackErr) {
+      if (primaryErr.message === "fetch failed" || primaryErr.cause?.code === "ECONNREFUSED") {
+        if (provider === "lmstudio") {
+          throw new Error("LM Studio is not running. Start LM Studio on port 1234, or switch to a cloud provider in Dashboard → Settings.");
+        }
+        throw new Error(`Network error reaching ${provider} API. Check your internet or switch providers in Dashboard → Settings.`);
       }
-      throw new Error(`Network error reaching ${provider} API. Check your internet or switch providers in Dashboard → Settings.`);
+      throw primaryErr;
     }
-    throw e;
   }
 }
 
